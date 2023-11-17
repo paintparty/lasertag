@@ -79,9 +79,9 @@ The function `typetag.core/tag-map` will return a map with additional info.
 With `tt-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to false will exclude certain information, which, depending on how you are using the utility, could help with performance.
 
 ```clojure
-:include-all-typetags?              
-:include-function-info?          
-:include-js-built-in-object-info?
+:all-typetags?              
+:function-info?          
+:js-built-in-object-info?
 ```
 <br>
 
@@ -130,7 +130,7 @@ Exclude the JS built-in-object related entries:
 ### Clojure
 Below is a table of example values in a Clojure context, and the results of passing the value to `typetag.core/tag`, and `clojure.core/type`.
 
-| `Value`                         | `typetag.core/tag`       | `clojure.core/type`               |
+| Input value                     | `typetag.core/tag`       | `clojure.core/type`               |
 | :---                            | :---                    | :---                              |
 | `"hi"`                          | `:string`               | `java.lang.String`                |
 | `:hi`                           | `:keyword`              | `clojure.lang.Keyword`            |
@@ -166,11 +166,11 @@ Below is a table of example values in a Clojure context, and the results of pass
 
 Below is a table of example values in a ClojureScript context, and the results of passing the value to `typetag.core/tag`, and `clojure.core/type`.
 
-| `Value`                            | `typetag.core/tt` | `cljs.core/type`               |
+| Input value                        | `typetag.core/tt` | `cljs.core/type`               |
 | :---                               | :---              | :---                           |
-| `"hi"`                               | `:string`         | `#object[String]`              |
+| `"hi"`                             | `:string`         | `#object[String]`              |
 | `:hi`                              | `:keyword`        | `cljs.core/Keyword`            |
-| `"^hi$"`                             | `:regex`          | `#object[RegExp]`              |
+| `"^hi$"`                           | `:regex`          | `#object[RegExp]`              |
 | `true`                             | `:boolean`        | `#object[Boolean]`             |
 | `mysym`                            | `:symbol`         | `cljs.core/Symbol`             |
 | `nil`                              | `:nil`            | `nil`                          |
