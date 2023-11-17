@@ -214,7 +214,9 @@ Below is a table of example values in a ClojureScript context, and the results o
 
 
 
-;; The `:js-built-in-method-of` entry can help to differentiate between instance-methods on JS built-ins that might have the same name as another instance methods on a different JS built-in.
+;; The `:js-built-in-method-of` entry can help to differentiate
+;; between instance-methods on JS built-ins that might have the
+;; same name as another instance methods on a different JS built-in.
 (tag-map (aget "hi" "concat"))
 ;; =>
 ;; {...
