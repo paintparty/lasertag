@@ -148,11 +148,11 @@ Below is a table of example values in a Clojure context, and the results of pass
 |                     `-Infinity` |            `:-Infinity` |      `java.lang.Double`           |
 |                           `NaN` |                  `:NaN` |      `java.lang.Double`           |
 |                           `1/3` |                `:ratio` |    `clojure.lang.Ratio`           |
-|                      `(byte 0)` |                 `:byte` |        `java.lang.Byte`           |
-|                     `(short 3)` |                `:short` |       `java.lang.Short`           |
-|                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
+|                      `(byte 0)` |                  `:int` |        `java.lang.Byte`           |
+|                     `(short 3)` |                  `:int` |       `java.lang.Short`           |
+|                `(double 23.44)` |               `:double` |      `java.lang.Double`           |
 |                            `1M` |              `:decimal` |  `java.math.BigDecimal`           |
-|                             `1` |                 `:long` |        `java.lang.Long`           |
+|                             `1` |                  `:int` |        `java.lang.Long`           |
 |                   `(float 1.5)` |                `:float` |       `java.lang.Float`           |
 |                      `(char a)` |                 `:char` |   `java.lang.Character`           |
 | `(java.math.BigInteger. "171")` | `:java.math.BigInteger` |  `java.math.BigInteger`           |
