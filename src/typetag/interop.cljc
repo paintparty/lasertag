@@ -176,12 +176,13 @@
       js/Reflect]))
 
 #?(:cljs 
-   (defonce js-built-ins-which-are-iterables*
+   (defonce js-built-ins-which-are-iterables-by-built-in*
      (apply concat (vals (select-keys js-built-ins-by-category ["Indexed collections" "Keyed collections"])))))
 
+
 #?(:cljs 
-   (defonce js-built-ins-which-are-not-functions-by-built-in
-     (select-keys js-built-ins-by-built-in js-built-ins-which-are-not-functions*)))
+   (defonce js-built-ins-which-are-iterables
+     (into #{} (keys (into {} js-built-ins-which-are-iterables-by-built-in*)))))
 
 
 ;;;; define built-in values -------------------
