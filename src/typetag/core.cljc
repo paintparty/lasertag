@@ -244,22 +244,24 @@
         fn-args              (fn-args-lamda fn-args fn-info)]
     [fn-args defrecord?]))
 
-(defn- fn-info [x include-fn-info?]
+(defn- fn-info [x k include-fn-info?]
   (when include-fn-info?
-    (let [fn-info              (fn-info* x)
-          [fn-args defrecord?] (fn-args x fn-info)]
+    (let [fn-info              (fn-info* x k)
+          [fn-args defrecord?] (fn-args x fn-info)
+          fn-args              (some->> fn-args seq (into []))]
       (merge fn-info
-             (when (seq fn-args)
+             (when fn-args
                {:fn-args (into [] fn-args)})
              (when defrecord?
                {:defrecord? true})
              #?(:cljs 
-                (let [{:keys [_ args]} (get interop/js-built-ins-by-built-in x)]
-                  (merge (if args 
-                           {:js-built-in-function? true
-                            :fn-args               args}
-                           (when (:js-built-in-method-of fn-info)
-                             {:fn-args :typetag/unknown-function-signature-on-js-built-in-method})))))))))
+                (when-not fn-args 
+                  (let [{:keys [_ args]} (get interop/js-built-ins-by-built-in x)]
+                    (merge (if args 
+                             {:js-built-in-function? true
+                              :fn-args               args}
+                             (when (:js-built-in-method-of fn-info)
+                               {:fn-args :typetag/unknown-function-signature-on-js-built-in-method}))))))))))
 
 ;; function resolution functions end---------------
 
