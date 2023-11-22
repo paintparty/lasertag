@@ -333,11 +333,11 @@
            (when (fn? x) :function)
            ;; Extra types, maybe useful info
            (when (coll? x) :coll)
+           (when (record? x) :record)
            (when (number? x) :number)]
           (remove nil?)
           (cons k)
-          distinct
-          (into []))))
+          (into #{}))))
 #?(:cljs 
    (defn- cljs-all-value-types [x k]
      (->> [(cljs-number-type x)
@@ -352,9 +352,9 @@
            (when (defmulti? x) :defmulti)
            (when (js-promise? x) :js/Promise)
            (when (js-global-this? x) :js/globalThis)
-
            ;; Extra types, maybe useful info
            (when (coll? x) :coll)
+           (when (record? x) :record)
            (when (number? x) :number)
 
            ;; Maybe we shouldn't check js-object-instance
@@ -364,8 +364,7 @@
            ]
           (remove nil?)
           (cons k)
-          distinct
-          (into []))))
+          (into #{}))))
 
 (defn- tag-map*
   [x k k+ opts]
