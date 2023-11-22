@@ -370,22 +370,29 @@
   [x k k+ opts]
   (let [include-all-typetags?            (if (false? (:all-typetags? opts)) false true)
         include-js-built-in-object-info? (if (false? (:js-built-in-object-info? opts)) false true)
-        include-function-info?           (if (false? (:function-info? opts)) false true)]
+        include-function-info?           (if (false? (:function-info? opts)) false true)
+        x-type                           (type x)]
     (merge 
      {:typetag k+}
 
      (when include-all-typetags?
-       {:all-typetags #?(:cljs (cljs-all-value-types x k)
-                         :clj (clj-all-value-types x k))})
+       (let [all-typetags #?(:cljs (cljs-all-value-types x k)
+                             :clj (clj-all-value-types x k))]
+         {:all-typetags all-typetags
+          :coll-type?   (or (contains? all-typetags :coll)
+                            #?(:cljs (or (object? x)
+                                         (array? x)
+                                         (contains? interop/js-built-ins-which-are-iterables x-type))))
+          :number-type? (contains? all-typetags :number)}))
 
      {:type #?(:cljs (if (= k :js/Generator)
                        (symbol "#object[Generator]")
-                       (type x))
-               :clj (type x))}
+                       x-type)
+               :clj x-type)}
      
-     (when (= k :function)
-       #?(:cljs (fn-info x include-function-info?)
-          :clj (fn-info x include-function-info?)))
+     (when (contains? #{:function :defmulti :java.lang.Class} k)
+       #?(:cljs (fn-info x k include-function-info?)
+          :clj (fn-info x k include-function-info?)))
 
      #?(:cljs 
         (when include-js-built-in-object-info?
