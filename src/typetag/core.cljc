@@ -142,41 +142,80 @@
 ;; cljs fn resolution functions start---------------
 (defn- js-built-in-method-of [x name-prop fn-nm]
   #?(:cljs
-     (when (re-find #"[^\$\.-]" name-prop)
-       (if-let [built-in-candidates (get (:objects-by-method-name interop/js-built-in-methods) fn-nm)]
-         (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) built-in-candidates))
-               {:keys [sym]} (get interop/js-built-ins-by-built-in o)]
-           {:js-built-in-method-of sym})
-         (when-let [built-in (get (:objects-by-unique-method-name interop/js-built-in-methods) fn-nm)]
-           (let [{:keys [sym]} (get interop/js-built-ins-by-built-in built-in)]
-             {:js-built-in-method-of sym}))))))
+     (when (and (string? name-prop)
+                (re-find #"[^\$\.-]" name-prop))
+       (let [{:keys [objects-by-method-name 
+                     objects-by-unique-method-name]} interop/js-built-in-methods]
+         (if-let [built-in-candidates (get objects-by-method-name fn-nm)]
+           (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
+                                              built-in-candidates))
+                 {:keys [sym]} (get interop/js-built-ins-by-built-in o)]
+             {:js-built-in-method-of sym})
+           (when-let [built-in (get objects-by-unique-method-name fn-nm)]
+             (let [{:keys [sym]} (get interop/js-built-ins-by-built-in
+                                      built-in)]
+               {:js-built-in-method-of sym})))))))
 
-(defn- fn-info* [x]
+(defn- cljs-defmulti [sym]
+  (when (symbol? sym)
+    (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
+      {:fn-ns   fn-ns
+       :fn-name fn-nm
+       :fn-args :typetag/multimethod})) )
+
+(defn- cljs-fn [x s]
+  (let [bits          (string/split s #"\$")
+        [fn-ns fn-nm] (partition-drop-last bits)
+        fn-nm         (demunge-fn-name fn-nm)]
+    (merge {:fn-name fn-nm}
+           (when (seq fn-ns)
+             {:fn-ns (string/join "." fn-ns)}) 
+           (js-built-in-method-of x s fn-nm))))
+
+(defn- cljs-fn-alt [o]
+  (let [datafied-str (pwos o)]
+    (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" datafied-str)]
+      {:fn-name           (demunge-fn-name fn-nm)
+       :fn-ns             fn-ns
+       :cljs-datatype-fn? true}
+      {:lamda? true})))
+
+(defn- fn-info* [x k]
   #?(:cljs 
      (let [datafied  (datafy x)
            name-prop (.-name datafied)]
-       (if-not (string/blank? name-prop)
-         (let [bits          (string/split name-prop #"\$")
-               [fn-ns fn-nm] (partition-drop-last bits)
-               fn-nm         (demunge-fn-name fn-nm)]
-           (merge {:fn-name fn-nm}
-                  (when (seq fn-ns)
-                    {:fn-ns (string/join "." fn-ns)}) 
-                  (js-built-in-method-of x name-prop fn-nm)))
-         (let [datafied-str (pwos datafied)]
-           (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" datafied-str)]
-             {:fn-name           (demunge-fn-name fn-nm)
-              :fn-ns             fn-ns
-              :cljs-datatype-fn? true}
-             {:lamda? true}))))
+       (cond
+         (= k :defmulti)
+         (cljs-defmulti name-prop)
+
+         (not (string/blank? name-prop))
+         (cljs-fn x name-prop)
+
+         :else
+         (cljs-fn-alt datafied)))
      :clj
-     (let [datafied  (datafy-str x)
-           [_ nm*] (re-find #"^#object\[([^\s]*)\s" datafied)]
-       (when (and nm* (not (string/blank? nm*)))
-         (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-               fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-           (merge (if fn-nm {:fn-name fn-nm} {:lamda? true})
-                  {:fn-ns fn-ns}))))))
+     (if (= k :defmulti)
+      {:fn-args :typetag/multimethod}
+      (if (= k :java.lang.Class)
+        (let [[_ nm] (re-find #"^class (.*)$" (str x))
+              bits   (string/split nm #"\.")
+              fn-ns  (string/join "." (drop-last bits))
+              fn-nm  (last bits)]
+          {:fn-ns   (string/replace fn-ns #"_" "-")
+           :fn-name fn-nm
+           :fn-args :typetag/unknown-function-signature-on-java-class})
+        (let [datafied (datafy-str x)
+              [_ nm*]  (re-find #"^#object\[([^\s]*)\s" datafied)]
+          (when (and nm* (not (string/blank? nm*)))
+            (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+                  fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+              (merge (if fn-nm 
+                       (if (re-find #"^fn--\d+$" fn-nm)
+                         {:lamda? true}
+                         {:fn-name fn-nm})
+                       {:lamda? true})
+                     {:fn-ns   (string/replace fn-ns #"_" "-")
+                      :fn-args :typetag/unknown-function-signature-on-clj-function}))))))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
