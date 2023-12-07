@@ -70,6 +70,7 @@
       clojure.lang.PersistentHashMap  :map
       clojure.lang.PersistentHashSet  :set
       clojure.lang.LazySeq            :seq
+      clojure.lang.Range              :seq
       clojure.lang.LongRange          :seq
       clojure.lang.PersistentList     :list}))
 
