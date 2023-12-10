@@ -141,45 +141,50 @@
 
 
 ;; cljs fn resolution functions start---------------
-(defn- js-built-in-method-of [x name-prop fn-nm]
-  #?(:cljs
-     (when (and (string? name-prop)
-                (re-find #"[^\$\.-]" name-prop))
-       (let [{:keys [objects-by-method-name 
-                     objects-by-unique-method-name]} interop/js-built-in-methods]
-         (if-let [built-in-candidates (get objects-by-method-name fn-nm)]
-           (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
-                                              built-in-candidates))
-                 {:keys [sym]} (get interop/js-built-ins-by-built-in o)]
-             {:js-built-in-method-of sym})
-           (when-let [built-in (get objects-by-unique-method-name fn-nm)]
-             (let [{:keys [sym]} (get interop/js-built-ins-by-built-in
-                                      built-in)]
-               {:js-built-in-method-of sym})))))))
+#?(:cljs 
+   (do 
+     (defn- js-built-in-method-of [x name-prop fn-nm]
+       (when 
+        (and (string? name-prop)
+             (re-find #"[^\$\.-]" name-prop))
+         (let [{:keys [objects-by-method-name 
+                       objects-by-unique-method-name]} interop/js-built-in-methods]
+           (if-let [built-in-candidates (get objects-by-method-name fn-nm)]
+             (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
+                                                built-in-candidates))
+                   {:keys [sym]} (get interop/js-built-ins-by-built-in o)]
+               {:js-built-in-method-of sym
+                :js-built-in-function? true})
+             (when-let [built-in (get objects-by-unique-method-name fn-nm)]
+               (let [{:keys [sym]} (get interop/js-built-ins-by-built-in built-in)]
+                 {:js-built-in-method-of sym
+                  :js-built-in-function? true}))))))
 
-(defn- cljs-defmulti [sym]
-  (when (symbol? sym)
-    (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
-      {:fn-ns   fn-ns
-       :fn-name fn-nm
-       :fn-args :typetag/multimethod})) )
+     (defn- cljs-defmulti [sym]
+       (when (symbol? sym)
+         (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
+           {:fn-ns   fn-ns
+            :fn-name fn-nm
+            :fn-args :typetag/multimethod})) )
 
-(defn- cljs-fn [x s]
-  (let [bits          (string/split s #"\$")
-        [fn-ns fn-nm] (partition-drop-last bits)
-        fn-nm         (demunge-fn-name fn-nm)]
-    (merge {:fn-name fn-nm}
-           (when (seq fn-ns)
-             {:fn-ns (string/join "." fn-ns)}) 
-           (js-built-in-method-of x s fn-nm))))
+     (defn- cljs-fn [x s]
+       (let [bits          (string/split s #"\$")
+             [fn-ns fn-nm] (partition-drop-last bits)
+             fn-nm         (demunge-fn-name fn-nm)
+             built-in?     (contains? (:js-built-in-objects interop/js-built-in-methods) x)]
+         (merge {:fn-name fn-nm}
+                (when built-in? {:js-built-in-function? true})
+                (when (seq fn-ns)
+                  {:fn-ns (string/join "." fn-ns)}) 
+                (when-not built-in? (js-built-in-method-of x s fn-nm)))))
 
-(defn- cljs-fn-alt [o]
-  (let [datafied-str (pwos o)]
-    (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" datafied-str)]
-      {:fn-name           (demunge-fn-name fn-nm)
-       :fn-ns             fn-ns
-       :cljs-datatype-fn? true}
-      {:lamda? true})))
+     (defn- cljs-fn-alt [o]
+       (let [datafied-str (pwos o)]
+         (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" datafied-str)]
+           {:fn-name           (demunge-fn-name fn-nm)
+            :fn-ns             fn-ns
+            :cljs-datatype-fn? true}
+           {:lamda? true})))))
 
 (defn- fn-info* [x k]
   #?(:cljs 
