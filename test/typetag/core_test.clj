@@ -33,9 +33,12 @@
   (is (= 
        (dissoc (tag-map #(inc %)) :type)
        {:typetag      :function,
-        :all-typetags [:function],
+        :all-typetags #{:function},
         :lamda?       true
-        :fn-ns        "typetag.core_test"}))) 
+        :coll-type?   false
+        :number-type? false
+        :fn-ns        "typetag.core-test"
+        :fn-args      :typetag/unknown-function-signature-on-clj-function}))) 
 
 (deftest clj-collection-types
  (is (= :vector (tag [1 2 3])))
@@ -51,7 +54,9 @@
   (is (= 
        (tag-map '(:a :b :c))
        {:typetag      :list,
-        :all-typetags [:list :coll],
+        :all-typetags #{:list :coll},
+        :coll-type?   true,
+        :number-type? false,
         :type         clojure.lang.PersistentList})))
 
 (deftest clj-number-types 

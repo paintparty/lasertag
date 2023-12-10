@@ -29,15 +29,17 @@
  (is (= :typetag.core-test/MyRecordType (tag my-record-type)))
  (is (= :defmulti (tag different-behavior))))
 
-(deftest clj-function-types-map
+(deftest cljs-function-types-map
   (is (= 
        (dissoc (tag-map #(inc %)) :type)
        {:typetag      :function,
-        :all-typetags [:function],
+        :all-typetags #{:function},
         :lamda?       true
+        :coll-type?   false
+        :number-type? false
         :fn-args      '[%1]}))) 
 
-(deftest clj-collection-types
+(deftest cljs-collection-types
  (is (= :vector (tag [1 2 3])))
  (is (= :set (tag #{1 2 3})))
  (is (= :map (tag {:a 2 :b 3})))
@@ -47,14 +49,16 @@
  (is (= :list (tag '(:a :b :c))))
  (is (= :list (tag (list :a :b :c)))))
 
-(deftest clj-collection-types-map
+(deftest cljs-collection-types-map
   (is (= 
        (tag-map '(:a :b :c))
        {:typetag      :list,
-        :all-typetags [:list :js/Iterable :coll],
+        :all-typetags #{:list :js/Iterable :coll},
+        :coll-type?   true,
+        :number-type? false,
         :type         cljs.core/List})))
 
-(deftest clj-number-types 
+(deftest cljs-number-types 
   (is (= :Infinity (tag (/ 1.6 0.0))))
   (is (= :-Infinity (tag (/ -1.0 0.0))))
   (is (= :NaN (tag (/ 0.0 0.0))))
