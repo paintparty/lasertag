@@ -381,8 +381,8 @@
 
 #?(:cljs 
    (defn- cljs-coll-type? [x]
-     (or (object? x)
-         (array? x)
+     (or (array? x)
+         (object? x)
          (contains? interop/js-built-ins-which-are-iterables
                     (type x)))))
 
