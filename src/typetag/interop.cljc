@@ -100,8 +100,7 @@
 
       "Internationalization"
 
-      [[js/Intl {:sym 'Intl :not-a-constructor? true 
-                 :args '[...]}]
+      [[js/Intl {:sym 'Intl :not-a-constructor? true}]
        [js/Intl.Collator {:sym 'Intl.Collator
                           :demo (new js/Intl.Collator "sv")
                           :args '[...]}]
@@ -167,13 +166,12 @@
      (into {} js-built-ins-by-built-in*)))
 
 #?(:cljs 
-   (defonce js-built-ins-which-are-not-functions*
-     [js/Symbol
-      js/Math
-      js/JSON
-      js/Atomics
-      js/Intl
-      js/Reflect]))
+   (defonce js-built-ins-which-are-not-functions-or-constructors
+     #{js/Math
+       js/JSON
+       js/Atomics
+       js/Intl
+       js/Reflect}))
 
 #?(:cljs 
    (defonce js-built-ins-which-are-iterables-by-built-in*
