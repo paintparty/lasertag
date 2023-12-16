@@ -392,9 +392,16 @@
     (assoc {}
            :all-typetags
            all-typetags
+
            :coll-type?
            (or (contains? all-typetags :coll)
                #?(:cljs (cljs-coll-type? x)))
+
+           :map-like?
+           ;; TODO - add Java data structures support
+           (or (contains? #{:map :js/Object :js/Map} k)
+               (contains? all-typetags :record))
+
            :number-type?
            (contains? all-typetags :number))))
 
