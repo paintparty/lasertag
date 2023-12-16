@@ -66,7 +66,7 @@
 
       "Keyed collections"
       [
-       [js/Map {:sym 'Map :demo (new js/Map #js[["a", 1], ["b", 2]]) :args '[...]}]
+       [js/Map {:sym 'Map :demo (new js/Map #js[#js["a", 1], #js["b", 2]]) :args '[...]}]
        [js/Set {:sym 'Set :demo (new js/Set #js[1 2]) :args '[...]}]
        [js/WeakMap {:sym  'WeakMap
                     :demo (let [wm (js/WeakMap.)
@@ -180,7 +180,9 @@
 
 #?(:cljs 
    (defonce js-built-ins-which-are-iterables
-     (into #{} (keys (into {} js-built-ins-which-are-iterables-by-built-in*)))))
+     (disj (into #{} (keys (into {} js-built-ins-which-are-iterables-by-built-in*)))
+           js/WeakMap
+           js/WeakSet)))
 
 
 ;;;; define built-in values -------------------
