@@ -431,14 +431,17 @@
              :js-built-in-object-name (str sym)})))
       :clj nil)))
 
-(defn- format-result [k {:keys [format]}]
+(defn- format-result [k x {:keys [format]}]
   (if format
     (case format
       :keyword k
       :symbol (symbol (subs (str k) 1))
       :string (str (subs (str k) 1))
       k)
-    k))
+    #?(:cljs k
+       :clj (if (record? x)
+              (-> k name (string/split #"\.") last keyword)
+              k))))
 
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
@@ -450,9 +453,8 @@
                    (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
                      (let [k (keyword nm)
                            k (get clj-names k k)]
-                       x
                        k))))
-           k+ (format-result k opts)]
+           k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k))
      :cljs
      (let [k (or (cljs-number-type x)
@@ -469,7 +471,7 @@
                  (when (js-global-this? x) :js/globalThis)
                  (js-object-instance x)
                  :typetag/value-type-unknown)
-           k+ (format-result k opts)]
+           k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k))))
 
 (defn tag
