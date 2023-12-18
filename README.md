@@ -48,7 +48,7 @@ The function `typetag.core/tag-map` will return a map with additional info.
 ```clojure
 (tag-map "hi") ;; =>
 {:typetag      :string
- :all-typetags [:string :js/Iterable]
+ :all-typetags #{:string :js/Iterable}
  :type         #object[String]}
 
 
@@ -76,7 +76,7 @@ The function `typetag.core/tag-map` will return a map with additional info.
 ```
 <br>
 
-With `tt-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to false will exclude certain information, which, depending on how you are using the utility, could help with performance.
+With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information, which, depending on how you are using the utility, could help with performance.
 
 ```clojure
 :all-typetags?              
@@ -88,7 +88,7 @@ With `tt-map`, There are 3 additional params you can pass with the optional seco
 Exclude the `:all-typetags` entry:
 
 ```clojure
-(tt-map xy {:all-typetags? false}) ;; =>
+(tag-map xy {:all-typetags? false}) ;; =>
 {:typetag      :function
  :type         #object[Function]
  :fn-name      "xy" 
@@ -100,9 +100,9 @@ Exclude the `:all-typetags` entry:
 Exclude the function-info related entries:
 
 ```clojure
-(tt-map xy {:function-info? false}) ;; =>
+(tag-map xy {:function-info? false}) ;; =>
 {:typetag      :function
- :all-typetags [:function]
+ :all-typetags #{:function}
  :type         #object[Function]}
 ```
 <br>
@@ -110,16 +110,16 @@ Exclude the function-info related entries:
 Exclude the JS built-in-object related entries:
 
 ```clojure
-(tt-map js/JSON) ;; =>
+(tag-map js/JSON) ;; =>
 {:typetag                 :js/Object
- :all-typetags            [:js/Object]
+ :all-typetags            #{:js/Object}
  :type                    #object[Object]
  :js-built-in-object?     true
  :js-built-in-object-name "JSON"}
 
-(tt-map js/JSON {:js-built-in-object-info? false}) ;; =>
+(tag-map js/JSON {:js-built-in-object-info? false}) ;; =>
 {:typetag                 :js/Object
- :all-typetags            [:js/Object]
+ :all-typetags            #{:js/Object}
  :type                    #object[Object]}
 ```
 <br>
@@ -219,15 +219,11 @@ Below is a table of example values in a ClojureScript context, and the results o
 ;; same name as another instance methods on a different JS built-in.
 (tag-map (aget "hi" "concat"))
 ;; =>
-;; {...
-;;  :js-built-in-method-of String
-;;  ...}
+;; {... :js-built-in-method-of String ...}
 
 (tag-map (aget #js [1 2 3] "concat"))
 ;; =>
-;; {...
-;;  :js-built-in-method-of Array
-;;  ...}
+;; {... :js-built-in-method-of Array ...}
 ```
 
 
