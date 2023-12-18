@@ -171,7 +171,8 @@
        (let [bits          (string/split s #"\$")
              [fn-ns fn-nm] (partition-drop-last bits)
              fn-nm         (demunge-fn-name fn-nm)
-             built-in?     (contains? (:js-built-in-objects interop/js-built-in-methods) x)]
+             built-in?     (or (contains? (:js-built-in-objects interop/js-built-in-methods) x)
+                               (contains? interop/js-built-in-functions x))]
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)
