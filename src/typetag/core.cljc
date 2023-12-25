@@ -28,12 +28,14 @@
       java.lang.String        :string
       java.lang.Boolean       :boolean
       java.util.regex.Pattern :regex
-      java.lang.Character     :char}))
+      java.lang.Character     :char
+      java.util.UUID          :uuid}))
 
 (def cljs-scalar-types
   #?(:cljs 
      {cljs.core/Symbol  :symbol
       cljs.core/Keyword :keyword
+      cljs.core/UUID    :uuid
       js/String         :string
       js/Boolean        :boolean
       js/RegExp         :regex
@@ -343,6 +345,7 @@
            (get clj-coll-types (type x))
            (when (fn? x) :function)
            ;; Extra types, maybe useful info
+           (when (inst? x) :inst)
            (when (coll? x) :coll)
            (when (record? x) :record)
            (when (number? x) :number)]
@@ -359,6 +362,7 @@
            (when (array? x) :js/Array)
            (when (object? x) :js/Object)
            (when (fn? x) :function)
+           (when (inst? x) :inst)
            (when (js-date? x) :js/Date)
            (when (defmulti? x) :defmulti)
            (when (js-promise? x) :js/Promise)
