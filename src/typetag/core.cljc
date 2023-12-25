@@ -101,6 +101,7 @@
 (def clj-names
   {:clojure.lang.MultiFn :defmulti
    :clojure.lang.Ratio :ratio})
+
 (defn- pwos [x] (with-out-str (print x)))
 
 (defn- datafy-str [x] (pwos (datafy x)))
@@ -126,20 +127,24 @@
   [(drop-last coll)
    (last coll)])
 
+;; TODO - hoist some of these rc
 (defn- cljc-NaN? [x] (and (number? x) (= "NaN" (str x))))
 (defn- infinity? [x] (and (number? x) (= "Infinity" (str x))))
 (defn- java-negative-infinity? [x] #?(:clj (and (number? x) (= "-Infinity" (str x)))))
 (defn- js-global-this? [x] #?(:cljs (= x js/globalThis)))
 (defn- js-object-instance? [x] #?(:cljs (instance? js/Object x)))
 (defn- defmulti? [x] #?(:cljs (= (type x) cljs.core/MultiFn)))
-(defn- js-object? [x] #?(:cljs (object? x) :clj false))
-(defn- js-array? [x] #?(:cljs (array? x) :clj false))
+
+;; (defn- js-object? [x] #?(:cljs (object? x) :clj false))
+;; (defn- js-array? [x] #?(:cljs (array? x) :clj false))
+
 (defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
 (defn- js-date? [x] #?(:cljs (instance? js/Date x) :clj false))
-(defn- java-byte? [x] #?(:clj (instance? Byte x) :cljs false))
-(defn- java-short? [x] #?(:clj (instance? Short x) :cljs false))
-(defn- java-long? [x] #?(:clj (instance? Short x) :cljs false))
-(defn- java-decimal? [x] #?(:clj (decimal? x) :cljs false))
+
+;; (defn- java-byte? [x] #?(:clj (instance? Byte x) :cljs false))
+;; (defn- java-short? [x] #?(:clj (instance? Short x) :cljs false))
+;; (defn- java-long? [x] #?(:clj (instance? Short x) :cljs false))
+;; (defn- java-decimal? [x] #?(:clj (decimal? x) :cljs false))
 
 
 ;; cljs fn resolution functions start---------------
@@ -323,6 +328,15 @@
              :js/Generator
              :js/Iterable)))) )
 
+(defn- js-object-instance-map-like [x] 
+  #?(:cljs 
+     (when (js-object-instance? x)
+       (when-not (or (.hasOwnProperty x "__hash")
+                     (.hasOwnProperty x "_hash")
+                     (js/Array.isArray x)
+                     (instance? js/RegExp x)
+                     (instance? js/Date x))
+         :js/map-like-object))))
 
 (defn- js-object-instance [x] 
   #?(:cljs 
@@ -375,7 +389,7 @@
            ;; Maybe we shouldn't check js-object-instance
            ;; Because it will do things like
            ;; (js-object-instance (range 10)) => cljs.core/Interange
-           #_(js-object-instance x)
+           (js-object-instance-map-like x)
            ]
           (remove nil?)
           (cons k)
@@ -393,22 +407,43 @@
 
 (defn- all-typetags [x k]
   (let [all-typetags #?(:cljs (cljs-all-value-types x k)
-                        :clj (clj-all-value-types x k))]
-    (assoc {}
-           :all-typetags
-           all-typetags
+                        :clj (clj-all-value-types x k))
+        map-like?    (or (contains? #{:map :js/Object :js/Map} k)
+                         (contains? all-typetags :record)
+                         (contains? all-typetags :js/map-like-object))
+        coll-type?   (or map-like?
+                         (contains? all-typetags :coll)
+                         #?(:cljs (cljs-coll-type? x)))
+        coll-size    (when coll-type?
+                       (cond 
+                         (or (= :js/Object k)
+                             (contains? all-typetags :js/map-like-object))
+                         #?(:cljs (.-length (js/Object.keys x))
+                            :clj 10)
 
-           :coll-type?
-           (or (contains? all-typetags :coll)
-               #?(:cljs (cljs-coll-type? x)))
+                         (= k :js/Array)  
+                         (.-length x)
 
-           :map-like?
-           ;; TODO - add Java data structures support
-           (or (contains? #{:map :js/Object :js/Map} k)
-               (contains? all-typetags :record))
+                         (contains? #{:js/Set :js/Map} k)
+                         (.-size x)
 
-           :number-type?
-           (contains? all-typetags :number))))
+                         :else
+                         (count x)))]
+    (merge (assoc {}
+                  :all-typetags
+                  all-typetags
+
+                  :coll-type?
+                  coll-type?
+
+                  :map-like?
+                  ;; TODO - add Java data structures support
+                  map-like?
+
+                  :number-type?
+                  (contains? all-typetags :number))
+           (when coll-size
+             {:coll-size coll-size}))))
 
 (defn- tag-map*
   [x k k+ opts]
@@ -460,23 +495,25 @@
                            k (get clj-names k k)]
                        k))))
            k+ (format-result k x opts)]
+       
        (if extras? (tag-map* x k k+ opts) k))
      :cljs
-     (let [k (or (cljs-number-type x)
-                 (get cljs-scalar-types (type x))
-                 (get cljs-coll-types (type x))
-                 (get js-coll-types (type x))
-                 (cljs-iterable-type x)
-                 (when (array? x) :js/Array)
-                 (when (object? x) :js/Object)
-                 (when (fn? x) :function)
-                 (when (js-date? x) :js/Date)
-                 (when (defmulti? x) :defmulti)
-                 (when (js-promise? x) :js/Promise)
-                 (when (js-global-this? x) :js/globalThis)
-                 (js-object-instance x)
-                 :typetag/value-type-unknown)
+     (let [k  (or (cljs-number-type x)
+                  (get cljs-scalar-types (type x))
+                  (get cljs-coll-types (type x))
+                  (get js-coll-types (type x))
+                  (cljs-iterable-type x)
+                  (when (array? x) :js/Array)
+                  (when (object? x) :js/Object)
+                  (when (fn? x) :function)
+                  (when (js-date? x) :js/Date)
+                  (when (defmulti? x) :defmulti)
+                  (when (js-promise? x) :js/Promise)
+                  (when (js-global-this? x) :js/globalThis)
+                  (js-object-instance x)
+                  :typetag/value-type-unknown)
            k+ (format-result k x opts)]
+       [k k+]
        (if extras? (tag-map* x k k+ opts) k))))
 
 (defn tag
