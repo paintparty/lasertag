@@ -65,8 +65,7 @@
        [js/unescape {:sym 'unescape :args '[str]}]]
 
       "Keyed collections"
-      [
-       [js/Map {:sym 'Map :demo (new js/Map #js[#js["a", 1], #js["b", 2]]) :args '[...]}]
+      [[js/Map {:sym 'Map :demo (new js/Map #js[#js["a", 1], #js["b", 2]]) :args '[...]}]
        [js/Set {:sym 'Set :demo (new js/Set #js[1 2]) :args '[...]}]
        [js/WeakMap {:sym  'WeakMap
                     :demo (let [wm (js/WeakMap.)
@@ -77,29 +76,29 @@
        ]
 
       "Indexed collections"
-      [
-       [js/Array {:sym  'Array :demo (new js/Array #js[1 2 3]) :args '[...]}]
-       [js/Int8Array {:sym  'Int8Array :demo (new js/Int8Array #js[1 2 3]) :args '[...]}]
-       [js/Uint8Array {:sym  'Uint8Array :demo (new js/Uint8Array #js[1 2 3]) :args '[...]}]
+      [[js/Array {:sym 'Array :demo (new js/Array #js[1 2 3]) :args '[...]}]
+       [js/Int8Array {:sym 'Int8Array :demo (new js/Int8Array #js[1 2 3]) :args '[...]}]
+       [js/Uint8Array {:sym 'Uint8Array :demo (new js/Uint8Array #js[1 2 3]) :args '[...]}]
        [js/Uint8ClampedArray {:sym  'Uint8ClampedArray :demo (new js/Uint8ClampedArray #js[1 2 3]) :args '[...]}]
-       [js/Int16Array {:sym  'Int16Array :demo (new js/Int16Array #js[1 2 3]) :args '[...]}]
-       [js/Uint16Array {:sym  'Uint16Array :demo (new js/Uint16Array #js[1 2 3]) :args '[...]}]
-       [js/Int32Array {:sym  'Int32Array :demo (new js/Int32Array #js[1 2 3]) :args '[...]}]
-       [js/Uint32Array {:sym  'Uint32Array :demo (new js/Uint32Array #js[1 2 3]) :args '[...]}]
-       [js/BigInt64Array {:sym  'BigInt64Array :demo (new js/BigInt64Array 3) :args '[...]}]
-       [js/BigUint64Array {:sym  'BigUint64Array :demo (new js/BigUint64Array 3) :args '[...]}]
-       [js/Float32Array {:sym  'Float32Array :demo (new js/Float32Array #js[1 2 3]) :args '[...]}]
-       [js/Float64Array {:sym  'Float64Array :demo (new js/Float64Array #js[1 2 3]) :args '[...]}]
-       ]
+       [js/Int16Array {:sym 'Int16Array :demo (new js/Int16Array #js[1 2 3]) :args '[...]}]
+       [js/Uint16Array {:sym 'Uint16Array :demo (new js/Uint16Array #js[1 2 3]) :args '[...]}]
+       [js/Int32Array {:sym 'Int32Array :demo (new js/Int32Array #js[1 2 3]) :args '[...]}]
+       [js/Uint32Array {:sym 'Uint32Array :demo (new js/Uint32Array #js[1 2 3]) :args '[...]}]
+       [js/BigInt64Array {:sym 'BigInt64Array :demo (new js/BigInt64Array 3) :args '[...]}]
+       [js/BigUint64Array {:sym 'BigUint64Array :demo (new js/BigUint64Array 3) :args '[...]}]
+       [js/Float32Array {:sym 'Float32Array :demo (new js/Float32Array #js[1 2 3]) :args '[...]}]
+       [js/Float64Array {:sym 'Float64Array :demo (new js/Float64Array #js[1 2 3]) :args '[...]}]]
 
       "Structured data"
       [[js/ArrayBuffer {:sym 'ArrayBuffer :demo (new js/ArrayBuffer 8) :args '[...]}]
        [js/JSON {:sym 'JSON :not-a-constructor? true}]
        [js/Atomics {:sym 'Atomics :not-a-constructor? true}]
-       [js/DataView {:sym 'DataView :demo (new js/DataView (new js/ArrayBuffer 8)) :args '[ArrayBuffer]}]]
+       [js/DataView {:sym 'DataView
+                     :demo (new js/DataView (new js/ArrayBuffer 8))
+                     :args '[ArrayBuffer]
+                     :instance-properties ["buffer" "byteLength" "byteOffset"]}]]
 
       "Internationalization"
-
       [[js/Intl {:sym 'Intl :not-a-constructor? true}]
        [js/Intl.Collator {:sym 'Intl.Collator
                           :demo (new js/Intl.Collator "sv")
@@ -115,7 +114,24 @@
                             :args '[...]}]
        [js/Intl.Locale {:sym 'Intl.Locale
                         :demo (new js/Intl.Locale "ko" #js{:script "Kore", :region "KR", :hourCycle "h23", :calendar "gregory"})
-                        :args '[...]}]
+                        :args '[...]
+                        :instance-properties ["baseName"
+                                              "calendar"
+                                              "calendars"
+                                              "caseFirst"
+                                              "collation"
+                                              "collations"
+                                              "hourCycle"
+                                              "hourCycles"
+                                              "language"
+                                              "numberingSystem"
+                                              "numberingSystems"
+                                              "numeric"
+                                              "region"
+                                              "script"
+                                              "textInfo"
+                                              "timeZones"
+                                              "weekInfo"]}]
        [js/Intl.NumberFormat {:sym 'Intl.NumberFormat 
                               :demo (new js/Intl.NumberFormat "de-DE" #js{:style "currency", :currency "EUR" })
                               :args '[...]}]
@@ -216,6 +232,19 @@
      (into #{} (keys js-built-in-functions-by-function))))
 
 
+;;;; define built-in Internationalization objects ---
+
+#?(:cljs
+   (defonce js-built-in-intl-by-object*
+     (get js-built-ins-by-category "Internationalization")))
+
+#?(:cljs
+   (defonce js-built-in-intl-by-object
+     (into {} js-built-in-intl-by-object*)))
+
+#?(:cljs
+   (defonce js-built-in-intl
+     (into #{} (keys js-built-in-intl-by-object))))
 
 
 ;;;; define built-in objects ---------------------
