@@ -141,6 +141,7 @@
 (defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
 (defn- js-date? [x] #?(:cljs (instance? js/Date x) :clj false))
 (defn- js-data-view? [x] #?(:cljs (instance? js/DataView x) :clj false))
+(defn- js-array-buffer? [x] #?(:cljs (instance? js/ArrayBuffer x) :clj false))
 
 ;; (defn- java-byte? [x] #?(:clj (instance? Byte x) :cljs false))
 ;; (defn- java-short? [x] #?(:clj (instance? Short x) :cljs false))
@@ -527,6 +528,7 @@
                   (when (js-global-this? x) :js/globalThis)
                   (js-intl-object-key x)
                   (when (js-data-view? x) :js/DataView)
+                  (when (js-array-buffer? x) :js/ArrayBuffer)
                   (js-object-instance x)
                   :typetag/value-type-unknown)
            k+ (format-result k x opts)]

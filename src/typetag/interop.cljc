@@ -90,7 +90,10 @@
        [js/Float64Array {:sym 'Float64Array :demo (new js/Float64Array #js[1 2 3]) :args '[...]}]]
 
       "Structured data"
-      [[js/ArrayBuffer {:sym 'ArrayBuffer :demo (new js/ArrayBuffer 8) :args '[...]}]
+      [[js/ArrayBuffer {:sym 'ArrayBuffer 
+                        :demo (new js/ArrayBuffer 8) 
+                        :args '[...]
+                        :instance-properties ["byteLength" "detached" "maxByteLength" "resizable"]}]
        [js/JSON {:sym 'JSON :not-a-constructor? true}]
        [js/Atomics {:sym 'Atomics :not-a-constructor? true}]
        [js/DataView {:sym 'DataView
