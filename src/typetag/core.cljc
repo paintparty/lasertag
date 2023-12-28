@@ -337,11 +337,15 @@
 (defn- js-object-instance-map-like [x] 
   #?(:cljs 
      (when (js-object-instance? x)
-       (when-not (or (.hasOwnProperty x "__hash")
+       (when-not (or (fn? x)
+                     (defmulti? x)
+                     (.hasOwnProperty x "__hash")
                      (.hasOwnProperty x "_hash")
                      (js/Array.isArray x)
+                     (instance? js/Set x)
                      (instance? js/RegExp x)
-                     (instance? js/Date x))
+                     (instance? js/Date x)
+                     (typed-array? x))
          :js/map-like-object))))
 
 (defn- js-object-instance [x] 
