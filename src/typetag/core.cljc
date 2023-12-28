@@ -490,6 +490,14 @@
               (-> k name (string/split #"\.") last keyword)
               k))))
 
+#?(:cljs 
+   (defn- js-intl-object-key [x]
+     (when-let [sym (some->> x
+                             type 
+                             (get interop/js-built-in-intl-by-object)
+                             :sym)]
+       (keyword (str "js/" sym)))))
+
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
      (let [k (or (clj-number-type x)
@@ -517,10 +525,11 @@
                   (when (defmulti? x) :defmulti)
                   (when (js-promise? x) :js/Promise)
                   (when (js-global-this? x) :js/globalThis)
+                  (js-intl-object-key x)
+                  (when (js-data-view? x) :js/DataView)
                   (js-object-instance x)
                   :typetag/value-type-unknown)
            k+ (format-result k x opts)]
-       [k k+]
        (if extras? (tag-map* x k k+ opts) k))))
 
 (defn tag
