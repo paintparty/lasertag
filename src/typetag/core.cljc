@@ -395,12 +395,8 @@
            (when (coll? x) :coll)
            (when (record? x) :record)
            (when (number? x) :number)
-
-           ;; Maybe we shouldn't check js-object-instance
-           ;; Because it will do things like
-           ;; (js-object-instance (range 10)) => cljs.core/Interange
-           (js-object-instance-map-like x)
-           ]
+           (when (typed-array? x) :js/TypedArray)
+           (js-object-instance-map-like x)]
           (remove nil?)
           (cons k)
           (into #{}))))
@@ -418,7 +414,7 @@
 (defn- all-typetags [x k]
   (let [all-typetags #?(:cljs (cljs-all-value-types x k)
                         :clj (clj-all-value-types x k))
-        map-like?    (or (contains? #{:map :js/Object :js/Map} k)
+        map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-typetags :record)
                          (contains? all-typetags :js/map-like-object))
         coll-type?   (or map-like?
@@ -431,7 +427,8 @@
                          #?(:cljs (.-length (js/Object.keys x))
                             :clj 10)
 
-                         (= k :js/Array)  
+                         (or (= k :js/Array)
+                             #?(:cljs (typed-array? x)))  
                          (.-length x)
 
                          (contains? #{:js/Set :js/Map} k)
