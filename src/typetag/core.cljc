@@ -399,7 +399,7 @@
           (cons k)
           (into #{}))))
 #?(:cljs 
-   (defn- cljs-all-value-types [x k]
+   (defn- cljs-all-value-types [x k dom-node-type-keyword]
      (->> [(cljs-number-type x)
            (get cljs-scalar-types (type x))
            (get cljs-coll-types (type x))
@@ -418,7 +418,8 @@
            (when (record? x) :record)
            (when (number? x) :number)
            (when (typed-array? x) :js/TypedArray)
-           (js-object-instance-map-like x)]
+           (js-object-instance-map-like x)
+           dom-node-type-keyword]
           (remove nil?)
           (cons k)
           (into #{}))))
