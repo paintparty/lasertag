@@ -161,18 +161,16 @@
        (when 
         (and (string? name-prop)
              (re-find #"[^\$\.-]" name-prop))
-         (let [{:keys [objects-by-method-name 
-                       objects-by-unique-method-name]} interop/js-built-in-methods]
-           (if-let [built-in-candidates (get objects-by-method-name fn-nm)]
-             (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
-                                                built-in-candidates))
-                   {:keys [sym]} (get interop/js-built-ins-by-built-in o)]
+         (if-let [built-in-candidates (get cljs-interop/objects-by-method-name fn-nm)]
+           (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
+                                              built-in-candidates))
+                 {:keys [sym]} (get cljs-interop/js-built-ins-by-built-in o)]
+             {:js-built-in-method-of sym
+              :js-built-in-function? true})
+           (when-let [built-in (get cljs-interop/objects-by-unique-method-name fn-nm)]
+             (let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in built-in)]
                {:js-built-in-method-of sym
-                :js-built-in-function? true})
-             (when-let [built-in (get objects-by-unique-method-name fn-nm)]
-               (let [{:keys [sym]} (get interop/js-built-ins-by-built-in built-in)]
-                 {:js-built-in-method-of sym
-                  :js-built-in-function? true}))))))
+                :js-built-in-function? true})))))
 
      (defn- cljs-defmulti [sym]
        (when (symbol? sym)
