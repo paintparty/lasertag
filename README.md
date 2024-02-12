@@ -76,7 +76,7 @@ The function `typetag.core/tag-map` will return a map with additional info.
 ```
 <br>
 
-With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information, which, depending on how you are using the utility, could help with performance.
+With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information. Depending on how you are using `tag-map`, this could also help with performance.
 
 ```clojure
 :all-typetags?              
@@ -231,7 +231,7 @@ Below is a table of example values in a ClojureScript context, and the results o
 
 ## License
 
-Copyright © 2023 Jeremiah Coyle
+Copyright © 2024 Jeremiah Coyle
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
