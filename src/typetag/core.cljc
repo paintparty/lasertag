@@ -550,7 +550,7 @@
    (defn- js-intl-object-key [x]
      (when-let [sym (some->> x
                              type 
-                             (get interop/js-built-in-intl-by-object)
+                             (get cljs-interop/js-built-in-intl-by-object)
                              :sym)]
        (keyword (str "js/" sym)))))
 
@@ -584,6 +584,7 @@
                   (js-intl-object-key x)
                   (when (js-data-view? x) :js/DataView)
                   (when (js-array-buffer? x) :js/ArrayBuffer)
+                  ;; (when (dom-element x) )
                   (js-object-instance x)
                   :typetag/value-type-unknown)
            k+ (format-result k x opts)]
