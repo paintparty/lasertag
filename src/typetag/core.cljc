@@ -361,6 +361,29 @@
                 :js/Object)]
         k))))
 
+(def dom-node-types
+  ["ELEMENT_NODE"
+   "ATTRIBUTE_NODE"
+   "TEXT_NODE"
+   "CDATA_SECTION_NODE"
+   "PROCESSING_INSTRUCTION_NODE"
+   "COMMENT_NODE"
+   "DOCUMENT_NODE"
+   "DOCUMENT_TYPE_NODE"
+   "DOCUMENT_FRAGMENT_NODE"])
+
+(def dom-node-type-keywords
+  [:dom-element-node
+   :dom-attribute-node
+   :dom-text-node
+   :dom-cdata-section-node
+   :dom-processing-instruction-node
+   :dom-comment-node
+   :dom-document-node
+   :dom-document-type-node
+   :dom-document-fragment-node])
+
+
 #?(:clj 
    (defn- clj-all-value-types [x k]
      (->> [(clj-number-type x)
