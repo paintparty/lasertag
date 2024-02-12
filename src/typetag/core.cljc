@@ -485,29 +485,54 @@
 
 (defn- tag-map*
   [x k k+ opts]
-  (merge 
-   {:typetag k+}
+    (merge 
+     ;; The typetag for clj & cljs
+     {:typetag k+}
 
-   (when (opt? :include-all-typetags? opts)
-     (all-typetags x k))
+     ;; The `type` (result of calling clojure.core.type), or cljs.core.type on the value 
+     {:type #?(:cljs (if (= k :js/Generator) (symbol "#object[Generator]") (type x))
+               :clj (type x))}
+     
+     ;; Optionaly get reflective function info, same for clj & cljs
+     (when (contains? #{:function :defmulti :java.lang.Class} k)
+       (let [b (opt? :include-function-info? opts)]
+         #?(:cljs (fn-info x k b)
+            :clj (fn-info x k b))))
 
-   {:type #?(:cljs (if (= k :js/Generator)
-                     (symbol "#object[Generator]")
-                     (type x))
-             :clj (type x))}
-   
-   (when (contains? #{:function :defmulti :java.lang.Class} k)
-     (let [b (opt? :include-function-info? opts)]
-       #?(:cljs (fn-info x k b)
-          :clj (fn-info x k b))))
 
-   #?(:cljs 
-      (when (opt? :include-js-built-in-object-info? opts)
-        (when (= k :js/Object)
-          (when-let [{:keys [sym]} (get interop/js-built-ins-by-built-in x)]
-            {:js-built-in-object?     true
-             :js-built-in-object-name (str sym)})))
-      :clj nil)))
+      ;; Just for ClojureScript
+     #?(:cljs 
+        (let [[dom-node-type
+               dom-node-type-name
+               dom-node-type-keyword]    (dom-node x)]
+
+          (merge
+           ;; Get all the tags
+           (when (opt? :include-all-typetags? opts)
+             (all-typetags x k dom-node-type-keyword))
+
+           ;; Get dom node info 
+           (when dom-node-type
+             {:dom-node-type      dom-node-type
+              :dom-node-type-name dom-node-type-name})
+
+           ;; Get dom element node info 
+           (when (= 1 dom-node-type)
+             {:dom-element-tag-name x.tagName})
+
+           ;; Enhanced reflection for built-in js objects
+           (when (opt? :include-js-built-in-object-info? opts)
+             (when (= k :js/Object)
+               (when-let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in x)]
+                 {:js-built-in-object?     true
+                  :js-built-in-object-name (str sym)})))))
+        
+
+        ;; Just for Clojure
+        :clj (when (opt? :include-all-typetags? opts)
+               ;; Get all the tags
+               (all-typetags x k nil)))))
+
 
 (defn- format-result [k x {:keys [format]}]
   (if format
