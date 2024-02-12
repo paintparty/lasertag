@@ -1,8 +1,8 @@
 (ns typetag.core
   (:require 
    [clojure.string :as string]
-   [typetag.interop :as interop]
-   [clojure.datafy :refer [datafy]]))
+   [clojure.datafy :refer [datafy]]
+   #?(:cljs [typetag.cljs-interop :as cljs-interop])))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
 
