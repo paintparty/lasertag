@@ -424,6 +424,7 @@
           (cons k)
           (into #{}))))
 
+
 (defn- opt? [k opts]
   (if (false? (k opts)) false true))
 
@@ -431,11 +432,11 @@
    (defn- cljs-coll-type? [x]
      (or (array? x)
          (object? x)
-         (contains? interop/js-built-ins-which-are-iterables
+         (contains? cljs-interop/js-built-ins-which-are-iterables
                     (type x)))))
 
-(defn- all-typetags [x k]
-  (let [all-typetags #?(:cljs (cljs-all-value-types x k)
+(defn- all-typetags [x k dom-node-type-keyword]
+  (let [all-typetags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                         :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-typetags :record)
@@ -459,21 +460,14 @@
 
                          :else
                          (count x)))]
-    (merge (assoc {}
-                  :all-typetags
-                  all-typetags
+    (merge 
+     ;; TODO - add Java data structures support
+     {:all-typetags all-typetags
+      :coll-type?   coll-type?
+      :map-like?    map-like?
+      :number-type? (contains? all-typetags :number)}
+     (when coll-size {:coll-size coll-size}))))
 
-                  :coll-type?
-                  coll-type?
-
-                  :map-like?
-                  ;; TODO - add Java data structures support
-                  map-like?
-
-                  :number-type?
-                  (contains? all-typetags :number))
-           (when coll-size
-             {:coll-size coll-size}))))
 
 (defn- tag-map*
   [x k k+ opts]
