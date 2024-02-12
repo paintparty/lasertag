@@ -266,7 +266,7 @@
 #?(:cljs 
    (defn- cljs-fn-args [x fn-args fn-info]
      (when-not fn-args 
-       (let [{:keys [_ args]} (get interop/js-built-ins-by-built-in x)]
+       (let [{:keys [_ args]} (get cljs-interop/js-built-ins-by-built-in x)]
          (merge (if args 
                   {:js-built-in-function? true
                    :fn-args               args}
