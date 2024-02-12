@@ -468,6 +468,20 @@
       :number-type? (contains? all-typetags :number)}
      (when coll-size {:coll-size coll-size}))))
 
+(defn- dom-node 
+  "Helper fn which takes an HTML dom element and returns a 3-element vector.
+   Ex:
+   (dom-node `<div>hi</div>`)
+   =>
+   [1                   ; <- type code of node
+    \"ELEMENT_NODE\"    ; <- canonical tag name of node
+    :dom-element-node]  ; <- kw representation available for consumers of typetag.core/tag-map"  
+  [x]
+  (when-let [t (when (js-object-instance? x) (some->> x .-nodeType))]
+    (let [n (dec t)]
+      [t
+       (nth dom-node-types n nil)
+       (nth dom-node-type-keywords n nil)])))
 
 (defn- tag-map*
   [x k k+ opts]
