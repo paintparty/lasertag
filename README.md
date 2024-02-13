@@ -2,7 +2,7 @@
 
 # typetag
 
-A Clojure(Script) utility for discerning, and working programmatically, with types of values.
+A Clojure(Script) utility for categorizing types of values.
 
 This lib fell out of work on other Clojure(Script) dev tooling, so perhaps it may be useful in a similar context.
 
@@ -63,7 +63,7 @@ The function `typetag.core/tag-map` will return a map with additional info.
 (tag-map xy)
 =>
 {:tag          :function
- :all-tags     [:function]
+ :all-tags     #{:function}
  :type         #object[Function]
  :fn-name      "xy" 
  :fn-ns        "myns.core"
@@ -74,8 +74,8 @@ The function `typetag.core/tag-map` will return a map with additional info.
 
 (tag-map js/ParseFloat)
 =>
-{:tag :function
- :all-tags              [:function]
+{:tag                   :function
+ :all-tags              #{:function}
  :type                  #object[Function]
  :fn-name               "parseFloat"
  :fn-args               [s]
@@ -274,28 +274,71 @@ Below is a table of example values in a ClojureScript context, and the results o
 
 (tag my-promise) 
 => :js/Promise
+```
 
+### Instance methods on JavaScript built-ins
 
-;; Instance methods on JavaScript built-ins
+`typetag.core/tag-map` can help to differentiate between an instance method on a JS built-in that might have the same name as another instance method on a different JS built-in.
 
-;; Calling `typetag.core/tag-map` on a method of a JS built-in
-;; will return a map containing a `:js-built-in-method-of` entry.
-;; This can help to differentiate between instance methods
-;; on JS built-ins that might have the same name as another
-;; instance methods on a different JS built-in.
+Consider the following 2 values. Both are instance methods on JS built-ins. Both are named `concat`, although they are different functions that expect different inputs and yield different outputs:
+```Clojure
+(aget "hi" "concat")
+(aget #js [1 2 3] "concat")
+```
 
+<br>
+
+Calling `js/console.log` on either of the values above would result in the same (somewhat cryptic) result in a browser dev console, the exact format of which may vary depending on the browser:
+
+```Clojure
+ƒ concat() { [native code] }
+```
+
+<br>
+
+Calling `clojure.pprint/pprint` or `clojure.core/println`
+on either of the values above would give you this:
+
+```Clojure
+#object[concat]
+```
+
+<br>
+
+If you need enhanced reflection in situations like this, the result of `typetag.core/tag-map` offers the following 2 entries:
+ <br>`:js-built-in-method-of`<br> `:js-built-in-method-of-name`
+
+```Clojure
 (tag-map (aget "hi" "concat"))
 =>
-{...
- :js-built-in-method-of String
- ...}
+{:js-built-in-method-of      #object[String]
+ :js-built-in-method-of-name "String"
+ :js-built-in-function?      true
+ :coll-type?                 false
+ :map-like?                  false
+ :fn-name                    "concat"
+ :type                       #object[Function]
+ :all-tags                   #{:function}
+ :fn-args                    []
+ :tag                        :function
+ :number-type?               false}
+
 
 (tag-map (aget #js [1 2 3] "concat"))
 =>
-{... 
- :js-built-in-method-of Array
- ...}
+{:js-built-in-method-of      #object[Array]
+ :js-built-in-method-of-name "Array"
+ :js-built-in-function?      true
+ :coll-type?                 false
+ :map-like?                  false
+ :fn-name                    "concat"
+ :type                       #object[Function]
+ :all-tags                   #{:function}
+ :fn-args                    []
+ :tag                        :function
+ :number-type?               false}
 ```
+
 
 <br>
 
