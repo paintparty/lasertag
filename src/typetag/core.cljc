@@ -154,20 +154,22 @@
 ;; cljs fn resolution functions start---------------
 #?(:cljs 
    (do 
+     (defn- js-built-in-map [o]
+       (let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in o)]
+         {:js-built-in-method-of      o
+          :js-built-in-method-of-name (name sym)
+          :js-built-in-function?      true}))
+
      (defn- js-built-in-method-of [x name-prop fn-nm]
        (when 
         (and (string? name-prop)
              (re-find #"[^\$\.-]" name-prop))
          (if-let [built-in-candidates (get cljs-interop/objects-by-method-name fn-nm)]
            (let [o             (first (filter #(= x (aget (.-prototype %) fn-nm)) 
-                                              built-in-candidates))
-                 {:keys [sym]} (get cljs-interop/js-built-ins-by-built-in o)]
-             {:js-built-in-method-of sym
-              :js-built-in-function? true})
+                                              built-in-candidates))]
+             (js-built-in-map o))
            (when-let [built-in (get cljs-interop/objects-by-unique-method-name fn-nm)]
-             (let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in built-in)]
-               {:js-built-in-method-of sym
-                :js-built-in-function? true})))))
+             (js-built-in-map built-in)))))
 
      (defn- cljs-defmulti [sym]
        (when (symbol? sym)
@@ -189,8 +191,8 @@
                 (when-not built-in? (js-built-in-method-of x s fn-nm)))))
 
      (defn- cljs-fn-alt [o]
-       (let [datafied-str (pwos o)]
-         (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" datafied-str)]
+       (let [out-str (pwos o)]
+         (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" out-str)]
            {:fn-name           (demunge-fn-name fn-nm)
             :fn-ns             fn-ns
             :cljs-datatype-fn? true}
