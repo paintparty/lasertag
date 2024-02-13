@@ -1,7 +1,6 @@
 (ns typetag.core
   (:require 
    [clojure.string :as string]
-   [clojure.datafy :refer [datafy]]
    #?(:cljs [typetag.cljs-interop :as cljs-interop])))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
@@ -104,8 +103,6 @@
 
 (defn- pwos [x] (with-out-str (print x)))
 
-(defn- datafy-str [x] (pwos (datafy x)))
-
 (defn- lamda-args [args]
   #?(:cljs
      (if (every? #(re-find #"_SHARP_$" (name %)) args)
@@ -201,8 +198,7 @@
 
 (defn- fn-info* [x k]
   #?(:cljs 
-     (let [datafied  (datafy x)
-           name-prop (.-name datafied)]
+     (let [name-prop (.-name x)]
        (cond
          (= k :defmulti)
          (cljs-defmulti name-prop)
@@ -211,7 +207,7 @@
          (cljs-fn x name-prop)
 
          :else
-         (cljs-fn-alt datafied)))
+         (cljs-fn-alt x)))
      :clj
      (if (= k :defmulti)
       {:fn-args :typetag/multimethod}
@@ -223,8 +219,8 @@
           {:fn-ns   (string/replace fn-ns #"_" "-")
            :fn-name fn-nm
            :fn-args :typetag/unknown-function-signature-on-java-class})
-        (let [datafied (datafy-str x)
-              [_ nm*]  (re-find #"^#object\[([^\s]*)\s" datafied)]
+        (let [pwo-stringified (pwos x)
+              [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
           (when (and nm* (not (string/blank? nm*)))
             (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
                   fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
@@ -356,8 +352,9 @@
                     ;; js class instances
                     (let [ret (keyword nm)]
                       (if (= ret :Object) :js/Object ret))
+
                     ;; cljs datatype and recordtype instances
-                    (some-> c datafy-str keyword)))
+                    (some-> c pwos keyword)))
                 :js/Object)]
         k))))
 
@@ -435,19 +432,19 @@
          (contains? cljs-interop/js-built-ins-which-are-iterables
                     (type x)))))
 
-(defn- all-typetags [x k dom-node-type-keyword]
-  (let [all-typetags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
+(defn- all-tags [x k dom-node-type-keyword]
+  (let [all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                         :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
-                         (contains? all-typetags :record)
-                         (contains? all-typetags :js/map-like-object))
+                         (contains? all-tags :record)
+                         (contains? all-tags :js/map-like-object))
         coll-type?   (or map-like?
-                         (contains? all-typetags :coll)
+                         (contains? all-tags :coll)
                          #?(:cljs (cljs-coll-type? x)))
         coll-size    (when coll-type?
                        (cond 
                          (or (= :js/Object k)
-                             (contains? all-typetags :js/map-like-object))
+                             (contains? all-tags :js/map-like-object))
                          #?(:cljs (.-length (js/Object.keys x))
                             :clj 10)
 
@@ -462,10 +459,10 @@
                          (count x)))]
     (merge 
      ;; TODO - add Java data structures support
-     {:all-typetags all-typetags
+     {:all-tags all-tags
       :coll-type?   coll-type?
       :map-like?    map-like?
-      :number-type? (contains? all-typetags :number)}
+      :number-type? (contains? all-tags :number)}
      (when coll-size {:coll-size coll-size}))))
 
 (defn- dom-node 
@@ -487,7 +484,7 @@
   [x k k+ opts]
     (merge 
      ;; The typetag for clj & cljs
-     {:typetag k+}
+     {:tag k+}
 
      ;; The `type` (result of calling clojure.core.type), or cljs.core.type on the value 
      {:type #?(:cljs (if (= k :js/Generator) (symbol "#object[Generator]") (type x))
@@ -508,8 +505,8 @@
 
           (merge
            ;; Get all the tags
-           (when (opt? :include-all-typetags? opts)
-             (all-typetags x k dom-node-type-keyword))
+           (when (opt? :include-all-tags? opts)
+             (all-tags x k dom-node-type-keyword))
 
            ;; Get dom node info 
            (when dom-node-type
@@ -529,9 +526,9 @@
         
 
         ;; Just for Clojure
-        :clj (when (opt? :include-all-typetags? opts)
+        :clj (when (opt? :include-all-tags? opts)
                ;; Get all the tags
-               (all-typetags x k nil)))))
+               (all-tags x k nil)))))
 
 
 (defn- format-result [k x {:keys [format]}]
@@ -567,7 +564,7 @@
                        k))))
            k+ (format-result k x opts)]
        
-       (if extras? (tag-map* x k k+ opts) k))
+       (if extras? (tag-map* x k k+ opts) k+))
      :cljs
      (let [k  (or (cljs-number-type x)
                   (get cljs-scalar-types (type x))
@@ -588,7 +585,7 @@
                   (js-object-instance x)
                   :typetag/value-type-unknown)
            k+ (format-result k x opts)]
-       (if extras? (tag-map* x k k+ opts) k))))
+       (if extras? (tag-map* x k k+ opts) k+))))
 
 (defn tag
   "Given a value, returns a tag representing the value's type."
