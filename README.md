@@ -1,16 +1,19 @@
+<img align="right" width="300px" src="resources/typetag.jpg"/>
+
 # typetag
 
 A Clojure(Script) utility for discerning, and working programmatically, with types of values.
 
-This lib fell out of work on other Clojure(Script) dev tooling, so perhaps useful in a similar context.
+This lib fell out of work on other Clojure(Script) dev tooling, so perhaps it may be useful in a similar context.
 
+<br>
 
 ## Usage
 
 Add as a dependency to your project:
 
 ```clojure
-[org.clojars.paintparty/typetag "0.1.0"]
+[io.github.paintparty/typetag "0.2.0"]
 ```
 
 Import into your namespace:
@@ -46,30 +49,41 @@ The typetag is a keyword, by default. You can pass an options map if you want a 
 The function `typetag.core/tag-map` will return a map with additional info.
 
 ```clojure
-(tag-map "hi") ;; =>
-{:typetag      :string
- :all-typetags #{:string :js/Iterable}
- :type         #object[String]}
-
+(tag-map "hi")
+=>
+{:tag          :string
+ :all-tags     #{:string :js/Iterable}
+ :type         #object[String]
+ :coll-type?   false
+ :map-like?    false
+ :number-type? false}
 
 (defn xy [x y] (+ x y))
 
-(tag-map xy) ;; =>
-{:typetag      :function
- :all-typetags [:function]
+(tag-map xy)
+=>
+{:tag          :function
+ :all-tags     [:function]
  :type         #object[Function]
  :fn-name      "xy" 
- :fn-ns        "printer.reflect"
- :fn-args      [x y]}
+ :fn-ns        "myns.core"
+ :fn-args      [x y]
+ :coll-type?   false
+ :map-like?    false
+ :number-type? false}
 
-(tag-map js/ParseFloat) ;; =>
-{:typetag :function
- :all-typetags [:function]
- :type #object[Function]
- :fn-name "parseFloat"
- :fn-args [s], 
+(tag-map js/ParseFloat)
+=>
+{:tag :function
+ :all-tags              [:function]
+ :type                  #object[Function]
+ :fn-name               "parseFloat"
+ :fn-args               [s]
  :js-built-in-method-of Number
- :js-built-in-function? true}
+ :js-built-in-function? true
+ :coll-type?            false
+ :map-like?             false
+ :number-type?          false}
 
 ;; NOTE: :fn-args entry is only available in cljs
 ;; NOTE: :fn-name will not work as expected in cljs advanced compilation
@@ -79,48 +93,88 @@ The function `typetag.core/tag-map` will return a map with additional info.
 With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information. Depending on how you are using `tag-map`, this could also help with performance.
 
 ```clojure
-:all-typetags?              
-:function-info?          
-:js-built-in-object-info?
+:include-all-tags?              
+:include-function-info?          
+:include-js-built-in-object-info?
 ```
 <br>
 
-Exclude the `:all-typetags` entry:
+The following example excludes the `:all-tags` entry, as well as the related `:coll-type?`, `:map-like?`, `:number-type?` and `:coll-size?` entries:
 
 ```clojure
-(tag-map xy {:all-typetags? false}) ;; =>
-{:typetag      :function
+
+(tag-map xy) 
+=>
+{:tag          :function
+ :all-tags     #{:function}
  :type         #object[Function]
  :fn-name      "xy" 
- :fn-ns        "printer.reflect"
+ :fn-ns        "myns.core"
+ :fn-args      [x y]
+ :coll-type?   false
+ :map-like?    false
+ :number-type? false}
+
+
+(tag-map xy {:include-all-tags? false}) 
+=>
+{:tag          :function
+ :type         #object[Function]
+ :fn-name      "xy" 
+ :fn-ns        "myns.core"
  :fn-args      [x y]}
 ```
 <br>
 
-Exclude the function-info related entries:
+Excluding the function-info related entries:
 
 ```clojure
-(tag-map xy {:function-info? false}) ;; =>
-{:typetag      :function
- :all-typetags #{:function}
- :type         #object[Function]}
+(tag-map xy)
+=>
+{:tag          :function
+ :all-tags     #{:function}
+ :type         #object[Function]
+ :fn-args      [x y]
+ :fn-name      "xy"
+ :fn-ns        "myns.core"
+ :coll-type?   false
+ :map-like?    false
+ :number-type? false}
+
+
+(tag-map xy {:include-function-info? false})
+=>
+{:tag          :function
+ :all-tags     #{:function}
+ :type         #object[Function]
+ :coll-type?   false
+ :map-like?    false
+ :number-type? false}
 ```
 <br>
 
-Exclude the JS built-in-object related entries:
+Excluding the JS built-in-object related entries:
 
 ```clojure
-(tag-map js/JSON) ;; =>
-{:typetag                 :js/Object
- :all-typetags            #{:js/Object}
+(tag-map js/JSON)
+=>
+{:tag                     :js/Object
+ :all-tags                #{:js/Object}
  :type                    #object[Object]
  :js-built-in-object?     true
- :js-built-in-object-name "JSON"}
+ :js-built-in-object-name "JSON"
+ :coll-type?              true
+ :map-like?               true
+ :number-type?            false}
 
-(tag-map js/JSON {:js-built-in-object-info? false}) ;; =>
-{:typetag                 :js/Object
- :all-typetags            #{:js/Object}
- :type                    #object[Object]}
+(tag-map js/JSON {:include-js-built-in-object-info? false})
+=>
+{:tag                     :js/Object
+ :all-tags                #{:js/Object}
+ :type                    #object[Object]
+ :coll-type?              true
+ :map-like?               true
+ :number-type?            false}
 ```
 <br>
 <br>
@@ -128,7 +182,7 @@ Exclude the JS built-in-object related entries:
 ## Examples 
 
 ### Clojure
-Below is a table of example values in a Clojure context, and the results of passing the value to `typetag.core/tag`, and `clojure.core/type`.
+Below is a table of example values in a JVM Clojure context, and the results of passing each value to `typetag.core/tag`, and `clojure.core/type`.
 
 | Input value                     | `typetag.core/tag`       | `clojure.core/type`               |
 | :---                            | :---                    | :---                              |
@@ -164,7 +218,7 @@ Below is a table of example values in a Clojure context, and the results of pass
 
 ### ClojureScript
 
-Below is a table of example values in a ClojureScript context, and the results of passing the value to `typetag.core/tag`, and `clojure.core/type`.
+Below is a table of example values in a ClojureScript context, and the results of passing each value to `typetag.core/tag`, and `cljs.core/type`.
 
 | Input value                        | `typetag.core/tt` | `cljs.core/type`               |
 | :---                               | :---              | :---                           |
@@ -194,37 +248,71 @@ Below is a table of example values in a ClojureScript context, and the results o
 ### Additional ClojureScript Examples
 
 ```clojure
+;; A Record type
+
 (defrecord MyRecordType [a b c d])
 
 (def my-record-type (->MyRecordType 4 8 4 5))
 
-(tag my-record-type) ;; => :printer.reflect/MyRecordType
+(tag my-record-type) 
+=> :myns.core/MyRecordType
 
 
+
+;; Multimethod definition
 
 (defmulti different-behavior (fn [x] (:x-type x)))
 
-(tag different-behavior) ;; => :defmulti
+(tag different-behavior)
+=> :defmulti
 
 
 
-(def mypromise (js/Promise. (fn [x] x)))
+;; Javascript Promise
 
-(tag my-promise) ;; => :js/Promise
+(def my-promise (js/Promise. (fn [x] x)))
+
+(tag my-promise) 
+=> :js/Promise
 
 
+;; Instance methods on JavaScript built-ins
 
-;; The `:js-built-in-method-of` entry can help to differentiate
-;; between instance-methods on JS built-ins that might have the
-;; same name as another instance methods on a different JS built-in.
+;; Calling `typetag.core/tag-map` on a method of a JS built-in
+;; will return a map containing a `:js-built-in-method-of` entry.
+;; This can help to differentiate between instance methods
+;; on JS built-ins that might have the same name as another
+;; instance methods on a different JS built-in.
+
 (tag-map (aget "hi" "concat"))
-;; =>
-;; {... :js-built-in-method-of String ...}
+=>
+{...
+ :js-built-in-method-of String
+ ...}
 
 (tag-map (aget #js [1 2 3] "concat"))
-;; =>
-;; {... :js-built-in-method-of Array ...}
+=>
+{... 
+ :js-built-in-method-of Array
+ ...}
 ```
+
+<br>
+
+## Test
+ The JVM tests require [leiningen](https://leiningen.org/) to be installed.
+
+```Clojure
+lein test
+```
+
+The ClojureScript tests:
+
+```Clojure
+npm run test
+```
+
+
 
 
 <br>
