@@ -14,6 +14,10 @@
   (str (:name x) " will have a specific behavior"))
 (defn xy [x y] (+ x y))
 
+(deftest alternate-tag-format
+  (is (= "int" (tag 1 {:format :string})))
+  (is (= 'int (tag 1 {:format :symbol}))))
+
 
 #?(:cljs
    (deftest cljs-function-types
@@ -29,7 +33,7 @@
      (is (= :java.lang.Class (tag MyType)))
      (is (= :java.lang.Class (tag MyRecordType)))
      (is (= :typetag.core_test.MyType (tag my-data-type)))
-     (is (= :typetag.core_test.MyRecordType (tag my-record-type)))
+     (is (= :MyRecordType (tag my-record-type)))
      (is (= :defmulti (tag different-behavior)))))
 
 
@@ -45,8 +49,8 @@
    (deftest cljs-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:typetag      :function,
-           :all-typetags #{:function},
+          {:tag          :function,
+           :all-tags     #{:function},
            :lamda?       true
            :coll-type?   false
            :map-like?    false
@@ -56,15 +60,33 @@
    (deftest clj-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:typetag      :function,
-           :all-typetags #{:function},
+          {:tag          :function,
+           :all-tags     #{:function},
            :lamda?       true
            :coll-type?   false
            :map-like?    false
            :number-type? false
            :fn-ns        "typetag.core-test"
-           :fn-args      :typetag/unknown-function-signature-on-clj-function}))) 
-   )
+           :fn-args      :typetag/unknown-function-signature-on-clj-function}))))
+
+#?(:cljs
+   (deftest cljs-elide-function-info
+     (is (= 
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          {:tag          :function,
+           :all-tags     #{:function},
+           :coll-type?   false
+           :map-like?    false
+           :number-type? false})))
+   :clj
+   (deftest clj-elide-function-info
+     (is (= 
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          {:tag          :function,
+           :all-tags     #{:function},
+           :coll-type?   false
+           :map-like?    false
+           :number-type? false}))))
 
 (deftest cljc-collection-types
  (is (= :vector (tag [1 2 3])))
@@ -80,8 +102,8 @@
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:typetag      :list,
-           :all-typetags #{:list :js/Iterable :coll},
+          {:tag          :list,
+           :all-tags     #{:list :js/Iterable :coll},
            :coll-type?   true,
            :number-type? false,
            :map-like?    false,
@@ -90,14 +112,49 @@
    :clj
    (deftest clj-collection-types-map
      (is (= 
-          (tag-map '(:a :b :c))
-          {:typetag      :list,
-           :all-typetags #{:list :coll},
+          (tag-map       '(:a :b :c))
+          {:tag          :list,
+           :all-tags     #{:list :coll},
            :coll-type?   true,
            :map-like?    false
            :coll-size    3
            :number-type? false,
            :type         clojure.lang.PersistentList}))))
+
+#?(:cljs
+   (deftest cljs-elide-all-tagtypes
+     (is (= 
+          (tag-map '(:a :b :c) {:include-all-tags? false})
+          {:tag  :list,
+           :type cljs.core/List})))
+   :clj
+   (deftest clj-elide-all-tagtypes 
+     (is (= 
+          (tag-map       '(:a :b :c) {:include-all-tags? false})
+          {:tag  :list,
+           :type clojure.lang.PersistentList}))))
+
+#?(:cljs
+   (deftest cljs-elide-all-tagtypes+alternate-tag-type
+     (is (= 
+          (tag-map '(:a :b :c) {:include-all-tags? false :format :string})
+          {:tag  "list",
+           :type cljs.core/List}))
+     (is (= 
+          (tag-map '(:a :b :c) {:include-all-tags? false :format :symbol})
+          {:tag  'list,
+           :type cljs.core/List})))
+   :clj
+   (deftest clj-elide-all-tagtypes+alternate-tag-type
+     (is (= 
+          (tag-map '(:a :b :c) {:include-all-tags? false :format :string})
+          {:tag  "list",
+           :type clojure.lang.PersistentList}))
+     (is (= 
+          (tag-map '(:a :b :c) {:include-all-tags? false :format :symbol})
+          {:tag  'list,
+           :type clojure.lang.PersistentList}))))
+
 
 (deftest cljc-number-types 
   (is (= :Infinity (tag (/ 1.6 0.0))))
