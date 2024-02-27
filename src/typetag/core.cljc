@@ -60,6 +60,7 @@
       cljs.core/PersistentArrayMap :map
       cljs.core/PersistentHashMap  :map
       cljs.core/PersistentHashSet  :set
+      cljs.core/PersistentTreeSet  :set
       cljs.core/LazySeq            :seq
       cljs.core/IntegerRange       :seq
       cljs.core/List               :list}))
@@ -70,6 +71,7 @@
       clojure.lang.PersistentArrayMap :map
       clojure.lang.PersistentHashMap  :map
       clojure.lang.PersistentHashSet  :set
+      clojure.lang.PersistentTreeSet  :set
       clojure.lang.LazySeq            :seq
       clojure.lang.Range              :seq
       clojure.lang.LongRange          :seq
@@ -391,7 +393,14 @@
            (when (fn? x) :function)
            ;; Extra types, maybe useful info
            (when (inst? x) :inst)
-           (when (coll? x) :coll)
+           (when (or (coll? x)
+                     (instance? java.util.Collection x))
+             :coll)
+
+          ;; TODO - leave this out for now
+          ;;  (when (instance? java.util.AbstractList x)
+          ;;    :java.util.AbstractList)
+
            (when (record? x) :record)
            (when (number? x) :number)]
           (remove nil?)
@@ -436,7 +445,7 @@
 
 (defn- all-tags [x k dom-node-type-keyword]
   (let [all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
-                        :clj (clj-all-value-types x k))
+                    :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-tags :record)
                          (contains? all-tags :js/map-like-object))
@@ -447,8 +456,9 @@
                        (cond 
                          (or (= :js/Object k)
                              (contains? all-tags :js/map-like-object))
-                         #?(:cljs (.-length (js/Object.keys x))
-                            :clj 10)
+                         #?(:cljs
+                            (.-length (js/Object.keys x))
+                            :clj nil)
 
                          (or (= k :js/Array)
                              #?(:cljs (typed-array? x)))  
