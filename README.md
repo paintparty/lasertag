@@ -1,20 +1,26 @@
-<img align="right" width="300px" src="resources/typetag.jpg"/>
-
-# typetag
+# Typetag
 
 A Clojure(Script) utility for categorizing types of values.
+
+For a quick summary of how this differs from `clojure.core/type`, view [the tables below](#examples).
 
 This lib fell out of work on other Clojure(Script) dev tooling, so perhaps it may be useful in a similar context.
 
 <br>
 
 ## Usage
+Requires Clojure `1.9.0` or higher
+
+If using with Babashka, requires Babashka `v1.3.187` or higher
+
+<br>
 
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/typetag "0.2.0"]
+[io.github.paintparty/typetag "0.3.0"]
 ```
+<br>
 
 Import into your namespace:
 
@@ -23,9 +29,9 @@ Import into your namespace:
   (:require
     [typetag.core :refer [tag tag-map]]))
 ```
+<br>
 
-The function `typetag.core/tag` will return a typetag.
-Clojure(Script) examples:
+The function `typetag.core/tag` will return a typetag:
 
 ```clojure
 (tag 1)         ;; => :int
@@ -356,6 +362,15 @@ npm run test
 ```
 
 
+<br>
+
+## Status
+Alpha, subject to change. Currently, the enhanced interop reflection is focused more on the ClojureScript side. It would be nice to add more support for categorizing Java types. Issues welcome, see [contributing](#contributing).
+
+<br>
+
+## Contributing
+Issues for bugs, improvements, or feautures are very welcome. Please file an issue for discussion before starting or issuing a PR.
 
 
 <br>
