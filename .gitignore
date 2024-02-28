@@ -16,3 +16,4 @@ node_modules/*
 .shadow-cljs/*
 .lsp/*
 .clj-kondo/*
+.DS_Store
