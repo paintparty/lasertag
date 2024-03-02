@@ -238,7 +238,7 @@ Below is a table of example values in a ClojureScript context, and the results o
 | `#{1 3 2}`                         | `:set`            | `cljs.core/PersistentHashSet`  |
 | `{:a 2, :b 3}`                     | `:map`            | `cljs.core/PersistentArrayMap` |
 | `(map inc (range 3))`              | `:seq`            | `cljs.core/LazySeq`            |
-| `(range 3)`                        | `:seq`            | `cljs.core/IntergerRange`      |
+| `(range 3)`                        | `:seq`            | `cljs.core/IntegerRange`       |
 | `(:a :b :c)`                       | `:list`           | `cljs.core/List`               |
 | `Infinity`                         | `:Infinity`       | `#object[Boolean]`             |
 | `-Infinity`                        | `:-Infinity`      | `#object[Boolean]`             |
@@ -370,7 +370,7 @@ Alpha, subject to change. Currently, the enhanced interop reflection is focused 
 <br>
 
 ## Contributing
-Issues for bugs, improvements, or feautures are very welcome. Please file an issue for discussion before starting or issuing a PR.
+Issues for bugs, improvements, or features are very welcome. Please file an issue for discussion before starting or issuing a PR.
 
 
 <br>
