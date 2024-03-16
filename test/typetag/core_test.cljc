@@ -1,5 +1,5 @@
-(ns typetag.core-test
-  (:require [typetag.core :refer [tag tag-map]]
+(ns lasertag.core-test
+  (:require [lasertag.core :refer [tag tag-map]]
             #?(:cljs [cljs.test :refer [deftest is]])
             #?(:clj [clojure.test :refer :all])))
 
@@ -24,15 +24,15 @@
      (is (= :function (tag #(inc %))))
      (is (= :function (tag MyType)))
      (is (= :function (tag MyRecordType)))
-     (is (= :typetag.core-test/MyType (tag my-data-type)))
-     (is (= :typetag.core-test/MyRecordType (tag my-record-type)))
+     (is (= :lasertag.core-test/MyType (tag my-data-type)))
+     (is (= :lasertag.core-test/MyRecordType (tag my-record-type)))
      (is (= :defmulti (tag different-behavior))))
    :clj
    (deftest clj-function-types
      (is (= :function (tag #(inc %))))
      (is (= :java.lang.Class (tag MyType)))
      (is (= :java.lang.Class (tag MyRecordType)))
-     (is (= :typetag.core_test.MyType (tag my-data-type)))
+     (is (= :lasertag.core_test.MyType (tag my-data-type)))
      (is (= :MyRecordType (tag my-record-type)))
      (is (= :defmulti (tag different-behavior)))))
 
@@ -66,8 +66,8 @@
            :coll-type?   false
            :map-like?    false
            :number-type? false
-           :fn-ns        "typetag.core-test"
-           :fn-args      :typetag/unknown-function-signature-on-clj-function}))))
+           :fn-ns        "lasertag.core-test"
+           :fn-args      :lasertag/unknown-function-signature-on-clj-function}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info

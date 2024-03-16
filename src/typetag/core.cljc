@@ -1,7 +1,7 @@
-(ns typetag.core
+(ns lasertag.core
   (:require 
    [clojure.string :as string]
-   #?(:cljs [typetag.cljs-interop :as cljs-interop])))
+   #?(:cljs [lasertag.cljs-interop :as cljs-interop])))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
 
@@ -178,7 +178,7 @@
          (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
            {:fn-ns   fn-ns
             :fn-name fn-nm
-            :fn-args :typetag/multimethod})) )
+            :fn-args :lasertag/multimethod})) )
 
      (defn- cljs-fn [x s]
        (let [bits          (string/split s #"\$")
@@ -214,7 +214,7 @@
          (cljs-fn-alt x)))
      :clj
      (if (= k :defmulti)
-      {:fn-args :typetag/multimethod}
+      {:fn-args :lasertag/multimethod}
       (if (= k :java.lang.Class)
         (let [[_ nm] (re-find #"^class (.*)$" (str x))
               bits   (string/split nm #"\.")
@@ -222,7 +222,7 @@
               fn-nm  (last bits)]
           {:fn-ns   (string/replace fn-ns #"_" "-")
            :fn-name fn-nm
-           :fn-args :typetag/unknown-function-signature-on-java-class})
+           :fn-args :lasertag/unknown-function-signature-on-java-class})
         (let [pwo-stringified (pwos x)
               [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
           (when (and nm* (not (string/blank? nm*)))
@@ -234,7 +234,7 @@
                          {:fn-name fn-nm})
                        {:lamda? true})
                      {:fn-ns   (string/replace fn-ns #"_" "-")
-                      :fn-args :typetag/unknown-function-signature-on-clj-function}))))))))
+                      :fn-args :lasertag/unknown-function-signature-on-clj-function}))))))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -271,7 +271,7 @@
                   {:js-built-in-function? true
                    :fn-args               args}
                   (when (:js-built-in-method-of fn-info)
-                    {:fn-args :typetag/unknown-function-signature-on-js-built-in-method})))))))
+                    {:fn-args :lasertag/unknown-function-signature-on-js-built-in-method})))))))
 
 (defn- fn-info [x k include-fn-info?]
   (when include-fn-info?
@@ -484,7 +484,7 @@
    =>
    [1                   ; <- type code of node
     \"ELEMENT_NODE\"    ; <- canonical tag name of node
-    :dom-element-node]  ; <- kw representation available for consumers of typetag.core/tag-map"  
+    :dom-element-node]  ; <- kw representation available for consumers of lasertag.core/tag-map"  
   [x]
   (when-let [t (when (js-object-instance? x) (some->> x .-nodeType))]
     (let [n (dec t)]
@@ -495,7 +495,7 @@
 (defn- tag-map*
   [x k k+ opts]
     (merge 
-     ;; The typetag for clj & cljs
+     ;; The lasertag for clj & cljs
      {:tag k+}
 
      ;; The `type` (result of calling clojure.core.type), or cljs.core.type on the value 
@@ -595,7 +595,7 @@
                   (when (js-array-buffer? x) :js/ArrayBuffer)
                   ;; (when (dom-element x) )
                   (js-object-instance x)
-                  :typetag/value-type-unknown)
+                  :lasertag/value-type-unknown)
            k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k+))))
 

@@ -1,4 +1,4 @@
-(ns typetag.cljs-interop
+(ns lasertag.cljs-interop
   (:require 
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
@@ -828,8 +828,8 @@
 
 
 ;; Code below is for generating 
-;; typetag.interop/objects-by-unique-method-name
-;; typetag.interop/objects-by-method-name
+;; lasertag.interop/objects-by-unique-method-name
+;; lasertag.interop/objects-by-method-name
 
 
 ;;;; helper fns ---------------------

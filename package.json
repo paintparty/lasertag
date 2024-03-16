@@ -1,7 +1,7 @@
 {
-  "name": "typetag-cljs-tests",
+  "name": "lasertag-cljs-tests",
   "version": "1.0.0",
-  "description": "ClojureScript tests for typetag",
+  "description": "ClojureScript tests for Lasertag tagging library",
   "main": "index.js",
   "scripts": {
     "test": "shadow-cljs compile test && karma start --single-run"

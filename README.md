@@ -1,10 +1,10 @@
-# Typetag
+# Lasertag
 
 A Clojure(Script) utility for categorizing types of values.
 
 For a quick summary of how this differs from `clojure.core/type`, view [the tables below](#examples).
 
-This lib fell out of work on other Clojure(Script) dev tooling, so perhaps it may be useful in a similar context.
+This lib fell out of work on other Clojure(Script) dev tooling, namely [Fireworks](https://github.com/paintparty/fireworks) so perhaps it may be useful in a similar context.
 
 <br>
 
@@ -18,7 +18,7 @@ If using with Babashka, requires Babashka `v1.3.187` or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/typetag "0.3.0"]
+[io.github.paintparty/lasertag "0.3.0"]
 ```
 <br>
 
@@ -27,11 +27,11 @@ Import into your namespace:
 ```clojure
 (ns myns.core
   (:require
-    [typetag.core :refer [tag tag-map]]))
+    [lasertag.core :refer [tag tag-map]]))
 ```
 <br>
 
-The function `typetag.core/tag` will return a typetag:
+The function `lasertag.core/tag` will return a tag describing the category of data type:
 
 ```clojure
 (tag 1)         ;; => :int
@@ -45,14 +45,14 @@ The function `typetag.core/tag` will return a typetag:
 ```
 <br>
 
-The typetag is a keyword, by default. You can pass an options map if you want a string or symbol:
+The tag is a keyword, by default. You can pass an options map if you want a string or symbol:
 ```clojure
 (tag 1 {:format :string}) ;; => "int"
 (tag 1 {:format :symbol}) ;; => int
 ```
 <br>
 
-The function `typetag.core/tag-map` will return a map with additional info.
+The function `lasertag.core/tag-map` will return a map with additional info.
 
 ```clojure
 (tag-map "hi")
@@ -188,9 +188,9 @@ Excluding the JS built-in-object related entries:
 ## Examples 
 
 ### Clojure
-Below is a table of example values in a JVM Clojure context, and the results of passing each value to `typetag.core/tag`, and `clojure.core/type`.
+Below is a table of example values in a JVM Clojure context, and the results of passing each value to `lasertag.core/tag`, and `clojure.core/type`.
 
-| Input value                     | `typetag.core/tag`       | `clojure.core/type`               |
+| Input value                     | `lasertag.core/tag`       | `clojure.core/type`               |
 | :---                            | :---                    | :---                              |
 | `"hi"`                          | `:string`               | `java.lang.String`                |
 | `:hi`                           | `:keyword`              | `clojure.lang.Keyword`            |
@@ -224,9 +224,9 @@ Below is a table of example values in a JVM Clojure context, and the results of 
 
 ### ClojureScript
 
-Below is a table of example values in a ClojureScript context, and the results of passing each value to `typetag.core/tag`, and `cljs.core/type`.
+Below is a table of example values in a ClojureScript context, and the results of passing each value to `lasertag.core/tag`, and `cljs.core/type`.
 
-| Input value                        | `typetag.core/tt` | `cljs.core/type`               |
+| Input value                        | `lasertag.core/tt` | `cljs.core/type`               |
 | :---                               | :---              | :---                           |
 | `"hi"`                             | `:string`         | `#object[String]`              |
 | `:hi`                              | `:keyword`        | `cljs.core/Keyword`            |
@@ -284,7 +284,7 @@ Below is a table of example values in a ClojureScript context, and the results o
 
 ### Instance methods on JavaScript built-ins
 
-`typetag.core/tag-map` can help to differentiate between an instance method on a JS built-in that might have the same name as another instance method on a different JS built-in.
+`lasertag.core/tag-map` can help to differentiate between an instance method on a JS built-in that might have the same name as another instance method on a different JS built-in.
 
 Consider the following 2 values. Both are instance methods on JS built-ins. Both are named `concat`, although they are different functions that expect different inputs and yield different outputs:
 ```Clojure
@@ -311,7 +311,7 @@ on either of the values above would give you this:
 
 <br>
 
-If you need enhanced reflection in situations like this, the result of `typetag.core/tag-map` offers the following 2 entries:
+If you need enhanced reflection in situations like this, the result of `lasertag.core/tag-map` offers the following 2 entries:
  <br>`:js-built-in-method-of`<br> `:js-built-in-method-of-name`
 
 ```Clojure
