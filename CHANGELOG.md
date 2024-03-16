@@ -1,7 +1,10 @@
 # Changelog
-
+[Lasertag](https://github.com/paintparty/lasertag): Clojure(Script) utility for discerning types of values.
 ## Unreleased
  - 
+## 0.3.0 (Lasertag)
+2024-03-16
+- Changed name of project to Lasertag [#1](https://github.com/paintparty/lasertag/issues/1)
 
 ## 0.3.0
 2024-02-27
