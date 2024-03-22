@@ -1,8 +1,9 @@
 (ns lasertag.cljs-interop
   (:require 
-   [clojure.string :as string]
-   [clojure.pprint :refer [pprint]]
-   [clojure.set :as set]))
+   ;; keep these commented out unless you are doing code gen with fns at end of this namespace
+  ;;  [clojure.pprint :refer [pprint]]
+  ;;  [clojure.set :as set]
+   ))
 
 
 ;; These are the built-ins you cannot access directly, e.g. `js/Iterator`
@@ -22,12 +23,18 @@
    [[js/Object {:sym 'Object :args '[...]}]
     [js/Function {:sym 'Function :args '[...]}]
     [js/Boolean {:sym 'Boolean :args '[...]}]
-    [js/Symbol {:sym 'Symbol :demo (js/Symbol "my-sym") :not-a-constructor? true :args '[s]}]]
+    [js/Symbol {:sym 'Symbol
+                :demo (js/Symbol "my-sym")
+                :not-a-constructor? true
+                :args '[s]}]]
 
    "Numbers and dates"
    [[js/Math {:sym 'Math :not-a-constructor? true}]
     [js/Number {:sym 'Number :demo (new js/Number "3") :args '[v]}]
-    [js/BigInt {:sym 'BigInt :demo (js/BigInt "999999999999") :not-a-constructor? true :args '[v]}]
+    [js/BigInt {:sym 'BigInt
+                :demo (js/BigInt "999999999999")
+                :not-a-constructor? true
+                :args '[v]}]
     [js/Date {:sym 'Date :demo (new js/Date) :args '[...]}]]
 
    "Value properties" 
@@ -39,7 +46,10 @@
    [[js/Promise {:sym 'Promise :demo (new js/Promise (fn [x] x)) :args '[f]}]]
 
    "Error objects"
-   [[js/AggregateError {:sym 'AggregateError :demo (new js/AggregateError #js[(new js/Error "some error")] "Hello") :args '[array]}]
+   [[js/AggregateError {:sym 'AggregateError
+                        :demo (new js/AggregateError
+                                   #js[(new js/Error "some error")] "Hello")
+                        :args '[array]}]
     [js/EvalError {:sym 'EvalError :demo (new js/EvalError) :args '[]}]
     [js/RangeError {:sym 'RangeError :demo (new js/RangeError) :args '[]}]
     [js/ReferenceError {:sym 'ReferenceError :demo (new js/ReferenceError) :args '[]}]
@@ -94,13 +104,18 @@
    [[js/ArrayBuffer {:sym 'ArrayBuffer 
                      :demo (new js/ArrayBuffer 8) 
                      :args '[...]
-                     :instance-properties ["byteLength" "detached" "maxByteLength" "resizable"]}]
+                     :instance-properties ["byteLength"
+                                           "detached"
+                                           "maxByteLength"
+                                           "resizable"]}]
     [js/JSON {:sym 'JSON :not-a-constructor? true}]
     [js/Atomics {:sym 'Atomics :not-a-constructor? true}]
     [js/DataView {:sym 'DataView
                   :demo (new js/DataView (new js/ArrayBuffer 8))
                   :args '[ArrayBuffer]
-                  :instance-properties ["buffer" "byteLength" "byteOffset"]}]]
+                  :instance-properties ["buffer"
+                                        "byteLength"
+                                        "byteOffset"]}]]
 
    "Internationalization"
    [[js/Intl {:sym 'Intl :not-a-constructor? true}]
@@ -108,16 +123,27 @@
                        :demo (new js/Intl.Collator "sv")
                        :args '[...]}]
     [js/Intl.DateTimeFormat {:sym 'Intl.DateTimeFormat
-                             :demo (new js/Intl.DateTimeFormat "en-US")
+                             :demo (new js/Intl.DateTimeFormat
+                                        "en-US")
                              :args '[...]}]
     [js/Intl.DisplayNames {:sym 'Intl.DisplayNames
-                           :demo (new js/Intl.DisplayNames #js["en"] #js {:type "region"})
+                           :demo (new js/Intl.DisplayNames
+                                      #js["en"]
+                                      #js {:type "region"})
                            :args '[...]}]
     [js/Intl.ListFormat {:sym 'Intl.ListFormat
-                         :demo (new js/Intl.ListFormat "en-GB" #js {:style "long", :type "conjunction" })
+                         :demo (new js/Intl.ListFormat 
+                                    "en-GB"
+                                    #js {:style "long",
+                                         :type "conjunction"})
                          :args '[...]}]
     [js/Intl.Locale {:sym 'Intl.Locale
-                     :demo (new js/Intl.Locale "ko" #js{:script "Kore", :region "KR", :hourCycle "h23", :calendar "gregory"})
+                     :demo (new js/Intl.Locale
+                                "ko"
+                                #js{:script "Kore",
+                                    :region "KR",
+                                    :hourCycle "h23",
+                                    :calendar "gregory"})
                      :args '[...]
                      :instance-properties ["baseName"
                                            "calendar"
@@ -137,18 +163,27 @@
                                            "timeZones"
                                            "weekInfo"]}]
     [js/Intl.NumberFormat {:sym 'Intl.NumberFormat 
-                           :demo (new js/Intl.NumberFormat "de-DE" #js{:style "currency", :currency "EUR" })
+                           :demo (new js/Intl.NumberFormat
+                                      "de-DE"
+                                      #js{:style "currency",
+                                          :currency "EUR" })
                            :args '[...]}]
     [js/Intl.PluralRules {:sym 'Intl.PluralRules
                           :demo (new js/Intl.PluralRules "en-US") 
                           :args '[...]}]
     [js/Intl.RelativeTimeFormat {:sym 'Intl.RelativeTimeFormat
-                                 :demo (new js/Intl.RelativeTimeFormat "en" #js{:style "short"}) 
+                                 :demo (new js/Intl.RelativeTimeFormat
+                                            "en"
+                                            #js{:style "short"}) 
                                  :args '[...]}]
     [js/Intl.Segmenter {:sym 'Intl.Segmenter
-                        :demo (new js/Intl.Segmenter "fr" #js{:granularity "word"})
+                        :demo (new js/Intl.Segmenter
+                                   "fr"
+                                   #js{:granularity "word"})
                         :args '[...]}]
-    ;; [js/Intl.DurationFormat {:sym 'DurationFormat :args '[...]}] ;; experimental, Safari-only
+
+    ;; experimental, Safari-only
+    ;; [js/Intl.DurationFormat {:sym 'DurationFormat :args '[...]}]
     ]
 
    "Managing memory"
@@ -190,7 +225,9 @@
     js/Reflect})
 
 (defonce js-built-ins-which-are-iterables-by-built-in*
-  (apply concat (vals (select-keys js-built-ins-by-category ["Indexed collections" "Keyed collections"]))))
+  (apply concat
+         (vals (select-keys js-built-ins-by-category 
+                            ["Indexed collections" "Keyed collections"]))))
 
 
 (defonce js-built-ins-which-are-iterables
@@ -259,7 +296,8 @@
   (into #{} (keys js-built-in-objects-by-object-map)))
 
 
-;; This def is generated AOT at repl from above using fn to speed up startup time of script
+;; This def is generated AOT at repl from above,
+;; to speed up startup time of script
 (def objects-by-method-name 
   {"message"                  [js/Error
                                js/AggregateError
