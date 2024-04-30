@@ -473,6 +473,10 @@
       :coll-type?   coll-type?
       :map-like?    map-like?
       :number-type? (contains? all-tags :number)}
+     #?(:cljs (merge (when (object? x)
+                       {:js-object? true})
+                     (when (array? x)
+                       {:js-array? true})))
      (when coll-size {:coll-size coll-size}))))
 
 (defn- dom-node 
