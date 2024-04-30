@@ -327,11 +327,9 @@
 (defn- cljs-iterable-type [x]
   #?(:cljs 
      (when (js-iterable? x)
-       (or (get js-coll-types (type x))
-           (get js-indexed-coll-types (type x))
-           (if (= (str x) "[object Generator]") 
-             :js/Generator
-             :js/Iterable)))) )
+       (if (= (str x) "[object Generator]") 
+         :js/Generator
+         :js/Iterable))) )
 
 (defn- js-object-instance-map-like [x] 
   #?(:cljs 
