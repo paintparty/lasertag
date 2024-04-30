@@ -103,6 +103,10 @@
   {:clojure.lang.MultiFn :defmulti
    :clojure.lang.Ratio :ratio})
 
+(defn carries-meta? [x]
+  #?(:clj  (instance? clojure.lang.IObj x)
+     :cljs (satisfies? IWithMeta x)))
+
 (defn- pwos [x] (with-out-str (print x)))
 
 (defn- lamda-args [args]
@@ -510,6 +514,8 @@
          #?(:cljs (fn-info x k b)
             :clj (fn-info x k b))))
 
+     ;; Whether or not the value is able to carry metadata
+     {:carries-meta? (carries-meta? x)}
 
       ;; Just for ClojureScript
      #?(:cljs 
