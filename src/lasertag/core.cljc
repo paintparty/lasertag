@@ -584,6 +584,7 @@
                   (get cljs-scalar-types (type x))
                   (get cljs-coll-types (type x))
                   (get js-coll-types (type x))
+                  (get js-indexed-coll-types (type x))
                   (cljs-iterable-type x)
                   (when (array? x) :js/Array)
                   (when (object? x) :js/Object)
