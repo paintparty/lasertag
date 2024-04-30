@@ -159,7 +159,7 @@
      (defn- js-built-in-map [o]
        (let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in o)]
          {:js-built-in-method-of      o
-          :js-built-in-method-of-name (name sym)
+          :js-built-in-method-of-name (some-> sym name)
           :js-built-in-function?      true}))
 
      (defn- js-built-in-method-of [x name-prop fn-nm]
