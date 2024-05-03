@@ -49,44 +49,48 @@
    (deftest cljs-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:tag          :function,
-           :all-tags     #{:function},
-           :lamda?       true
-           :coll-type?   false
-           :map-like?    false
-           :number-type? false
-           :fn-args      '[%1]})))
+          {:tag           :function,
+           :carries-meta? false
+           :all-tags      #{:function},
+           :lamda?        true
+           :coll-type?    false
+           :map-like?     false
+           :number-type?  false
+           :fn-args       '[%1]})))
    :clj
    (deftest clj-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:tag          :function,
-           :all-tags     #{:function},
-           :lamda?       true
-           :coll-type?   false
-           :map-like?    false
-           :number-type? false
-           :fn-ns        "lasertag.core-test"
-           :fn-args      :lasertag/unknown-function-signature-on-clj-function}))))
+          {:tag           :function,
+           :all-tags      #{:function},
+           :lamda?        true
+           :coll-type?    false
+           :map-like?     false
+           :number-type?  false
+           :carries-meta? true
+           :fn-ns         "lasertag.core-test"
+           :fn-args       :lasertag/unknown-function-signature-on-clj-function}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag          :function,
-           :all-tags     #{:function},
-           :coll-type?   false
-           :map-like?    false
-           :number-type? false})))
+          {:tag           :function,
+           :carries-meta? false
+           :all-tags      #{:function},
+           :coll-type?    false
+           :map-like?     false
+           :number-type?  false})))
    :clj
    (deftest clj-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag          :function,
-           :all-tags     #{:function},
-           :coll-type?   false
-           :map-like?    false
-           :number-type? false}))))
+          {:tag           :function,
+           :carries-meta? true
+           :all-tags      #{:function},
+           :coll-type?    false
+           :map-like?     false
+           :number-type?  false}))))
 
 (deftest cljc-collection-types
  (is (= :vector (tag [1 2 3])))
@@ -102,58 +106,70 @@
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:tag          :list,
-           :all-tags     #{:list :js/Iterable :coll},
-           :coll-type?   true,
-           :number-type? false,
-           :map-like?    false,
-           :coll-size    3,
-           :type         cljs.core/List})))
+          {:tag           :list,
+           :carries-meta? true
+           :all-tags      #{:list :js/Iterable :coll},
+           :coll-type?    true,
+           :number-type?  false,
+           :map-like?     false,
+           :coll-size     3,
+           :type          cljs.core/List})))
    :clj
    (deftest clj-collection-types-map
      (is (= 
           (tag-map       '(:a :b :c))
-          {:tag          :list,
-           :all-tags     #{:list :coll},
-           :coll-type?   true,
-           :map-like?    false
-           :coll-size    3
-           :number-type? false,
-           :type         clojure.lang.PersistentList}))))
+          {:tag           :list,
+           :carries-meta? true
+           :all-tags      #{:list :coll},
+           :coll-type?    true,
+           :map-like?     false
+           :coll-size     3
+           :number-type?  false,
+           :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false})
-          {:tag  :list,
-           :type cljs.core/List})))
+          {:tag           :list,
+           :carries-meta? true
+           :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes 
      (is (= 
           (tag-map       '(:a :b :c) {:include-all-tags? false})
-          {:tag  :list,
-           :type clojure.lang.PersistentList}))))
+          {:tag           :list,
+           :carries-meta? true
+           :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false :format :string})
-          {:tag  "list",
-           :type cljs.core/List}))
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :string})
+          {:tag           "list",
+           :carries-meta? true
+           :type          cljs.core/List}))
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false :format :symbol})
-          {:tag  'list,
-           :type cljs.core/List})))
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :symbol})
+          {:tag           'list,
+           :carries-meta? true
+           :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false :format :string})
-          {:tag  "list",
-           :type clojure.lang.PersistentList}))
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :string})
+          {:tag           "list",
+           :carries-meta? true
+           :type          clojure.lang.PersistentList}))
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false :format :symbol})
-          {:tag  'list,
-           :type clojure.lang.PersistentList}))))
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :symbol})
+          {:tag           'list,
+           :carries-meta? true
+           :type          clojure.lang.PersistentList}))))
 
 
 (deftest cljc-number-types 
