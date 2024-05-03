@@ -18,7 +18,7 @@ If using with Babashka, requires Babashka `v1.3.187` or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.3.1"]
+[io.github.paintparty/lasertag "0.4.0"]
 ```
 <br>
 
@@ -57,26 +57,26 @@ The function `lasertag.core/tag-map` will return a map with additional info.
 ```clojure
 (tag-map "hi")
 =>
-{:tag          :string
- :all-tags     #{:string :js/Iterable}
- :type         #object[String]
- :coll-type?   false
- :map-like?    false
- :number-type? false}
+{:tag           :string
+ :all-tags      #{:string :js/Iterable}
+ :type          #object[String]
+ :coll-type?    false
+ :map-like?     false
+ :number-type?  false}
 
 (defn xy [x y] (+ x y))
 
 (tag-map xy)
 =>
-{:tag          :function
- :all-tags     #{:function}
- :type         #object[Function]
- :fn-name      "xy" 
- :fn-ns        "myns.core"
- :fn-args      [x y]
- :coll-type?   false
- :map-like?    false
- :number-type? false}
+{:tag           :function
+ :all-tags      #{:function}
+ :type          #object[Function]
+ :fn-name       "xy" 
+ :fn-ns         "myns.core"
+ :fn-args       [x y]
+ :coll-type?    false
+ :map-like?     false
+ :number-type?  false}
 
 (tag-map js/ParseFloat)
 =>
