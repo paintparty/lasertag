@@ -63,6 +63,7 @@
       cljs.core/PersistentTreeSet  :set
       cljs.core/LazySeq            :seq
       cljs.core/IntegerRange       :seq
+      cljs.core/Cons               :seq
       cljs.core/List               :list}))
 
 (def clj-coll-types
@@ -75,6 +76,7 @@
       clojure.lang.LazySeq            :seq
       clojure.lang.Range              :seq
       clojure.lang.LongRange          :seq
+      clojure.lang.Cons               :seq
       clojure.lang.PersistentList     :list}))
 
 (def js-coll-types
