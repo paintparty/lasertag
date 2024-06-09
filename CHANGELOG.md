@@ -1,8 +1,15 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): Clojure(Script) utility for discerning types of values.
 ## Unreleased
- - 
-## 0.3.0 (Lasertag)
+-
+
+## 0.5.0
+2024-06-05
+### Added
+- Adds :carries-meta? entry to `tag-map` return value
+- Tag `cljs.core/Cons` and `clojure.lang.Cons` with `:seq`
+
+## 0.4.0 (Lasertag)
 2024-03-16
 - Changed name of project to Lasertag [#1](https://github.com/paintparty/lasertag/issues/1)
 
