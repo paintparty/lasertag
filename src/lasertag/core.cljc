@@ -1,6 +1,5 @@
 (ns lasertag.core
   (:require 
-   [clojure.pprint :refer [pprint]]
    [clojure.string :as string]
    #?(:cljs [lasertag.cljs-interop :as cljs-interop])))
 

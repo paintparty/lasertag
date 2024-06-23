@@ -4,10 +4,14 @@
 -
 
 ## 0.5.0
-2024-06-05
+2024-06-23
 ### Added
 - Adds :carries-meta? entry to `tag-map` return value
 - Tag `cljs.core/Cons` and `clojure.lang.Cons` with `:seq`
+
+### Changed
+- All colls that pass the pred `seq?` will get tagged with `:seq`. No colls will get tagged with `:list`.
+
 
 ## 0.4.0 (Lasertag)
 2024-03-16
