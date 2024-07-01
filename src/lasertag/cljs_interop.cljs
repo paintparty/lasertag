@@ -16,6 +16,9 @@
 ;; AsyncFunction 
 ;; Errors
 
+(defonce Atomics
+  (try js/Atomics
+       (catch js/Object e nil)))
 
 (defonce js-built-ins-by-category
   (array-map 
@@ -101,21 +104,25 @@
     [js/Float64Array {:sym 'Float64Array :demo (new js/Float64Array #js[1 2 3]) :args '[...]}]]
 
    "Structured data"
-   [[js/ArrayBuffer {:sym 'ArrayBuffer 
-                     :demo (new js/ArrayBuffer 8) 
-                     :args '[...]
-                     :instance-properties ["byteLength"
-                                           "detached"
-                                           "maxByteLength"
-                                           "resizable"]}]
-    [js/JSON {:sym 'JSON :not-a-constructor? true}]
-    [js/Atomics {:sym 'Atomics :not-a-constructor? true}]
-    [js/DataView {:sym 'DataView
-                  :demo (new js/DataView (new js/ArrayBuffer 8))
-                  :args '[ArrayBuffer]
-                  :instance-properties ["buffer"
-                                        "byteLength"
-                                        "byteOffset"]}]]
+   (into []
+         (concat 
+          [[js/ArrayBuffer {:sym                 'ArrayBuffer 
+                            :demo                (new js/ArrayBuffer 8) 
+                            :args                '[...]
+                            :instance-properties ["byteLength"
+                                                  "detached"
+                                                  "maxByteLength"
+                                                  "resizable"]}]
+           [js/JSON {:sym                'JSON
+                     :not-a-constructor? true}]
+           [js/DataView {:sym                 'DataView
+                         :demo                (new js/DataView (new js/ArrayBuffer 8))
+                         :args                '[ArrayBuffer]
+                         :instance-properties ["buffer"
+                                               "byteLength"
+                                               "byteOffset"]}]]
+          (when Atomics [[Atomics {:sym                'Atomics
+                                   :not-a-constructor? true}]])))
 
    "Internationalization"
    [[js/Intl {:sym 'Intl :not-a-constructor? true}]
@@ -218,11 +225,18 @@
   (into {} js-built-ins-by-built-in*))
 
 (defonce js-built-ins-which-are-not-functions-or-constructors
-  #{js/Math
-    js/JSON
-    js/Atomics
-    js/Intl
-    js/Reflect})
+  (if Atomics 
+    ;; js/Atomics support
+    #{js/Math
+      js/JSON
+      Atomics
+      js/Intl
+      js/Reflect}
+    ;; No js/Atomics support
+    #{js/Math
+      js/JSON
+      js/Intl
+      js/Reflect} ))
 
 (defonce js-built-ins-which-are-iterables-by-built-in*
   (apply concat
@@ -322,7 +336,8 @@
    "getPrototypeOf"           [js/Reflect js/Object],
    "toLocaleString"           [js/Object js/Array js/Number js/BigInt js/Date],
    "of"                       [js/Intl.DisplayNames js/Array],
-   "sub"                      [js/Atomics js/String],
+  ;;  "sub"                      [js/Atomics js/String],
+   "sub"                      [js/String],
    "byteLength"               [js/DataView js/ArrayBuffer],
    "delete"                   [js/Map js/Set js/WeakMap js/WeakSet],
    "formatRange"              [js/Intl.DateTimeFormat js/Intl.NumberFormat],
@@ -472,7 +487,8 @@
    "match"                    [js/String js/Symbol],
    "slice"                    [js/String js/Array js/ArrayBuffer],
    "parse"                    [js/Date js/JSON],
-   "add"                      [js/Atomics js/Set js/WeakSet],
+  ;;  "add"                      [js/Atomics js/Set js/WeakSet],
+   "add"                      [js/Set js/WeakSet],
    "set"                      [js/Map js/Reflect js/WeakMap],
    "matchAll"                 [js/String js/Symbol],
    "size"                     [js/Map js/Set],
@@ -593,7 +609,7 @@
    "delete"                    js/WeakSet,
    "stackTraceLimit"           js/Error,
    "formatRange"               js/Intl.NumberFormat,
-   "compareExchange"           js/Atomics,
+  ;;  "compareExchange"           js/Atomics,
    "every"                     js/Array,
    "leftContext"               js/RegExp,
    "atan2"                     js/Math,
@@ -602,7 +618,7 @@
    "getYear"                   js/Date,
    "hasOwnProperty"            js/Object,
    "segment"                   js/Intl.Segmenter,
-   "load"                      js/Atomics,
+  ;;  "load"                      js/Atomics,
    "hourCycle"                 js/Intl.Locale,
    "pop"                       js/Array,
    "padEnd"                    js/String,
@@ -620,7 +636,7 @@
    "textInfo"                  js/Intl.Locale,
    "toLocaleLowerCase"         js/String,
    "ownKeys"                   js/Reflect,
-   "waitAsync"                 js/Atomics,
+  ;;  "waitAsync"                 js/Atomics,
    "flat"                      js/Array,
    "max"                       js/Math,
    "preventExtensions"         js/Object,
@@ -696,11 +712,11 @@
    "exp"                       js/Math,
    "toISOString"               js/Date,
    "getUint8"                  js/DataView,
-   "wait"                      js/Atomics,
+  ;;  "wait"                      js/Atomics,
    "imul"                      js/Math,
    "select"                    js/Intl.PluralRules,
    "formatToParts"             js/Intl.RelativeTimeFormat,
-   "or"                        js/Atomics,
+  ;;  "or"                        js/Atomics,
    "LN10"                      js/Math,
    "setMilliseconds"           js/Date,
    "substr"                    js/String,
@@ -736,7 +752,7 @@
    "transfer"                  js/ArrayBuffer,
    "input"                     js/RegExp,
    "trunc"                     js/Math,
-   "and"                       js/Atomics,
+  ;;  "and"                       js/Atomics,
    "SQRT1_2"                   js/Math,
    "deref"                     js/WeakRef,
    "italics"                   js/String,
@@ -773,7 +789,7 @@
    "slice"                     js/ArrayBuffer,
    "LOG2E"                     js/Math,
    "numberingSystems"          js/Intl.Locale,
-   "exchange"                  js/Atomics,
+  ;;  "exchange"                  js/Atomics,
    "ListFormat"                js/Intl,
    "blink"                     js/String,
    "NEGATIVE_INFINITY"         js/Number,
@@ -806,7 +822,7 @@
    "size"                      js/Set,
    "setUTCDate"                js/Date,
    "has"                       js/WeakSet,
-   "notify"                    js/Atomics,
+  ;;  "notify"                    js/Atomics,
    "isView"                    js/ArrayBuffer,
    "reduce"                    js/Array,
    "clear"                     js/Set,
@@ -828,7 +844,7 @@
    "asinh"                     js/Math,
    "setUTCSeconds"             js/Date,
    "calendars"                 js/Intl.Locale,
-   "isLockFree"                js/Atomics,
+  ;;  "isLockFree"                js/Atomics,
    "fromEntries"               js/Object,
    "SQRT2"                     js/Math,
    "getTime"                   js/Date,
@@ -844,8 +860,8 @@
    "sign"                      js/Math,
    "rightContext"              js/RegExp,
    "getBigInt64"               js/DataView,
-   "store"                     js/Atomics,
-   "xor"                       js/Atomics,
+  ;;  "store"                     js/Atomics,
+  ;;  "xor"                       js/Atomics,
    "tanh"                      js/Math,
    "at"                        js/Array,
    "setUTCMilliseconds"        js/Date,
@@ -865,6 +881,8 @@
    "parseInt"                  js/Number})
 
 
+
+;; TODO - incorporate test for Atomics support in codegen below
 ;; Code below is for generating 
 ;; lasertag.interop/objects-by-unique-method-name
 ;; lasertag.interop/objects-by-method-name
