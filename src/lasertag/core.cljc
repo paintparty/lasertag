@@ -54,36 +54,14 @@
       java.lang.Byte       :byte
       java.math.BigDecimal :decimal}))
 
-(def cljs-coll-types
-  #?(:cljs
-     {cljs.core/PersistentVector   :vector
-      cljs.core/PersistentArrayMap :map
-      cljs.core/PersistentHashMap  :map
-      cljs.core/PersistentHashSet  :set
-      cljs.core/PersistentTreeSet  :set
-      cljs.core/LazySeq            :seq
-      cljs.core/IntegerRange       :seq
-      cljs.core/Cons               :seq
-      cljs.core/List               :list}))
-
-(def clj-coll-types
-  #?(:clj
-     {clojure.lang.PersistentVector   :vector
-      clojure.lang.PersistentArrayMap :map
-      clojure.lang.PersistentHashMap  :map
-      clojure.lang.PersistentHashSet  :set
-      clojure.lang.PersistentTreeSet  :set
-      clojure.lang.LazySeq            :seq
-      clojure.lang.Range              :seq
-      clojure.lang.LongRange          :seq
-      clojure.lang.Cons               :seq
-      clojure.lang.PersistentList     :list}))
-
-(def js-coll-types
+(def js-map-types
   #?(:cljs
      {js/Map     :js/Map
-      js/WeakMap :js/WeakMap
-      js/Set     :js/Set
+      js/WeakMap :js/WeakMap}))
+
+(def js-set-types
+  #?(:cljs
+     {js/Set     :js/Set
       js/WeakSet :js/WeakSet}))
 
 (def js-indexed-coll-types
@@ -310,61 +288,70 @@
          :else
          k))))
 
-(defn- cljs-number-type [x]
-  #?(:cljs 
-     (when-let [k (get js-number-types (type x))]
-       (if (= k :js/Number)
-         (cond (int? x)
-               :int
-               (float? x)
-               (cond 
-                 (js/Number.isNaN x)
-                 :NaN
-                 (= x js/Number.POSITIVE_INFINITY)
-                 :Infinity
-                 (= x js/Number.NEGATIVE_INFINITY)
-                 :-Infinity
+#?(:cljs 
+   (do
+     (defn- cljs-number-type [x]
+       (when-let [k (get js-number-types (type x))]
+         (if (= k :js/Number)
+           (cond (int? x)
+                 :int
+                 (float? x)
+                 (cond 
+                   (js/Number.isNaN x)
+                   :NaN
+                   (= x js/Number.POSITIVE_INFINITY)
+                   :Infinity
+                   (= x js/Number.NEGATIVE_INFINITY)
+                   :-Infinity
+                   :else
+                   :float)
                  :else
-                 :float)
-               :else
-               :number)
-         k))) )
+                 :number)
+           k)))
 
-(defn- cljs-iterable-type [x]
-  #?(:cljs 
-     (when (js-iterable? x)
-       (if (= (str x) "[object Generator]") 
-         :js/Generator
-         :js/Iterable))) )
-
-(defn- js-object-instance-map-like [x] 
-  #?(:cljs 
-     (when (js-object-instance? x)
-       (when-not (or (fn? x)
-                     (defmulti? x)
-                     (.hasOwnProperty x "__hash")
-                     (.hasOwnProperty x "_hash")
-                     (js/Array.isArray x)
-                     (instance? js/Set x)
-                     (instance? js/RegExp x)
-                     (instance? js/Date x)
-                     (typed-array? x))
-         :js/map-like-object))))
-
-(defn- js-object-instance [x] 
-  #?(:cljs 
-     (when (js-object-instance? x)
-      (let [k (if-let [c (.-constructor x)] 
-                (let [nm (.-name c)]
-                  (if-not (string/blank? nm)
+     (defn- cljs-iterable-type [x]
+       (when (js-iterable? x)
+         (if (= (str x) "[object Generator]") 
+           :js/Generator
+           :js/Iterable)))
+     
+     (defn- js-object-instance-map-like
+       [x types]
+       (when-not (or (-> types :coll)
+                     (-> types :scalar-type)
+                     (-> types :number-type)
+                     (->> [:record         
+                           :number         
+                           :js-set-types
+                           :iterable      
+                           :array         
+                           :fn            
+                           :inst          
+                           :js-date       
+                           :defmulti      
+                           :js-global-this
+                           :typed-array]
+                          (select-keys types)
+                          vals
+                          (some #(when (keyword? %) %))))
+         (when (js-object-instance? x)
+           :js/map-like-object)))
+     
+     (defn- js-object-instance [x] 
+       #?(:cljs 
+          (when (js-object-instance? x)
+            (let [k (if-let [c (.-constructor x)] 
+                      (let [nm (.-name c)]
+                        (if-not (string/blank? nm)
                     ;; js class instances
-                    (let [ret (keyword nm)]
-                      (if (= ret :Object) :js/Object ret))
+                          (let [ret (keyword nm)]
+                            (if (= ret :Object) :js/Object ret))
 
                     ;; cljs datatype and recordtype instances
-                    (some-> c pwos keyword)))
-                :js/Object)]
-        k))))
+                          (some-> c pwos keyword)))
+                      :js/Object)]
+              k))))))
+
 
 (def dom-node-types
   ["ELEMENT_NODE"
@@ -388,14 +375,20 @@
    :dom-document-type-node
    :dom-document-fragment-node])
 
+(defn- cljc-coll-type [x]
+  (cond (vector? x)             :vector
+        (and (map? x)
+             (not (record? x))) :map
+        (set? x)                :set
+        (seq? x)                :seq))
 
 #?(:clj 
    (defn- clj-all-value-types [x k]
      (->> [(clj-number-type x)
            (get clj-scalar-types (type x))
-           (get clj-coll-types (type x))
+           (cljc-coll-type x)
            (when (fn? x) :function)
-           ;; Extra types, maybe useful info
+           ;; Extra types - useful info
            (when (inst? x) :inst)
            (when (or (coll? x)
                      (instance? java.util.Collection x))
@@ -412,29 +405,35 @@
           (into #{}))))
 #?(:cljs 
    (defn- cljs-all-value-types [x k dom-node-type-keyword]
-     (->> [(cljs-number-type x)
-           (get cljs-scalar-types (type x))
-           (get cljs-coll-types (type x))
-           (get js-coll-types (type x))
-           (cljs-iterable-type x)
-           (when (array? x) :js/Array)
-           (when (object? x) :js/Object)
-           (when (fn? x) :function)
-           (when (inst? x) :inst)
-           (when (js-date? x) :js/Date)
-           (when (defmulti? x) :defmulti)
-           (when (js-promise? x) :js/Promise)
-           (when (js-global-this? x) :js/globalThis)
-           ;; Extra types, maybe useful info
-           (when (coll? x) :coll)
-           (when (record? x) :record)
-           (when (number? x) :number)
-           (when (typed-array? x) :js/TypedArray)
-           (js-object-instance-map-like x)
-           dom-node-type-keyword]
-          (remove nil?)
-          (cons k)
-          (into #{}))))
+     (let [types 
+           {:number-type    (cljs-number-type x)
+            :scalar-type    (get cljs-scalar-types (type x))
+            :cljc-coll-type (cljc-coll-type x)
+            :js-map-types   (get js-map-types (type x))
+            :js-set-types   (get js-set-types (type x))
+            :iterable       (cljs-iterable-type x)
+            :array          (when (array? x) :js/Array)
+            :object         (when (object? x) :js/Object)
+            :fn             (when (fn? x) :function)
+            :inst           (when (inst? x) :inst)
+            :js-date        (when (js-date? x) :js/Date)
+            :defmulti       (when (defmulti? x) :defmulti)
+            :js-promise     (when (js-promise? x) :js/Promise)
+            :js-global-this (when (js-global-this? x) :js/globalThis)
+             ;; Extra types - useful info
+            :coll           (when (coll? x) :coll)
+            :record         (when (record? x) :record)
+            :number         (when (number? x) :number)
+            :typed-array    (when (typed-array? x) :js/TypedArray)}
+
+           js-object-instance-map-like
+           (js-object-instance-map-like x types)]
+
+       (->> (vals types)
+            (concat [js-object-instance-map-like dom-node-type-keyword])
+            (remove nil?)
+            (cons k)
+            (into #{})))))
 
 
 (defn- opt? [k opts]
@@ -573,11 +572,12 @@
                              :sym)]
        (keyword (str "js/" sym)))))
 
+
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
      (let [k (or (clj-number-type x)
                  (get clj-scalar-types (type x))
-                 (get clj-coll-types (type x))
+                 (cljc-coll-type x)
                  (when (fn? x) :function)
                  (when-let [c (class x)]
                    (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
@@ -590,8 +590,9 @@
      :cljs
      (let [k  (or (cljs-number-type x)
                   (get cljs-scalar-types (type x))
-                  (get cljs-coll-types (type x))
-                  (get js-coll-types (type x))
+                  (cljc-coll-type x)
+                  (get js-map-types (type x))
+                  (get js-set-types (type x))
                   (get js-indexed-coll-types (type x))
                   (cljs-iterable-type x)
                   (when (array? x) :js/Array)

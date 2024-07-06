@@ -18,7 +18,7 @@ If using with Babashka, requires Babashka `v1.3.187` or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.4.0"]
+[io.github.paintparty/lasertag "0.5.0"]
 ```
 <br>
 
@@ -40,7 +40,7 @@ The function `lasertag.core/tag` will return a tag describing the category of da
 (tag :hi)       ;; => :keyword
 (tag "#^hi$")   ;; => :regex
 (tag [1 2 3])   ;; => :vector
-(tag '(1 2 3))  ;; => :list
+(tag '(1 2 3))  ;; => :seq
 (tag (range 3)) ;; => :seq
 ```
 <br>
@@ -203,7 +203,7 @@ Below is a table of example values in a JVM Clojure context, and the results of 
 | `{:a 2, :b 3}`                  | `:map`                  | `clojure.lang.PersistentArrayMap` |
 | `(map inc (range 3))`           | `:seq`                  | `clojure.lang.LazySeq`            |
 | `(range 3)`                     | `:seq`                  | `clojure.lang.LongRange`          |
-| `(:a :b :c)`                    | `:list`                 | `clojure.lang.PersistentList`     |
+| `(:a :b :c)`                    | `:seq`                  | `clojure.lang.PersistentList`     |
 |                      `Infinity` |             `:Infinity` |      `java.lang.Double`           |
 |                     `-Infinity` |            `:-Infinity` |      `java.lang.Double`           |
 |                           `NaN` |                  `:NaN` |      `java.lang.Double`           |
@@ -239,7 +239,7 @@ Below is a table of example values in a ClojureScript context, and the results o
 | `{:a 2, :b 3}`                     | `:map`            | `cljs.core/PersistentArrayMap` |
 | `(map inc (range 3))`              | `:seq`            | `cljs.core/LazySeq`            |
 | `(range 3)`                        | `:seq`            | `cljs.core/IntegerRange`       |
-| `(:a :b :c)`                       | `:list`           | `cljs.core/List`               |
+| `(:a :b :c)`                       | `:seq`            | `cljs.core/List`               |
 | `Infinity`                         | `:Infinity`       | `#object[Boolean]`             |
 | `-Infinity`                        | `:-Infinity`      | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`       | `#object[Function]`            |
