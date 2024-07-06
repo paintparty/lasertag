@@ -3,6 +3,19 @@
 ## Unreleased
 -
 
+<br>
+
+## 0.5.1
+2024-07-06
+### Fixed
+- Conditionally defines `Atomics` (`js/Atomics`), in case device does not support it. 
+
+### Breaking Changes
+- Some reflection features may work differently if you are reflecting on an instance of `js/Atomics`.
+
+
+<br>
+
 ## 0.5.0
 2024-06-23
 ### Added
@@ -13,9 +26,14 @@
 - All colls that pass the pred `seq?` will get tagged with `:seq`. No colls will get tagged with `:list`.
 
 
+<br>
+
 ## 0.4.0 (Lasertag)
 2024-03-16
 - Changed name of project to Lasertag [#1](https://github.com/paintparty/lasertag/issues/1)
+
+
+<br>
 
 ## 0.3.0
 2024-02-27
@@ -28,6 +46,9 @@
 - Renamed `:all-typetags` -> `:all-tags`
 - Refactored js-built-in method resolver
 - Lowered Clojure dep from `v1.11.0` -> `v1.9.0`
+
+
+<br>
 
 ## 0.2.0
 2024-02-13
@@ -44,6 +65,9 @@
 
 ### Fixed
 - js built-in tag for native fns
+
+
+<br>
 
 ## 0.1.0
 2023-11-17
