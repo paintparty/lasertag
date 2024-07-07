@@ -2,6 +2,8 @@
 
 A Clojure(Script) utility for categorizing types of values.
 
+<img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?color=0969da&style=flat-square&cacheSeconds=3" alt="Lasertag Clojars badge"></img>
+
 For a quick summary of how this differs from `clojure.core/type`, view [the tables below](#examples).
 
 This lib fell out of work on other Clojure(Script) dev tooling, namely [Fireworks](https://github.com/paintparty/fireworks) so perhaps it may be useful in a similar context.
