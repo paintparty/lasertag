@@ -60,7 +60,7 @@ The function `lasertag.core/tag-map` will return a map with additional info.
 (tag-map "hi")
 =>
 {:tag           :string
- :all-tags      #{:string :js/Iterable}
+ :all-tags      #{:string}
  :type          #object[String]
  :coll-type?    false
  :map-like?     false
