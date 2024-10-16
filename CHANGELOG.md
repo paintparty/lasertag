@@ -8,6 +8,10 @@
 ## 0.6.0
 2024-10-16
 ### Added
+- If tag of coll is `:seq`, and coll is a list such as
+`clojure.lang.PersistentList`, then `:list` is added to the :all-tags entry in
+the return value from `tag-map`.
+
 - If coll is an array-map, `:array-map` is added to the :all-tags entry in the
 return value from `tag-map`:
 ```Clojure
