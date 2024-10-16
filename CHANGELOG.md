@@ -5,6 +5,31 @@
 
 <br>
 
+## 0.6.0
+2024-10-16
+### Added
+- If tag of coll is `:seq`, and coll is a list such as
+`clojure.lang.PersistentList`, then `:list` is added to the :all-tags entry in
+the return value from `tag-map`.
+
+- If coll is an array-map, `:array-map` is added to the :all-tags entry in the
+return value from `tag-map`:
+```Clojure
+(tag-map (array-map {"one" 1 "two" 2 "three" 3}))
+=>
+{:tag           :map
+ :type          clojure.lang/PersistentArrayMap[]
+ :carries-meta? true
+ :all-tags      #{:coll :array-map :map}
+ :coll-type?    true
+ :map-like?     true
+ :number-type?  false
+ :coll-size     9}
+```
+
+
+<br>
+
 ## 0.5.1
 2024-07-06
 ### Fixed

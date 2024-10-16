@@ -20,7 +20,7 @@ If using with Babashka, requires Babashka `v1.3.187` or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.5.1"]
+[io.github.paintparty/lasertag "0.6.0"]
 ```
 <br>
 

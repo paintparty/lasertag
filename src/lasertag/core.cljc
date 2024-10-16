@@ -389,6 +389,8 @@
            (cljc-coll-type x)
            (when (fn? x) :function)
            ;; Extra types - useful info
+           (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
+           (when (= clojure.lang.PersistentList (type x)) :list)
            (when (inst? x) :inst)
            (when (or (coll? x)
                      (instance? java.util.Collection x))
@@ -413,6 +415,8 @@
             :js-set-types   (get js-set-types (type x))
             :iterable       (cljs-iterable-type x)
             :array          (when (array? x) :js/Array)
+            :array-map      (when (= cljs.core/PersistentArrayMap (type x)) :array-map)
+            :list           (when (= cljs.core/List (type x)) :list)
             :object         (when (object? x) :js/Object)
             :fn             (when (fn? x) :function)
             :inst           (when (inst? x) :inst)

@@ -1,7 +1,10 @@
 (ns lasertag.core-test
   (:require [lasertag.core :refer [tag tag-map]]
+            [clojure.pprint :refer [pprint]]
             #?(:cljs [cljs.test :refer [deftest is]])
             #?(:clj [clojure.test :refer :all])))
+
+(pprint (type '(:a :b :c)))
 
 ;; Samples
 (deftype MyType [a b])
@@ -99,16 +102,16 @@
  (is (= :map (tag {:a 2 :b 3 :c 3 :d 4 :e 5 :f 6 :g 7 :h 8 :i 9 :j 10 :k 11 :l 12})))
  (is (= :seq (tag (map inc (range 5)))))
  (is (= :seq (tag (range 10))))
- (is (= :list (tag '(:a :b :c))))
- (is (= :list (tag (list :a :b :c)))))
+ (is (= :seq (tag '(:a :b :c))))
+ (is (= :seq (tag (list :a :b :c)))))
 
 #?(:cljs
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:tag           :list,
+          {:tag           :seq,
            :carries-meta? true
-           :all-tags      #{:list :js/Iterable :coll},
+           :all-tags      #{:seq :list :js/Iterable :coll},
            :coll-type?    true,
            :number-type?  false,
            :map-like?     false,
@@ -118,9 +121,9 @@
    (deftest clj-collection-types-map
      (is (= 
           (tag-map       '(:a :b :c))
-          {:tag           :list,
+          {:tag           :seq,
            :carries-meta? true
-           :all-tags      #{:list :coll},
+           :all-tags      #{:seq :coll :list},
            :coll-type?    true,
            :map-like?     false
            :coll-size     3
@@ -129,31 +132,29 @@
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes
-     (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false})
-          {:tag           :list,
-           :carries-meta? true
-           :type          cljs.core/List})))
+     (is (= (tag-map '(:a :b :c) {:include-all-tags? false})
+            {:tag           :seq,
+             :carries-meta? true
+             :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes 
-     (is (= 
-          (tag-map       '(:a :b :c) {:include-all-tags? false})
-          {:tag           :list,
-           :carries-meta? true
-           :type          clojure.lang.PersistentList}))))
+     (is (= (tag-map       '(:a :b :c) {:include-all-tags? false})
+            {:tag           :seq,
+             :carries-meta? true
+             :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes+alternate-tag-type
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :string})
-          {:tag           "list",
+          {:tag           "seq",
            :carries-meta? true
            :type          cljs.core/List}))
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :symbol})
-          {:tag           'list,
+          {:tag           'seq,
            :carries-meta? true
            :type          cljs.core/List})))
    :clj
@@ -161,13 +162,13 @@
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :string})
-          {:tag           "list",
+          {:tag           "seq",
            :carries-meta? true
            :type          clojure.lang.PersistentList}))
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :symbol})
-          {:tag           'list,
+          {:tag           'seq,
            :carries-meta? true
            :type          clojure.lang.PersistentList}))))
 
