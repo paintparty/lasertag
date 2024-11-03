@@ -60,19 +60,22 @@
            :fn-args       '[%1]})))
    :clj
    (deftest clj-function-types-map
+     ;; TODO - Address :classname dissoc
      (is (= 
-          (dissoc (tag-map #(inc %)) :type)
-          {:tag              :function,
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                  :classname)
+          {:coll-type?       false,
+           :lamda?           true,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :java-lang-class? false,
            :all-tags         #{:function},
-           :lamda?           true
-           :coll-type?       false
-           :map-like?        false
-           :number-type?     false
-           :java-util-class? false
-           :set-like?        false
-           :carries-meta?    true
-           :fn-ns            "lasertag.core-test"
-           :fn-args          :lasertag/unknown-function-signature-on-clj-function}))))
+           :fn-args          :lasertag/unknown-function-signature-on-clj-function,
+           :tag              :function,
+           :fn-ns            "lasertag.core-test",
+           :set-like?        false,
+           :number-type?     false}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info
@@ -88,13 +91,15 @@
    (deftest clj-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag              :function,
-           :carries-meta?    true
+          {:coll-type?       false,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        "lasertag.core_test$xy",
+           :java-lang-class? false,
            :all-tags         #{:function},
-           :coll-type?       false
-           :map-like?        false
-           :java-util-class? false
-           :set-like?        false
+           :tag              :function,
+           :set-like?        false,
            :number-type?     false}))))
 
 (deftest cljc-collection-types
@@ -124,16 +129,18 @@
      (testing "clojure.lang.PersistentList"
        (is (= 
             (tag-map       '(:a :b :c))
-            {:tag              :seq,
-             :carries-meta?    true
-             :all-tags         #{:seq :coll :list},
-             :coll-type?       true,
-             :map-like?        false
-             :java-util-class? false
-             :set-like?        false
-             :coll-size        3
-             :number-type?     false,
-             :type             clojure.lang.PersistentList})))
+            {:coll-type?       true,
+             :carries-meta?    true,
+             :java-util-class? false,
+             :map-like?        false,
+             :type             clojure.lang.PersistentList,
+             :classname        "clojure.lang.PersistentList",
+             :java-lang-class? false,
+             :coll-size        3,
+             :all-tags         #{:coll :list :seq},
+             :tag              :seq,
+             :set-like?        false,
+             :number-type?     false})))
      (testing "java.util.HashMap"
        (is (= 
             (tag-map       (java.util.HashMap. {"a" 1
@@ -143,9 +150,11 @@
              :java-util-class? true,
              :map-like?        true,
              :type             java.util.HashMap,
+             :classname        "java.util.HashMap",
+             :java-lang-class? false,
              :coll-size        2,
-             :all-tags         #{:java.util.HashMap},
-             :tag              :java.util.HashMap,
+             :all-tags         #{:map},
+             :tag              :map,
              :set-like?        false,
              :number-type?     false})))
      (testing "java.util.HashSet"
@@ -157,9 +166,11 @@
              :java-util-class? true,
              :map-like?        false,
              :type             java.util.HashSet,
+             :classname        "java.util.HashSet",
+             :java-lang-class? false,
              :coll-size        4,
-             :all-tags         #{:java.util.HashSet :coll},
-             :tag              :java.util.HashSet,
+             :all-tags         #{:coll :set},
+             :tag              :set,
              :set-like?        true,
              :number-type?     false})))
      (testing "java.util.ArrayList"
@@ -170,9 +181,11 @@
              :java-util-class? true,
              :map-like?        false,
              :type             java.util.ArrayList,
+             :classname        "java.util.ArrayList",
+             :java-lang-class? false,
              :coll-size        3,
-             :all-tags         #{:coll :java.util.ArrayList},
-             :tag              :java.util.ArrayList,
+             :all-tags         #{:coll :array},
+             :tag              :array,
              :set-like?        false,
              :number-type?     false})))
 
