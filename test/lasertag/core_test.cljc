@@ -50,14 +50,18 @@
    (deftest cljs-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:tag           :function,
-           :carries-meta? false
-           :all-tags      #{:function},
-           :lamda?        true
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false
-           :fn-args       '[%1]})))
+          {:coll-type?       false,
+           :lamda?           true,
+           :carries-meta?    false,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        nil,
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :fn-args          '[%1],
+           :tag              :function,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
@@ -81,12 +85,16 @@
    (deftest cljs-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag           :function,
-           :carries-meta? false
-           :all-tags      #{:function},
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false})))
+          {:coll-type?       false,
+           :carries-meta?    false,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        nil,
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :tag              :function,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-elide-function-info
      (is (= 
@@ -116,14 +124,18 @@
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:tag           :seq,
-           :carries-meta? true
-           :all-tags      #{:seq :list :js/Iterable :coll},
-           :coll-type?    true,
-           :number-type?  false,
-           :map-like?     false,
-           :coll-size     3,
-           :type          cljs.core/List})))
+          {:coll-type?       true,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :type             cljs.core/List,
+           :classname        nil,
+           :java-lang-class? false,
+           :coll-size        3,
+           :all-tags         #{:seq :js/Iterable :coll :list},
+           :tag              :seq,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-collection-types-map
      (testing "clojure.lang.PersistentList"
