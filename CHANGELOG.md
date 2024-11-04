@@ -5,6 +5,28 @@
 
 <br>
 
+## 0.7.0
+2024-11-3
+### Added
+- The following new entries in the return value of `lasertag.core/tag-map`:<br>
+  - `:set-like?`
+  - `:java-util-class?`
+  - `:java-lang-class?`
+  - `:classname`
+
+### Breaking changes
+- Some instances of java classes are now given tags like `:set`, `:map`, `:seq`,
+or `:array`.
+  Examples:
+```Clojure
+  (tag (java.util.HashMap. {"a" 1 "b" 2}))   ; => :map
+  (tag (java.util.HashSet. {"a" "b" "c"}))   ; => :set
+  (tag (java.util.ArrayList. [1 2 3]))       ; => :array
+```
+
+
+<br>
+
 ## 0.6.0
 2024-10-16
 ### Added

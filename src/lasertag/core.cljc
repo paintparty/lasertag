@@ -4,6 +4,12 @@
 ;; - Add array-like? 
 ;; - Add list-like? 
 ;; - Add scalar-type? (or scalar?)
+;; - Use :array instead of :js/Array (or any of the indexed array types)
+;; - Use :set instead of :js/Set (or :js/WeakSet)
+;; - Use :map instead of :js/Map (or :js/WeakMap)
+;; - Use :number instead of :js/Number (or :js/BigInt)
+;; - maybe lowercase :infinity and :-infinity instead of :Infinity :-Infinity
+;; - maybe lowercase :nan instead of :NaN
 
 (ns lasertag.core
   (:require 
