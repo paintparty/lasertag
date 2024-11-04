@@ -4,8 +4,6 @@
             #?(:cljs [cljs.test :refer [deftest is]])
             #?(:clj [clojure.test :refer :all])))
 
-(pprint (type '(:a :b :c)))
-
 ;; Samples
 (deftype MyType [a b])
 (def my-data-type (->MyType 2 3))
@@ -52,48 +50,65 @@
    (deftest cljs-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:tag           :function,
-           :carries-meta? false
-           :all-tags      #{:function},
-           :lamda?        true
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false
-           :fn-args       '[%1]})))
+          {:coll-type?       false,
+           :lamda?           true,
+           :carries-meta?    false,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        nil,
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :fn-args          '[%1],
+           :tag              :function,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-function-types-map
+     ;; TODO - Address :classname dissoc
      (is (= 
-          (dissoc (tag-map #(inc %)) :type)
-          {:tag           :function,
-           :all-tags      #{:function},
-           :lamda?        true
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false
-           :carries-meta? true
-           :fn-ns         "lasertag.core-test"
-           :fn-args       :lasertag/unknown-function-signature-on-clj-function}))))
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                  :classname)
+          {:coll-type?       false,
+           :lamda?           true,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :fn-args          :lasertag/unknown-function-signature-on-clj-function,
+           :tag              :function,
+           :fn-ns            "lasertag.core-test",
+           :set-like?        false,
+           :number-type?     false}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag           :function,
-           :carries-meta? false
-           :all-tags      #{:function},
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false})))
+          {:coll-type?       false,
+           :carries-meta?    false,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        nil,
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :tag              :function,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:tag           :function,
-           :carries-meta? true
-           :all-tags      #{:function},
-           :coll-type?    false
-           :map-like?     false
-           :number-type?  false}))))
+          {:coll-type?       false,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :classname        "lasertag.core_test$xy",
+           :java-lang-class? false,
+           :all-tags         #{:function},
+           :tag              :function,
+           :set-like?        false,
+           :number-type?     false}))))
 
 (deftest cljc-collection-types
  (is (= :vector (tag [1 2 3])))
@@ -109,26 +124,84 @@
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:tag           :seq,
-           :carries-meta? true
-           :all-tags      #{:seq :list :js/Iterable :coll},
-           :coll-type?    true,
-           :number-type?  false,
-           :map-like?     false,
-           :coll-size     3,
-           :type          cljs.core/List})))
+          {:coll-type?       true,
+           :carries-meta?    true,
+           :java-util-class? false,
+           :map-like?        false,
+           :type             cljs.core/List,
+           :classname        nil,
+           :java-lang-class? false,
+           :coll-size        3,
+           :all-tags         #{:seq :js/Iterable :coll :list},
+           :tag              :seq,
+           :set-like?        false,
+           :number-type?     false})))
    :clj
    (deftest clj-collection-types-map
-     (is (= 
-          (tag-map       '(:a :b :c))
-          {:tag           :seq,
-           :carries-meta? true
-           :all-tags      #{:seq :coll :list},
-           :coll-type?    true,
-           :map-like?     false
-           :coll-size     3
-           :number-type?  false,
-           :type          clojure.lang.PersistentList}))))
+     (testing "clojure.lang.PersistentList"
+       (is (= 
+            (tag-map       '(:a :b :c))
+            {:coll-type?       true,
+             :carries-meta?    true,
+             :java-util-class? false,
+             :map-like?        false,
+             :type             clojure.lang.PersistentList,
+             :classname        "clojure.lang.PersistentList",
+             :java-lang-class? false,
+             :coll-size        3,
+             :all-tags         #{:coll :list :seq},
+             :tag              :seq,
+             :set-like?        false,
+             :number-type?     false})))
+     (testing "java.util.HashMap"
+       (is (= 
+            (tag-map       (java.util.HashMap. {"a" 1
+                                                "b" 2}))
+            {:coll-type?       true,
+             :carries-meta?    false,
+             :java-util-class? true,
+             :map-like?        true,
+             :type             java.util.HashMap,
+             :classname        "java.util.HashMap",
+             :java-lang-class? false,
+             :coll-size        2,
+             :all-tags         #{:map},
+             :tag              :map,
+             :set-like?        false,
+             :number-type?     false})))
+     (testing "java.util.HashSet"
+       (is (= 
+            (tag-map       (java.util.HashSet. #{"a" 1
+                                                 "b" 2}))
+            {:coll-type?       true,
+             :carries-meta?    false,
+             :java-util-class? true,
+             :map-like?        false,
+             :type             java.util.HashSet,
+             :classname        "java.util.HashSet",
+             :java-lang-class? false,
+             :coll-size        4,
+             :all-tags         #{:coll :set},
+             :tag              :set,
+             :set-like?        true,
+             :number-type?     false})))
+     (testing "java.util.ArrayList"
+       (is (= 
+            (tag-map       (java.util.ArrayList. [1 2 3]))
+            {:coll-type?       true,
+             :carries-meta?    false,
+             :java-util-class? true,
+             :map-like?        false,
+             :type             java.util.ArrayList,
+             :classname        "java.util.ArrayList",
+             :java-lang-class? false,
+             :coll-size        3,
+             :all-tags         #{:coll :array},
+             :tag              :array,
+             :set-like?        false,
+             :number-type?     false})))
+
+     ))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes

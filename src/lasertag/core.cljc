@@ -1,3 +1,16 @@
+;; TODO 
+;; - Add more tests
+;; - Figure out way to do "%" for lamda args
+;; - Add array-like? 
+;; - Add list-like? 
+;; - Add scalar-type? (or scalar?)
+;; - Use :array instead of :js/Array (or any of the indexed array types)
+;; - Use :set instead of :js/Set (or :js/WeakSet)
+;; - Use :map instead of :js/Map (or :js/WeakMap)
+;; - Use :number instead of :js/Number (or :js/BigInt)
+;; - maybe lowercase :infinity and :-infinity instead of :Infinity :-Infinity
+;; - maybe lowercase :nan instead of :NaN
+
 (ns lasertag.core
   (:require 
    [clojure.string :as string]
@@ -53,6 +66,16 @@
       java.lang.Float      :float
       java.lang.Byte       :byte
       java.math.BigDecimal :decimal}))
+
+(def scalar-types-set
+  #?(:cljs
+     (as-> #{} $
+       (apply conj $ (vals cljs-scalar-types))
+       (apply conj $ (vals js-number-types)))
+     :clj
+     (as-> #{} $
+       (apply conj $ (vals clj-scalar-types))
+       (apply conj $ (vals java-number-types)))))
 
 (def js-map-types
   #?(:cljs
@@ -110,7 +133,6 @@
   [(drop-last coll)
    (last coll)])
 
-;; TODO - hoist some of these rc
 (defn- cljc-NaN? [x] (and (number? x) (= "NaN" (str x))))
 (defn- infinity? [x] (and (number? x) (= "Infinity" (str x))))
 (defn- java-negative-infinity? [x] #?(:clj (and (number? x) (= "-Infinity" (str x)))))
@@ -393,7 +415,8 @@
            (when (= clojure.lang.PersistentList (type x)) :list)
            (when (inst? x) :inst)
            (when (or (coll? x)
-                     (instance? java.util.Collection x))
+                     (instance? java.util.Collection x)
+                     (some-> x .getClass .isArray))
              :coll)
 
           ;; TODO - leave this out for now
@@ -450,13 +473,25 @@
          (contains? cljs-interop/js-built-ins-which-are-iterables
                     (type x)))))
 
+#?(:clj
+   (defn- java-util-class? [s]
+     (boolean (some-> s (string/starts-with? "java.util")))))
+#?(:clj
+   (defn- java-lang-class? [s]
+     (boolean (some->> s (re-find #"java\.lang")))))
+
+;; TODO - Add array-like? and maybe list-like?
 (defn- all-tags [x k dom-node-type-keyword]
   (let [all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                     :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-tags :record)
-                         (contains? all-tags :js/map-like-object))
+                         (contains? all-tags :js/map-like-object)
+                         #?(:clj (instance? java.util.AbstractMap x)))
+        set-like?    (or (contains? #{:set :js/Set} k)
+                         #?(:clj (instance? java.util.AbstractSet x)))
         coll-type?   (or map-like?
+                         set-like?
                          (contains? all-tags :coll)
                          #?(:cljs (cljs-coll-type? x)))
         coll-size    (when coll-type?
@@ -475,17 +510,38 @@
                          (.-size x)
 
                          :else
-                         (count x)))]
+                         (count x)))
+
+        ;; TODO - make sure this scalar-type? is accurate for all
+        ;; js and java scalars/primitives, then include it in the returned
+        ;; entries from tag-map?, and/or include :scalar (or :primitive, or
+        ;; both) in the :all-tags set.
+        scalar-type? (contains? scalar-types-set k)
+        classname    #?(:cljs
+                        nil
+                        :clj
+                        (some-> x
+                                type
+                                .getName
+                                ;; Example of what these last 2 do:
+                                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
+                                (string/replace #"^\[" "")
+                                (string/replace #";$" "")))]
     (merge 
-     ;; TODO - add Java data structures support
-     {:all-tags all-tags
-      :coll-type?   coll-type?
-      :map-like?    map-like?
-      :number-type? (contains? all-tags :number)}
-     #?(:cljs (merge (when (object? x)
-                       {:js-object? true})
-                     (when (array? x)
-                       {:js-array? true})))
+     {:all-tags         all-tags
+      :coll-type?       coll-type?
+      :map-like?        map-like?
+      :set-like?        set-like?
+      :number-type?     (contains? all-tags :number)
+      :java-lang-class? (boolean (when-not scalar-type?
+                                   #?(:clj (java-lang-class? classname)
+                                      :cljs nil)))
+      :java-util-class? (boolean (when-not scalar-type?
+                                   #?(:clj (java-util-class? classname)
+                                      :cljs nil)))
+      :classname        classname}
+     #?(:cljs (merge (when (object? x) {:js-object? true})
+                     (when (array? x) {:js-array? true})))
      (when coll-size {:coll-size coll-size}))))
 
 (defn- dom-node 
@@ -579,17 +635,23 @@
 
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
-     (let [k (or (clj-number-type x)
-                 (get clj-scalar-types (type x))
-                 (cljc-coll-type x)
-                 (when (fn? x) :function)
-                 (when-let [c (class x)]
-                   (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
-                     (let [k (keyword nm)
-                           k (get clj-names k k)]
-                       k))))
+     (let [k  (or (clj-number-type x)
+                  (get clj-scalar-types (type x))
+                  (cljc-coll-type x)
+                  (when (fn? x) :function)
+                  (when-let [c (class x)]
+                    (or 
+                     (when (instance? java.util.AbstractMap x) :map)
+                     (when (instance? java.util.AbstractSet x) :set)
+                     (when (some-> x .getClass .isArray) :array)
+                     (when (instance? java.util.ArrayList x) :array)
+                     (when (instance? java.util.ArrayDeque x) :array)
+                     (when (instance? java.util.AbstractList x) :seq)
+                     (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
+                       (let [k (keyword nm)
+                             k (get clj-names k k)]
+                         k)))))
            k+ (format-result k x opts)]
-       
        (if extras? (tag-map* x k k+ opts) k+))
      :cljs
      (let [k  (or (cljs-number-type x)
