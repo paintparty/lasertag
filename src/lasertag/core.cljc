@@ -474,11 +474,21 @@
                     (type x)))))
 
 #?(:clj
-   (defn- java-util-class? [s]
-     (boolean (some-> s (string/starts-with? "java.util")))))
-#?(:clj
-   (defn- java-lang-class? [s]
-     (boolean (some->> s (re-find #"java\.lang")))))
+   (do
+     (defn- java-util-class? [s]
+       (boolean (some-> s (string/starts-with? "java.util"))))
+
+     (defn- java-lang-class? [s]
+       (boolean (some->> s (re-find #"java\.lang"))))
+     
+     (defn java-class-name [x]
+       (some-> x
+               type
+               .getName
+               ;; Example of what these last 2 do:
+               ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
+               (string/replace #"^\[" "")
+               (string/replace #";$" "")))))
 
 ;; TODO - Add array-like? and maybe list-like?
 (defn- all-tags [x k dom-node-type-keyword]
@@ -520,13 +530,7 @@
         classname    #?(:cljs
                         nil
                         :clj
-                        (some-> x
-                                type
-                                .getName
-                                ;; Example of what these last 2 do:
-                                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
-                                (string/replace #"^\[" "")
-                                (string/replace #";$" "")))]
+                        (java-class-name x))]
     (merge 
      {:all-tags         all-tags
       :coll-type?       coll-type?
