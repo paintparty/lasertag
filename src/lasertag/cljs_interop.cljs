@@ -1,3 +1,6 @@
+;; TODO - Should demos be functions that create new Errors and instances ?
+;;        Or maybe just quoted lists?
+
 (ns lasertag.cljs-interop
   (:require 
    ;; keep these commented out unless you are doing code gen with fns at end of this namespace
