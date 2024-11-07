@@ -1,8 +1,13 @@
 (ns lasertag.core-test
   (:require [lasertag.core :refer [tag tag-map]]
-            [clojure.pprint :refer [pprint]]
-            #?(:cljs [cljs.test :refer [deftest is]])
-            #?(:clj [clojure.test :refer :all])))
+            #?(:cljs [cljs.test :refer [deftest is testing]])
+            #?(:clj [clojure.test :refer :all]))
+  #?(:clj
+     (:import (clojure.lang PersistentVector$TransientVector
+                            PersistentHashSet$TransientHashSet
+                            PersistentArrayMap$TransientArrayMap
+                            PersistentHashMap$TransientHashMap))))
+
 
 ;; Samples
 (deftype MyType [a b])
@@ -50,65 +55,38 @@
    (deftest cljs-function-types-map
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
-          {:coll-type?       false,
-           :lamda?           true,
-           :carries-meta?    false,
-           :java-util-class? false,
-           :map-like?        false,
-           :classname        nil,
-           :java-lang-class? false,
-           :all-tags         #{:function},
-           :fn-args          '[%1],
-           :tag              :function,
-           :set-like?        false,
-           :number-type?     false})))
+          {:tag       :function,
+           :lamda?    true,
+           :fn-args   '[%1],
+           :all-tags  #{:function},
+           :classname "Function"})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
      (is (= 
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
-          {:coll-type?       false,
-           :lamda?           true,
-           :carries-meta?    true,
-           :java-util-class? false,
-           :map-like?        false,
-           :java-lang-class? false,
-           :all-tags         #{:function},
-           :fn-args          :lasertag/unknown-function-signature-on-clj-function,
-           :tag              :function,
-           :fn-ns            "lasertag.core-test",
-           :set-like?        false,
-           :number-type?     false}))))
+          {:tag :function,
+           :lamda? true,
+           :fn-ns "lasertag.core-test",
+           :fn-args
+           :lasertag/unknown-function-signature-on-clj-function,
+           :all-tags #{:function :carries-meta}}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:coll-type?       false,
-           :carries-meta?    false,
-           :java-util-class? false,
-           :map-like?        false,
-           :classname        nil,
-           :java-lang-class? false,
-           :all-tags         #{:function},
-           :tag              :function,
-           :set-like?        false,
-           :number-type?     false})))
+          {:tag       :function
+           :all-tags  #{:function}
+           :classname "Function"})))
    :clj
    (deftest clj-elide-function-info
      (is (= 
           (dissoc (tag-map xy {:include-function-info? false}) :type)
-          {:coll-type?       false,
-           :carries-meta?    true,
-           :java-util-class? false,
-           :map-like?        false,
-           :classname        "lasertag.core_test$xy",
-           :java-lang-class? false,
-           :all-tags         #{:function},
-           :tag              :function,
-           :set-like?        false,
-           :number-type?     false}))))
+          {:tag       :function,
+           :all-tags  #{:function :carries-meta},
+           :classname "lasertag.core_test$xy"}))))
 
 (deftest cljc-collection-types
  (is (= :vector (tag [1 2 3])))
@@ -124,96 +102,135 @@
    (deftest cljs-collection-types-map
      (is (= 
           (tag-map '(:a :b :c))
-          {:coll-type?       true,
-           :carries-meta?    true,
-           :java-util-class? false,
-           :map-like?        false,
-           :type             cljs.core/List,
-           :classname        nil,
-           :java-lang-class? false,
-           :coll-size        3,
-           :all-tags         #{:seq :js/Iterable :coll :list},
-           :tag              :seq,
-           :set-like?        false,
-           :number-type?     false})))
+          {:tag       :seq,
+           :type      cljs.core/List,
+           :all-tags  #{:seq :js/Iterable :coll :list :coll-type :carries-meta},
+           :classname "cljs.core/List",
+           :coll-size 3})))
    :clj
    (deftest clj-collection-types-map
      (testing "clojure.lang.PersistentList"
        (is (= 
             (tag-map       '(:a :b :c))
-            {:coll-type?       true,
-             :carries-meta?    true,
-             :java-util-class? false,
-             :map-like?        false,
-             :type             clojure.lang.PersistentList,
-             :classname        "clojure.lang.PersistentList",
-             :java-lang-class? false,
-             :coll-size        3,
-             :all-tags         #{:coll :list :seq},
-             :tag              :seq,
-             :set-like?        false,
-             :number-type?     false})))
+            {:tag       :seq,
+             :type      clojure.lang.PersistentList,
+             :all-tags  #{:coll :list :coll-type :seq :carries-meta},
+             :classname "clojure.lang.PersistentList",
+             :coll-size 3})))
      (testing "java.util.HashMap"
        (is (= 
             (tag-map       (java.util.HashMap. {"a" 1
                                                 "b" 2}))
-            {:coll-type?       true,
-             :carries-meta?    false,
-             :java-util-class? true,
-             :map-like?        true,
-             :type             java.util.HashMap,
-             :classname        "java.util.HashMap",
-             :java-lang-class? false,
-             :coll-size        2,
-             :all-tags         #{:map},
-             :tag              :map,
-             :set-like?        false,
-             :number-type?     false})))
+            {:tag       :map,
+             :type      java.util.HashMap,
+             :all-tags  #{:coll :java-util-class :coll-type :map-like :map},
+             :classname "java.util.HashMap",
+             :coll-size 2})))
      (testing "java.util.HashSet"
        (is (= 
             (tag-map       (java.util.HashSet. #{"a" 1
                                                  "b" 2}))
-            {:coll-type?       true,
-             :carries-meta?    false,
-             :java-util-class? true,
-             :map-like?        false,
-             :type             java.util.HashSet,
-             :classname        "java.util.HashSet",
-             :java-lang-class? false,
-             :coll-size        4,
-             :all-tags         #{:coll :set},
-             :tag              :set,
-             :set-like?        true,
-             :number-type?     false})))
+            {:tag       :set,
+             :type      java.util.HashSet,
+             :all-tags  #{:coll :java-util-class :coll-type :set :set-like},
+             :classname "java.util.HashSet",
+             :coll-size 4})))
      (testing "java.util.ArrayList"
        (is (= 
             (tag-map       (java.util.ArrayList. [1 2 3]))
-            {:coll-type?       true,
-             :carries-meta?    false,
-             :java-util-class? true,
-             :map-like?        false,
-             :type             java.util.ArrayList,
-             :classname        "java.util.ArrayList",
-             :java-lang-class? false,
-             :coll-size        3,
-             :all-tags         #{:coll :array},
-             :tag              :array,
-             :set-like?        false,
-             :number-type?     false})))
+            {:tag       :array,
+             :type      java.util.ArrayList,
+             :all-tags  #{:coll :array :java-util-class :coll-type},
+             :classname "java.util.ArrayList",
+             :coll-size 3})))
 
      ))
+
+
+#?(:cljs
+   (deftest clj-transient-collections-map
+     (testing "cljs.core/TransientHashSet"
+       (is (= 
+            (tag-map    (transient #{1 2 3}))
+            {:tag       :set,
+             :type      cljs.core/TransientHashSet,
+             :all-tags  #{:coll :transient :coll-type :set :set-like},
+             :classname "cljs.core/TransientHashSet",
+             :coll-size 3})))
+     (testing "cljs.core/TransientArrayMap"
+       (is (= 
+            (tag-map    (transient {:a 2 :b 4}))
+            {:tag       :map,
+             :type      cljs.core/TransientArrayMap,
+             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :classname "cljs.core/TransientArrayMap",
+             :coll-size 2})))
+     (testing "cljs.core/PersistentHashMap$TransientHashMap"
+       (is (= 
+            (tag-map    (transient {:a 1
+                                    :b 2
+                                    :c 3
+                                    :d 4
+                                    :e 5
+                                    :f 6
+                                    :g 7
+                                    :h 8
+                                    :i 9
+                                    :j 10}))
+            {:tag       :map,
+             :type      cljs.core/TransientHashMap,
+             :all-tags  #{:map :coll :transient :coll-type :map-like},
+             :classname "cljs.core/TransientHashMap",
+             :coll-size 10}
+            ))))
+   :clj
+   (deftest clj-transient-collections-map
+     (testing "clojure.lang.PersistentHashSet$TransientHashSet"
+       (is (= 
+            (tag-map    (transient #{1 2 3}))
+            {:tag       :set,
+             :type      clojure.lang.PersistentHashSet$TransientHashSet,
+             :all-tags  #{:coll :transient :coll-type :set :set-like},
+             :classname "clojure.lang.PersistentHashSet$TransientHashSet",
+             :coll-size 3})))
+     (testing "clojure.lang.PersistentArrayMap$TransientArrayMap"
+       (is (= 
+            (tag-map    (transient {:a 2 :b 4}))
+            {:tag       :map,
+             :type      clojure.lang.PersistentArrayMap$TransientArrayMap,
+             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :classname "clojure.lang.PersistentArrayMap$TransientArrayMap",
+             :coll-size 2})))
+     (testing "clojure.lang.PersistentHashMap$TransientHashMap"
+       (is (= 
+            (tag-map    (transient {:a 1
+                                    :b 2
+                                    :c 3
+                                    :d 4
+                                    :e 5
+                                    :f 6
+                                    :g 7
+                                    :h 8
+                                    :i 9
+                                    :j 10}))
+            {:tag       :map,
+             :type      clojure.lang.PersistentHashMap$TransientHashMap,
+             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :classname "clojure.lang.PersistentHashMap$TransientHashMap",
+             :coll-size 10})))))
+
+
+
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes
      (is (= (tag-map '(:a :b :c) {:include-all-tags? false})
             {:tag           :seq,
-             :carries-meta? true
              :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes 
      (is (= (tag-map       '(:a :b :c) {:include-all-tags? false})
             {:tag           :seq,
-             :carries-meta? true
              :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
@@ -222,13 +239,11 @@
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :string})
           {:tag           "seq",
-           :carries-meta? true
            :type          cljs.core/List}))
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :symbol})
           {:tag           'seq,
-           :carries-meta? true
            :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes+alternate-tag-type
@@ -236,13 +251,11 @@
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :string})
           {:tag           "seq",
-           :carries-meta? true
            :type          clojure.lang.PersistentList}))
      (is (= 
           (tag-map '(:a :b :c) {:include-all-tags? false
                                 :format            :symbol})
           {:tag           'seq,
-           :carries-meta? true
            :type          clojure.lang.PersistentList}))))
 
 

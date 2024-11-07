@@ -5,6 +5,39 @@
 
 <br>
 
+## 0.8.0
+2024-11-3
+### Removed 
+Entries with a boolean value in the return value of `lasertag.core/tag-map`:<br>
+  - `:carries-meta?` 
+  - `:coll-type?` 
+  - `:map-like?` 
+  - `:set-like?` 
+  - `:transient?` 
+  - `:number-type?` 
+  - `:java-lang-class?` 
+  - `:java-util-class?` 
+  - `:js-object?`
+  - `:js-array?`
+  
+### Added
+The following tags are conditionally added to the :all-tags entry (hashset) in
+the return value of `lasertag.core/tag-map`:<br>
+  - `:carries-meta` 
+  - `:coll-type` 
+  - `:map-like` 
+  - `:set-like` 
+  - `:transient` 
+  - `:number-type` 
+  - `:java-lang-class` 
+  - `:java-util-class` 
+  - `:js-object`
+  - `:js-array`
+```
+
+
+<br>
+
 ## 0.7.0
 2024-11-3
 ### Added
