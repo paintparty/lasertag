@@ -358,21 +358,24 @@
                           (some #(when (keyword? %) %))))
          (when (js-object-instance? x)
            :js/map-like-object)))
-     
+
+     (defn- js-classname [x]
+       (let [k (if-let [c (.-constructor x)] 
+                 (let [nm (.-name c)]
+                   (if-not (string/blank? nm)
+                     ;; js class instances
+                     (let [ret (keyword nm)]
+                       (if (= ret :Object) :js/Object ret))
+
+                     ;; cljs datatype and recordtype instances
+                     (some-> c pwos keyword)))
+                 :js/Object)]
+         k))
+
      (defn- js-object-instance [x] 
        #?(:cljs 
           (when (js-object-instance? x)
-            (let [k (if-let [c (.-constructor x)] 
-                      (let [nm (.-name c)]
-                        (if-not (string/blank? nm)
-                    ;; js class instances
-                          (let [ret (keyword nm)]
-                            (if (= ret :Object) :js/Object ret))
-
-                    ;; cljs datatype and recordtype instances
-                          (some-> c pwos keyword)))
-                      :js/Object)]
-              k))))))
+            (js-classname x))))))
 
 
 (def dom-node-types
