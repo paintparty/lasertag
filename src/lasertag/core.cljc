@@ -14,7 +14,20 @@
 (ns lasertag.core
   (:require 
    [clojure.string :as string]
-   #?(:cljs [lasertag.cljs-interop :as cljs-interop])))
+   #?(:cljs [lasertag.cljs-interop :as cljs-interop]))
+  #?(:clj
+     (:import (clojure.lang PersistentVector$TransientVector
+                            PersistentHashSet$TransientHashSet
+                            PersistentArrayMap$TransientArrayMap
+                            PersistentHashMap$TransientHashMap))))
+
+(defn- ? 
+  "Debugging macro internal to lib"
+  ([x]
+   (? nil x))
+  ([l x]
+   (println (when l (str " " l "\n")) x)
+   x))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
 
@@ -31,6 +44,15 @@
    ["_LT_"          "<"]
    ["_STAR_"        "*"]
    ["_"             "-"]])  
+
+(def cljc-transients 
+  {#?(:cljs cljs.core/TransientVector :clj PersistentVector$TransientVector) :vector
+   #?(:cljs cljs.core/TransientHashSet :clj PersistentHashSet$TransientHashSet)  :set
+   #?(:cljs cljs.core/TransientArrayMap :clj PersistentArrayMap$TransientArrayMap)  :map
+   #?(:cljs cljs.core/TransientHashMap :clj PersistentHashMap$TransientHashMap)  :map })
+
+(def cljc-transients-set
+  (into #{} (keys cljc-transients)))
 
 (def clj-scalar-types
   #?(:clj 
@@ -405,7 +427,9 @@
         (and (map? x)
              (not (record? x))) :map
         (set? x)                :set
-        (seq? x)                :seq))
+        (seq? x)                :seq
+        :else
+        (get cljc-transients (type x) nil)))
 
 #?(:clj 
    (defn- clj-all-value-types [x k]
@@ -413,11 +437,13 @@
            (get clj-scalar-types (type x))
            (cljc-coll-type x)
            (when (fn? x) :function)
+           (when (contains? cljc-transients-set (type x)) :transient)
            ;; Extra types - useful info
            (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
            (when (= clojure.lang.PersistentList (type x)) :list)
            (when (inst? x) :inst)
-           (when (or (coll? x)
+           (when (or (contains? #{:vector :map :set :seq} k)
+                     (coll? x)
                      (instance? java.util.Collection x)
                      (some-> x .getClass .isArray))
              :coll)
@@ -441,7 +467,8 @@
             :js-set-types   (get js-set-types (type x))
             :iterable       (cljs-iterable-type x)
             :array          (when (array? x) :js/Array)
-            :array-map      (when (= cljs.core/PersistentArrayMap (type x)) :array-map)
+            :array-map      (when (= cljs.core/PersistentArrayMap (type x))
+                              :array-map)
             :list           (when (= cljs.core/List (type x)) :list)
             :object         (when (object? x) :js/Object)
             :fn             (when (fn? x) :function)
@@ -451,7 +478,11 @@
             :js-promise     (when (js-promise? x) :js/Promise)
             :js-global-this (when (js-global-this? x) :js/globalThis)
              ;; Extra types - useful info
-            :coll           (when (coll? x) :coll)
+            :coll           (when (or (contains? #{:vector :map :set :seq} k)
+                                      (coll? x))
+                              :coll)
+            :transient      (when (contains? cljc-transients-set (type x))
+                              :transient)
             :record         (when (record? x) :record)
             :number         (when (number? x) :number)
             :typed-array    (when (typed-array? x) :js/TypedArray)}
@@ -510,7 +541,7 @@
 
 ;; TODO - Add array-like? and maybe list-like?
 (defn- all-tags [x k dom-node-type-keyword]
-  (let [all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
+  (let [ all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                     :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-tags :record)
@@ -544,26 +575,40 @@
         ;; js and java scalars/primitives, then include it in the returned
         ;; entries from tag-map?, and/or include :scalar (or :primitive, or
         ;; both) in the :all-tags set.
-        scalar-type? (contains? scalar-types-set k)
+        scalar-type? (contains? scalar-types-set k) 
         classname    #?(:cljs
-                        nil
+                        (cljs-class-name x)
                         :clj
-                        (java-class-name x))]
+                        (java-class-name x))
+        java-lang-class? (boolean (when-not scalar-type?
+                                    #?(:clj (java-lang-class? classname)
+                                       :cljs nil)))
+        java-util-class? (boolean (when-not scalar-type?
+                                    #?(:clj (java-util-class? classname)
+                                       :cljs nil)))
+        transient?       (contains? all-tags :transient)
+        number-type?     (contains? all-tags :number)
+        carries-meta?    (carries-meta? x)
+        all-tags         (apply conj
+                                all-tags
+                                (remove nil?
+                                        (concat
+                                         [(when coll-type? :coll-type)
+                                          (when carries-meta? :carries-meta)
+                                          (when map-like? :map-like)
+                                          (when set-like? :set-like)
+                                          (when transient? :transient)
+                                          (when number-type? :number-type)
+                                          (when java-lang-class? :java-lang-class)
+                                          (when java-util-class? :java-util-class)]
+                                         #?(:cljs
+                                            (merge (when (object? x)
+                                                     :js-object)
+                                                   (when (array? x)
+                                                     :js-array))))))]
     (merge 
-     {:all-tags         all-tags
-      :coll-type?       coll-type?
-      :map-like?        map-like?
-      :set-like?        set-like?
-      :number-type?     (contains? all-tags :number)
-      :java-lang-class? (boolean (when-not scalar-type?
-                                   #?(:clj (java-lang-class? classname)
-                                      :cljs nil)))
-      :java-util-class? (boolean (when-not scalar-type?
-                                   #?(:clj (java-util-class? classname)
-                                      :cljs nil)))
-      :classname        classname}
-     #?(:cljs (merge (when (object? x) {:js-object? true})
-                     (when (array? x) {:js-array? true})))
+     {:all-tags  all-tags
+      :classname classname}
      (when coll-size {:coll-size coll-size}))))
 
 (defn- dom-node 
@@ -597,9 +642,6 @@
          #?(:cljs (fn-info x k b)
             :clj (fn-info x k b))))
 
-     ;; Whether or not the value is able to carry metadata
-     {:carries-meta? (carries-meta? x)}
-
       ;; Just for ClojureScript
      #?(:cljs 
         (let [[dom-node-type
@@ -623,7 +665,8 @@
            ;; Enhanced reflection for built-in js objects
            (when (opt? :include-js-built-in-object-info? opts)
              (when (= k :js/Object)
-               (when-let [{:keys [sym]} (get cljs-interop/js-built-ins-by-built-in x)]
+               (when-let [{:keys [sym]} 
+                          (get cljs-interop/js-built-ins-by-built-in x)]
                  {:js-built-in-object?     true
                   :js-built-in-object-name (str sym)})))))
         
@@ -693,7 +736,6 @@
                   (js-intl-object-key x)
                   (when (js-data-view? x) :js/DataView)
                   (when (js-array-buffer? x) :js/ArrayBuffer)
-                  ;; (when (dom-element x) )
                   (js-object-instance x)
                   :lasertag/value-type-unknown)
            k+ (format-result k x opts)]
