@@ -470,11 +470,26 @@
   (if (false? (k opts)) false true))
 
 #?(:cljs 
-   (defn- cljs-coll-type? [x]
-     (or (array? x)
-         (object? x)
-         (contains? cljs-interop/js-built-ins-which-are-iterables
-                    (type x)))))
+   (do
+     (defn- cljs-coll-type? [x]
+       (or (array? x)
+           (object? x)
+           (contains? cljs-interop/js-built-ins-which-are-iterables
+                      (type x))))
+
+     (defn- cljs-class-name [x]
+       (let [ret (or (js-object-instance x)
+                     ;; TODO - test whether this one is faster
+                     (some->> (get cljs-interop/js-built-ins-by-built-in
+                                   (type x)
+                                   nil)
+                              :sym
+                              name
+                              (str "js/"))
+                     ;; TODO - or this one is faster
+                     ;; TODO - test this with custom classes
+                     (js-classname x))]
+         (if (keyword? ret) (subs (str ret) 1) ret)))))
 
 #?(:clj
    (do
