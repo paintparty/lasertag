@@ -5,6 +5,14 @@
 
 <br>
 
+## 0.8.1
+2024-11-3
+### Breaking changes
+- Fixed spelling of :lambda? in the return value of `lasertag.core/tag-map`
+
+
+<br>
+
 ## 0.8.0
 2024-11-3
 ### Removed 

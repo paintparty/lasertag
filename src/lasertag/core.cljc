@@ -1,6 +1,6 @@
 ;; TODO 
 ;; - Add more tests
-;; - Figure out way to do "%" for lamda args
+;; - Figure out way to do "%" for lambda args
 ;; - Add array-like? 
 ;; - Add list-like? 
 ;; - Add scalar-type? (or scalar?)
@@ -134,7 +134,7 @@
 
 (defn- pwos [x] (with-out-str (print x)))
 
-(defn- lamda-args [args]
+(defn- lambda-args [args]
   #?(:cljs
      (if (every? #(re-find #"_SHARP_$" (name %)) args)
        (let [num-args (count args)]
@@ -226,7 +226,7 @@
            {:fn-name           (demunge-fn-name fn-nm)
             :fn-ns             fn-ns
             :cljs-datatype-fn? true}
-           {:lamda? true})))))
+           {:lambda? true})))))
 
 (defn- fn-info* [x k]
   #?(:cljs 
@@ -258,9 +258,9 @@
                   fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
               (merge (if fn-nm 
                        (if (re-find #"^fn--\d+$" fn-nm)
-                         {:lamda? true}
+                         {:lambda? true}
                          {:fn-name fn-nm})
-                       {:lamda? true})
+                       {:lambda? true})
                      {:fn-ns   (string/replace fn-ns #"_" "-")
                       :fn-args :lasertag/unknown-function-signature-on-clj-function}))))))))
 
@@ -282,13 +282,13 @@
       [coll false])
     [coll false]))
 
-(defn- fn-args-lamda [coll fn-info]
-  (if (:lamda? fn-info) (lamda-args coll) coll))
+(defn- fn-args-lambda [coll fn-info]
+  (if (:lambda? fn-info) (lambda-args coll) coll))
 
 (defn- fn-args [x fn-info]
   (let [fn-args              (fn-args* x)
         [fn-args defrecord?] (fn-args-defrecord fn-args fn-info)
-        fn-args              (fn-args-lamda fn-args fn-info)]
+        fn-args              (fn-args-lambda fn-args fn-info)]
     [fn-args defrecord?]))
 
 #?(:cljs 

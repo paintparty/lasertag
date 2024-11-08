@@ -56,7 +56,7 @@
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
           {:tag       :function,
-           :lamda?    true,
+           :lambda?    true,
            :fn-args   '[%1],
            :all-tags  #{:function},
            :classname "Function"})))
@@ -67,7 +67,7 @@
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
           {:tag :function,
-           :lamda? true,
+           :lambda? true,
            :fn-ns "lasertag.core-test",
            :fn-args
            :lasertag/unknown-function-signature-on-clj-function,
