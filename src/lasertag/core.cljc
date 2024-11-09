@@ -602,10 +602,9 @@
                                           (when java-lang-class? :java-lang-class)
                                           (when java-util-class? :java-util-class)]
                                          #?(:cljs
-                                            (merge (when (object? x)
-                                                     :js-object)
-                                                   (when (array? x)
-                                                     :js-array))))))]
+                                            [(when (object? x) :js-object)
+                                             (when (array? x) :js-array)]))))]
+
     (merge 
      {:all-tags  all-tags
       :classname classname}
@@ -647,7 +646,6 @@
         (let [[dom-node-type
                dom-node-type-name
                dom-node-type-keyword]    (dom-node x)]
-
           (merge
            ;; Get all the tags
            (when (opt? :include-all-tags? opts)
@@ -661,7 +659,7 @@
            ;; Get dom element node info 
            (when (= 1 dom-node-type)
              {:dom-element-tag-name x.tagName})
-
+          
            ;; Enhanced reflection for built-in js objects
            (when (opt? :include-js-built-in-object-info? opts)
              (when (= k :js/Object)
