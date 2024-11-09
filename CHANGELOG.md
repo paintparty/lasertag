@@ -5,8 +5,15 @@
 
 <br>
 
+## 0.8.2
+2024-11-8
+### Fixed 
+- 0f05e70: Fix bug with adding `:js-object` and `js-array` to `:all-tags` map
+
+<br>
+
 ## 0.8.1
-2024-11-3
+2024-11-7
 ### Breaking changes
 - Fixed spelling of :lambda? in the return value of `lasertag.core/tag-map`
 
@@ -14,7 +21,7 @@
 <br>
 
 ## 0.8.0
-2024-11-3
+2024-11-6
 ### Removed 
 Entries with a boolean value in the return value of `lasertag.core/tag-map`:<br>
   - `:carries-meta?` 
