@@ -13,14 +13,14 @@ This lib fell out of work on other Clojure(Script) dev tooling, namely [Firework
 ## Usage
 Requires Clojure `1.9.0` or higher
 
-If using with Babashka, requires Babashka `v1.3.187` or higher
+If using with Babashka, requires Babashka `v1.12.196`(Coming Soon) or higher
 
 <br>
 
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.8.2"]
+[io.github.paintparty/lasertag "0.8.3"]
 ```
 <br>
 
