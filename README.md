@@ -59,26 +59,20 @@ The function `lasertag.core/tag-map` will return a map with additional info.
 ```clojure
 (tag-map "hi")
 =>
-{:tag           :string
- :all-tags      #{:string}
- :type          #object[String]
- :coll-type?    false
- :map-like?     false
- :number-type?  false}
+{:tag      :string
+ :all-tags #{:string}
+ :type     #object[String]}
 
 (defn xy [x y] (+ x y))
 
 (tag-map xy)
 =>
-{:tag           :function
- :all-tags      #{:function}
- :type          #object[Function]
- :fn-name       "xy" 
- :fn-ns         "myns.core"
- :fn-args       [x y]
- :coll-type?    false
- :map-like?     false
- :number-type?  false}
+{:tag      :function
+ :all-tags #{:function}
+ :type     #object[Function]
+ :fn-name  "xy" 
+ :fn-ns    "myns.core"
+ :fn-args  [x y]}
 
 (tag-map js/ParseFloat)
 =>
@@ -88,10 +82,7 @@ The function `lasertag.core/tag-map` will return a map with additional info.
  :fn-name               "parseFloat"
  :fn-args               [s]
  :js-built-in-method-of Number
- :js-built-in-function? true
- :coll-type?            false
- :map-like?             false
- :number-type?          false}
+ :js-built-in-function? true}
 
 ;; NOTE: :fn-args entry is only available in cljs
 ;; NOTE: :fn-name will not work as expected in cljs advanced compilation
@@ -113,24 +104,21 @@ The following example excludes the `:all-tags` entry, as well as the related `:c
 
 (tag-map xy) 
 =>
-{:tag          :function
- :all-tags     #{:function}
- :type         #object[Function]
- :fn-name      "xy" 
- :fn-ns        "myns.core"
- :fn-args      [x y]
- :coll-type?   false
- :map-like?    false
- :number-type? false}
+{:tag      :function
+ :all-tags #{:function}
+ :type     #object[Function]
+ :fn-name  "xy" 
+ :fn-ns    "myns.core"
+ :fn-args  [x y]}
 
 
 (tag-map xy {:include-all-tags? false}) 
 =>
-{:tag          :function
- :type         #object[Function]
- :fn-name      "xy" 
- :fn-ns        "myns.core"
- :fn-args      [x y]}
+{:tag     :function
+ :type    #object[Function]
+ :fn-name "xy" 
+ :fn-ns   "myns.core"
+ :fn-args [x y]}
 ```
 <br>
 
@@ -139,25 +127,19 @@ Excluding the function-info related entries:
 ```clojure
 (tag-map xy)
 =>
-{:tag          :function
- :all-tags     #{:function}
- :type         #object[Function]
- :fn-args      [x y]
- :fn-name      "xy"
- :fn-ns        "myns.core"
- :coll-type?   false
- :map-like?    false
- :number-type? false}
+{:tag      :function
+ :all-tags #{:function}
+ :type     #object[Function]
+ :fn-args  [x y]
+ :fn-name  "xy"
+ :fn-ns    "myns.core"}
 
 
 (tag-map xy {:include-function-info? false})
 =>
-{:tag          :function
- :all-tags     #{:function}
- :type         #object[Function]
- :coll-type?   false
- :map-like?    false
- :number-type? false}
+{:tag      :function
+ :all-tags #{:function}
+ :type     #object[Function]}
 ```
 <br>
 
@@ -167,22 +149,16 @@ Excluding the JS built-in-object related entries:
 (tag-map js/JSON)
 =>
 {:tag                     :js/Object
- :all-tags                #{:js/Object}
+ :all-tags                #{:js/Object :map-like :coll-type}
  :type                    #object[Object]
  :js-built-in-object?     true
- :js-built-in-object-name "JSON"
- :coll-type?              true
- :map-like?               true
- :number-type?            false}
+ :js-built-in-object-name "JSON"}
 
 (tag-map js/JSON {:include-js-built-in-object-info? false})
 =>
-{:tag                     :js/Object
- :all-tags                #{:js/Object}
- :type                    #object[Object]
- :coll-type?              true
- :map-like?               true
- :number-type?            false}
+{:tag      :js/Object
+ :all-tags #{:js/Object :map-like :coll-type}
+ :type     #object[Object]}
 ```
 <br>
 <br>
@@ -190,7 +166,7 @@ Excluding the JS built-in-object related entries:
 ## Examples 
 
 ### Clojure
-Below is a table of example values in a JVM Clojure context, and the results of passing each value to `lasertag.core/tag`, and `clojure.core/type`.
+`lasertag.core/tag` vs `clojure.core/type`
 
 | Input value                     | `lasertag.core/tag`       | `clojure.core/type`               |
 | :---                            | :---                    | :---                              |
@@ -226,7 +202,7 @@ Below is a table of example values in a JVM Clojure context, and the results of 
 
 ### ClojureScript
 
-Below is a table of example values in a ClojureScript context, and the results of passing each value to `lasertag.core/tag`, and `cljs.core/type`.
+`lasertag.core/tag` vs `cljs.core/type`
 
 | Input value                        | `lasertag.core/tt` | `cljs.core/type`               |
 | :---                               | :---              | :---                           |
@@ -256,7 +232,7 @@ Below is a table of example values in a ClojureScript context, and the results o
 ### Additional ClojureScript Examples
 
 ```clojure
-;; A Record type
+;; Record type
 
 (defrecord MyRecordType [a b c d])
 
@@ -322,14 +298,11 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 {:js-built-in-method-of      #object[String]
  :js-built-in-method-of-name "String"
  :js-built-in-function?      true
- :coll-type?                 false
- :map-like?                  false
  :fn-name                    "concat"
  :type                       #object[Function]
  :all-tags                   #{:function}
  :fn-args                    []
- :tag                        :function
- :number-type?               false}
+ :tag                        :function}
 
 
 (tag-map (aget #js [1 2 3] "concat"))
@@ -337,14 +310,11 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 {:js-built-in-method-of      #object[Array]
  :js-built-in-method-of-name "Array"
  :js-built-in-function?      true
- :coll-type?                 false
- :map-like?                  false
  :fn-name                    "concat"
  :type                       #object[Function]
  :all-tags                   #{:function}
  :fn-args                    []
- :tag                        :function
- :number-type?               false}
+ :tag                        :function}
 ```
 
 
@@ -367,7 +337,7 @@ npm run test
 <br>
 
 ## Status
-Alpha, subject to change. Currently, the enhanced interop reflection is focused more on the ClojureScript side. It would be nice to add more support for categorizing Java types. Issues welcome, see [contributing](#contributing).
+Alpha, subject to change. Issues welcome, see [contributing](#contributing).
 
 <br>
 

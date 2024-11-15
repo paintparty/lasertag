@@ -1,7 +1,10 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): Clojure(Script) utility for discerning types of values.
 ## Unreleased
--
+2024-11-15
+### Fixed
+- Various class resolution issues with Babashka.
+
 
 <br>
 

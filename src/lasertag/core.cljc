@@ -431,6 +431,15 @@
         :else
         (get cljc-transients (type x) nil)))
 
+#?(:clj
+   (defn clj-or-bb-array? [x]
+     ;; This try hack is for babashka, because .getClass method is sometimes not allowed
+     (or 
+      (try (some-> x .getClass .isArray)
+           (catch Exception e))
+      (try (some-> x class .isArray)
+           (catch Exception e)))))
+
 #?(:clj 
    (defn- clj-all-value-types [x k]
      (->> [(clj-number-type x)
@@ -445,7 +454,7 @@
            (when (or (contains? #{:vector :map :set :seq} k)
                      (coll? x)
                      (instance? java.util.Collection x)
-                     (some-> x .getClass .isArray))
+                     (clj-or-bb-array? x))
              :coll)
 
           ;; TODO - leave this out for now
@@ -531,9 +540,13 @@
        (boolean (some->> s (re-find #"java\.lang"))))
      
      (defn java-class-name [x]
-       (some-> x
-               type
-               .getName
+       (some-> (or (try (some-> x type .getName)
+                        (catch Exception e))
+                   (some-> x
+                              type
+                              str
+                              (string/replace #"^class (.*)$" "")))
+
                ;; Example of what these last 2 do:
                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
                (string/replace #"^\[" "")
@@ -541,8 +554,8 @@
 
 ;; TODO - Add array-like? and maybe list-like?
 (defn- all-tags [x k dom-node-type-keyword]
-  (let [ all-tags #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
-                    :clj (clj-all-value-types x k))
+  (let [all-tags    #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
+                       :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js/Object :js/Map :js/DataView} k)
                          (contains? all-tags :record)
                          (contains? all-tags :js/map-like-object)
@@ -702,15 +715,21 @@
                   (get clj-scalar-types (type x))
                   (cljc-coll-type x)
                   (when (fn? x) :function)
-                  (when-let [c (class x)]
+                  (when-let [c (type x)]
                     (or 
                      (when (instance? java.util.AbstractMap x) :map)
                      (when (instance? java.util.AbstractSet x) :set)
-                     (when (some-> x .getClass .isArray) :array)
+                     (when (clj-or-bb-array? x) :array)
                      (when (instance? java.util.ArrayList x) :array)
                      (when (instance? java.util.ArrayDeque x) :array)
                      (when (instance? java.util.AbstractList x) :seq)
+                     ;; Refactor this
                      (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
+                       (let [k (keyword nm)
+                             k (get clj-names k k)]
+                         k))
+                     ;; And Refactor this (temp code for bb integration)
+                     (when-let [nm (some-> c str)]
                        (let [k (keyword nm)
                              k (get clj-names k k)]
                          k)))))
