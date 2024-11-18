@@ -1,13 +1,12 @@
 ;; TODO 
 ;; - Add more tests
 ;; - Figure out way to do "%" for lambda args
-;; - Add array-like? 
-;; - Add list-like? 
+;; - Add :array-like to all-tags
+;; - Add :list-like to all-tags
 ;; - Add scalar-type? (or scalar?)
 ;; - Use :array instead of :js/Array (or any of the indexed array types)
 ;; - Use :set instead of :js/Set (or :js/WeakSet)
 ;; - Use :map instead of :js/Map (or :js/WeakMap)
-;; - Use :number instead of :js/Number (or :js/BigInt)
 ;; - maybe lowercase :infinity and :-infinity instead of :Infinity :-Infinity
 ;; - maybe lowercase :nan instead of :NaN
 
@@ -359,7 +358,7 @@
                  (float? x)
                  (cond 
                    (js/Number.isNaN x)
-                   :NaN
+                   nil
                    (= x js/Number.POSITIVE_INFINITY)
                    :Infinity
                    (= x js/Number.NEGATIVE_INFINITY)
@@ -458,6 +457,10 @@
       (try (some-> x class .isArray)
            (catch Exception e)))))
 
+(defn- cljc-number? [x]
+  (and (number? x)
+       (not (cljc-NaN? x))))
+
 #?(:clj 
    (defn- clj-all-value-types [x k]
      (->> [(clj-number-type x)
@@ -478,9 +481,9 @@
           ;; TODO - leave this out for now
           ;;  (when (instance? java.util.AbstractList x)
           ;;    :java.util.AbstractList)
-
+           
            (when (record? x) :record)
-           (when (number? x) :number)]
+           (when (cljc-number? x) :number)]
           (remove nil?)
           (cons k)
           (into #{}))))
@@ -511,7 +514,7 @@
             :transient      (when (contains? cljc-transients-set (type x))
                               :transient)
             :record         (when (record? x) :record)
-            :number         (when (number? x) :number)
+            :number         (when (cljc-number? x) :number)
             :typed-array    (when (typed-array? x) :js/TypedArray)}
 
            js-object-instance-map-like
@@ -729,7 +732,8 @@
 
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
-     (let [k  (or (clj-number-type x)
+     (let [k  (or (when-let [t (clj-number-type x)] ;; reuse this for tag-map* ?
+                    (if (contains? #{:NaN} t) t :number))
                   (get clj-scalar-types (type x))
                   (cljc-coll-type x)
                   (when (fn? x) :function)
@@ -754,7 +758,8 @@
            k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k+))
      :cljs
-     (let [k  (or (cljs-number-type x)
+     (let [k  (or (when-let [t (cljs-number-type x)] ;; reuse this for tag-map* ?
+                    :number)
                   (get cljs-scalar-types (type x))
                   (cljc-coll-type x)
                   (get js-map-types (type x))
@@ -772,6 +777,7 @@
                   (when (js-data-view? x) :js/DataView)
                   (when (js-array-buffer? x) :js/ArrayBuffer)
                   (js-object-instance x)
+                  (when (js/Number.isNaN x) :NaN)
                   :lasertag/value-type-unknown)
            k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k+))))
