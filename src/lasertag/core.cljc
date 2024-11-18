@@ -21,6 +21,31 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
+(def cljc-transients 
+  {#?(:cljs cljs.core/TransientVector
+      ;; :bb (resolve 'PersistentVector$TransientVector)
+      :clj PersistentVector$TransientVector)
+   :vector
+
+   #?(:cljs cljs.core/TransientHashSet
+      ;; :bb (resolve 'PersistentHashSet$TransientHashSet)
+      :clj PersistentHashSet$TransientHashSet)
+   :set
+
+   #?(:cljs cljs.core/TransientArrayMap
+      ;; :bb (resolve 'PersistentArrayMap$TransientArrayMap)
+      :clj PersistentArrayMap$TransientArrayMap)
+   :map
+
+   #?(:cljs cljs.core/TransientHashMap
+      ;; :bb (resolve 'PersistentHashMap$TransientHashMap)
+      :clj PersistentHashMap$TransientHashMap)
+   :map})
+
+(def cljc-transients-set
+  (into #{} (keys cljc-transients)))
+
+
 (defn- ? 
   "Debugging macro internal to lib"
   ([x]
@@ -45,14 +70,6 @@
    ["_STAR_"        "*"]
    ["_"             "-"]])  
 
-(def cljc-transients 
-  {#?(:cljs cljs.core/TransientVector :clj PersistentVector$TransientVector) :vector
-   #?(:cljs cljs.core/TransientHashSet :clj PersistentHashSet$TransientHashSet)  :set
-   #?(:cljs cljs.core/TransientArrayMap :clj PersistentArrayMap$TransientArrayMap)  :map
-   #?(:cljs cljs.core/TransientHashMap :clj PersistentHashMap$TransientHashMap)  :map })
-
-(def cljc-transients-set
-  (into #{} (keys cljc-transients)))
 
 (def clj-scalar-types
   #?(:clj 
