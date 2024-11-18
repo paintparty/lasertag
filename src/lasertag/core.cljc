@@ -1,15 +1,13 @@
 ;; TODO 
 ;; - Add more tests
 ;; - Figure out way to do "%" for lambda args
-;; - Add array-like? 
-;; - Add list-like? 
+;; - Add :array-like to all-tags
+;; - Add :list-like to all-tags
 ;; - Add scalar-type? (or scalar?)
+;; - Figure out if you need more granular tags for time contructs
 ;; - Use :array instead of :js/Array (or any of the indexed array types)
 ;; - Use :set instead of :js/Set (or :js/WeakSet)
 ;; - Use :map instead of :js/Map (or :js/WeakMap)
-;; - Use :number instead of :js/Number (or :js/BigInt)
-;; - maybe lowercase :infinity and :-infinity instead of :Infinity :-Infinity
-;; - maybe lowercase :nan instead of :NaN
 
 (ns lasertag.core
   (:require 
@@ -20,6 +18,31 @@
                             PersistentHashSet$TransientHashSet
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
+
+(def cljc-transients 
+  {#?(:cljs cljs.core/TransientVector
+      ;; :bb (resolve 'PersistentVector$TransientVector)
+      :clj PersistentVector$TransientVector)
+   :vector
+
+   #?(:cljs cljs.core/TransientHashSet
+      ;; :bb (resolve 'PersistentHashSet$TransientHashSet)
+      :clj PersistentHashSet$TransientHashSet)
+   :set
+
+   #?(:cljs cljs.core/TransientArrayMap
+      ;; :bb (resolve 'PersistentArrayMap$TransientArrayMap)
+      :clj PersistentArrayMap$TransientArrayMap)
+   :map
+
+   #?(:cljs cljs.core/TransientHashMap
+      ;; :bb (resolve 'PersistentHashMap$TransientHashMap)
+      :clj PersistentHashMap$TransientHashMap)
+   :map})
+
+(def cljc-transients-set
+  (into #{} (keys cljc-transients)))
+
 
 (defn- ? 
   "Debugging macro internal to lib"
@@ -45,14 +68,6 @@
    ["_STAR_"        "*"]
    ["_"             "-"]])  
 
-(def cljc-transients 
-  {#?(:cljs cljs.core/TransientVector :clj PersistentVector$TransientVector) :vector
-   #?(:cljs cljs.core/TransientHashSet :clj PersistentHashSet$TransientHashSet)  :set
-   #?(:cljs cljs.core/TransientArrayMap :clj PersistentArrayMap$TransientArrayMap)  :map
-   #?(:cljs cljs.core/TransientHashMap :clj PersistentHashMap$TransientHashMap)  :map })
-
-(def cljc-transients-set
-  (into #{} (keys cljc-transients)))
 
 (def clj-scalar-types
   #?(:clj 
@@ -87,7 +102,9 @@
       java.lang.Long       :long
       java.lang.Float      :float
       java.lang.Byte       :byte
-      java.math.BigDecimal :decimal}))
+      java.math.BigDecimal :decimal
+      java.math.BigInteger :bigint
+      }))
 
 (def scalar-types-set
   #?(:cljs
@@ -166,7 +183,6 @@
 ;; (defn- js-array? [x] #?(:cljs (array? x) :clj false))
 
 (defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
-(defn- js-date? [x] #?(:cljs (instance? js/Date x) :clj false))
 (defn- js-data-view? [x] #?(:cljs (instance? js/DataView x) :clj false))
 (defn- js-array-buffer? [x] #?(:cljs (instance? js/ArrayBuffer x) :clj false))
 
@@ -322,13 +338,21 @@
        (cond
          (contains? #{:long :short :byte} k)
          :int
+
          (= k :double)
          (cond 
-           (cljc-NaN? x) :NaN
-           (java-negative-infinity? x) :-Infinity
-           (infinity? x) :Infinity
+           (cljc-NaN? x)
+           :nan
+
+           (java-negative-infinity? x)
+           :-infinity
+
+           (infinity? x)
+           :infinity
+
            :else
            k)
+
          :else
          k))))
 
@@ -337,20 +361,26 @@
      (defn- cljs-number-type [x]
        (when-let [k (get js-number-types (type x))]
          (if (= k :js/Number)
-           (cond (int? x)
-                 :int
-                 (float? x)
-                 (cond 
-                   (js/Number.isNaN x)
-                   :NaN
-                   (= x js/Number.POSITIVE_INFINITY)
-                   :Infinity
-                   (= x js/Number.NEGATIVE_INFINITY)
-                   :-Infinity
-                   :else
-                   :float)
-                 :else
-                 :number)
+           (cond 
+             (int? x)
+             :int
+
+             (float? x)
+             (cond 
+               (cljc-NaN? x)
+               :nan
+
+               (= x js/Number.POSITIVE_INFINITY)
+               :infinity
+
+               (= x js/Number.NEGATIVE_INFINITY)
+               :-infinity
+
+               :else
+               :float)
+
+             :else
+             :number)
            k)))
 
      (defn- cljs-iterable-type [x]
@@ -382,17 +412,18 @@
            :js/map-like-object)))
 
      (defn- js-classname [x]
-       (let [k (if-let [c (.-constructor x)] 
-                 (let [nm (.-name c)]
-                   (if-not (string/blank? nm)
+       (when-not (nil? x)
+        (let [k (if-let [c (.-constructor x)] 
+                  (let [nm (.-name c)]
+                    (if-not (string/blank? nm)
                      ;; js class instances
-                     (let [ret (keyword nm)]
-                       (if (= ret :Object) :js/Object ret))
+                      (let [ret (keyword nm)]
+                        (if (= ret :Object) :js/Object ret))
 
                      ;; cljs datatype and recordtype instances
-                     (some-> c pwos keyword)))
-                 :js/Object)]
-         k))
+                      (some-> c pwos keyword)))
+                  :js/Object)]
+          k)))
 
      (defn- js-object-instance [x] 
        #?(:cljs 
@@ -440,36 +471,47 @@
       (try (some-> x class .isArray)
            (catch Exception e)))))
 
+(defn- cljc-number? 
+  ([x]
+   (cljc-number? x nil))
+  ([x k]
+   (and (number? x)
+        (not (contains? #{:nan :-infinity :infinity} k)))))
+
 #?(:clj 
    (defn- clj-all-value-types [x k]
-     (->> [(clj-number-type x)
-           (get clj-scalar-types (type x))
-           (cljc-coll-type x)
-           (when (fn? x) :function)
-           (when (contains? cljc-transients-set (type x)) :transient)
+     (let [number-type (clj-number-type x)]
+       (->> [number-type
+             (get clj-scalar-types (type x))
+             (cljc-coll-type x)
+             (when (fn? x) :function)
+             (when (contains? cljc-transients-set (type x)) :transient)
            ;; Extra types - useful info
-           (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
-           (when (= clojure.lang.PersistentList (type x)) :list)
-           (when (inst? x) :inst)
-           (when (or (contains? #{:vector :map :set :seq} k)
-                     (coll? x)
-                     (instance? java.util.Collection x)
-                     (clj-or-bb-array? x))
-             :coll)
+             (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
+             (when (= clojure.lang.PersistentList (type x)) :list)
+             (when (inst? x) :inst)
+             (when (or (contains? #{:vector :map :set :seq} k)
+                       (coll? x)
+                       (instance? java.util.Collection x)
+                       (clj-or-bb-array? x))
+               :coll)
 
           ;; TODO - leave this out for now
           ;;  (when (instance? java.util.AbstractList x)
           ;;    :java.util.AbstractList)
-
-           (when (record? x) :record)
-           (when (number? x) :number)]
-          (remove nil?)
-          (cons k)
-          (into #{}))))
+             
+             (when (record? x) :record)
+             (when (cljc-number? x number-type) :number)]
+            (remove nil?)
+            (cons k)
+            (into #{})))))
 #?(:cljs 
    (defn- cljs-all-value-types [x k dom-node-type-keyword]
-     (let [types 
-           {:number-type    (cljs-number-type x)
+     (let [number-type
+           (cljs-number-type x)
+
+           types 
+           {:number-type    number-type
             :scalar-type    (get cljs-scalar-types (type x))
             :cljc-coll-type (cljc-coll-type x)
             :js-map-types   (get js-map-types (type x))
@@ -482,7 +524,6 @@
             :object         (when (object? x) :js/Object)
             :fn             (when (fn? x) :function)
             :inst           (when (inst? x) :inst)
-            :js-date        (when (js-date? x) :js/Date)
             :defmulti       (when (defmulti? x) :defmulti)
             :js-promise     (when (js-promise? x) :js/Promise)
             :js-global-this (when (js-global-this? x) :js/globalThis)
@@ -493,7 +534,7 @@
             :transient      (when (contains? cljc-transients-set (type x))
                               :transient)
             :record         (when (record? x) :record)
-            :number         (when (number? x) :number)
+            :number         (when (cljc-number? x number-type) :number)
             :typed-array    (when (typed-array? x) :js/TypedArray)}
 
            js-object-instance-map-like
@@ -708,13 +749,19 @@
                              :sym)]
        (keyword (str "js/" sym)))))
 
+(defn numberish-type [x]
+  (let [f #?(:cljs cljs-number-type :clj clj-number-type)]
+    (when-let [t (f x)]
+      (if (contains? #{:nan :-infinity :infinity} t)
+        t :number))))
 
 (defn- tag* [{:keys [x extras? opts]}]
   #?(:clj
-     (let [k  (or (clj-number-type x)
+     (let [k  (or (numberish-type x)
                   (get clj-scalar-types (type x))
                   (cljc-coll-type x)
                   (when (fn? x) :function)
+                  (when (inst? x) :inst)
                   (when-let [c (type x)]
                     (or 
                      (when (instance? java.util.AbstractMap x) :map)
@@ -736,7 +783,7 @@
            k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k+))
      :cljs
-     (let [k  (or (cljs-number-type x)
+     (let [k  (or (numberish-type x)
                   (get cljs-scalar-types (type x))
                   (cljc-coll-type x)
                   (get js-map-types (type x))
@@ -746,7 +793,7 @@
                   (when (array? x) :js/Array)
                   (when (object? x) :js/Object)
                   (when (fn? x) :function)
-                  (when (js-date? x) :js/Date)
+                  (when (inst? x) :inst)
                   (when (defmulti? x) :defmulti)
                   (when (js-promise? x) :js/Promise)
                   (when (js-global-this? x) :js/globalThis)
@@ -754,6 +801,7 @@
                   (when (js-data-view? x) :js/DataView)
                   (when (js-array-buffer? x) :js/ArrayBuffer)
                   (js-object-instance x)
+                  (when (js/Number.isNaN x) :nan)
                   :lasertag/value-type-unknown)
            k+ (format-result k x opts)]
        (if extras? (tag-map* x k k+ opts) k+))))

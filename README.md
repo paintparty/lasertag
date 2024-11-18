@@ -20,7 +20,7 @@ If using with Babashka, requires Babashka `v1.12.196`(Coming Soon) or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.8.3"]
+[io.github.paintparty/lasertag "0.8.4"]
 ```
 <br>
 
@@ -36,8 +36,8 @@ Import into your namespace:
 The function `lasertag.core/tag` will return a tag describing the category of data type:
 
 ```clojure
-(tag 1)         ;; => :int
-(tag 1.5)       ;; => :float
+(tag 1)         ;; => :number
+(tag 1.5)       ;; => :number
 (tag "hi")      ;; => :string
 (tag :hi)       ;; => :keyword
 (tag "#^hi$")   ;; => :regex
@@ -49,8 +49,8 @@ The function `lasertag.core/tag` will return a tag describing the category of da
 
 The tag is a keyword, by default. You can pass an options map if you want a string or symbol:
 ```clojure
-(tag 1 {:format :string}) ;; => "int"
-(tag 1 {:format :symbol}) ;; => int
+(tag 1 {:format :string}) ;; => "number"
+(tag 1 {:format :symbol}) ;; => number
 ```
 <br>
 
@@ -168,7 +168,7 @@ Excluding the JS built-in-object related entries:
 ### Clojure
 `lasertag.core/tag` vs `clojure.core/type`
 
-| Input value                     | `lasertag.core/tag`       | `clojure.core/type`               |
+| Input value                     | `lasertag.core/tag`     | `clojure.core/type`               |
 | :---                            | :---                    | :---                              |
 | `"hi"`                          | `:string`               | `java.lang.String`                |
 | `:hi`                           | `:keyword`              | `clojure.lang.Keyword`            |
@@ -182,19 +182,19 @@ Excluding the JS built-in-object related entries:
 | `(map inc (range 3))`           | `:seq`                  | `clojure.lang.LazySeq`            |
 | `(range 3)`                     | `:seq`                  | `clojure.lang.LongRange`          |
 | `(:a :b :c)`                    | `:seq`                  | `clojure.lang.PersistentList`     |
-|                      `Infinity` |             `:Infinity` |      `java.lang.Double`           |
-|                     `-Infinity` |            `:-Infinity` |      `java.lang.Double`           |
-|                           `NaN` |                  `:NaN` |      `java.lang.Double`           |
-|                           `1/3` |                `:ratio` |    `clojure.lang.Ratio`           |
-|                      `(byte 0)` |                  `:int` |        `java.lang.Byte`           |
-|                     `(short 3)` |                  `:int` |       `java.lang.Short`           |
-|                `(double 23.44)` |               `:double` |      `java.lang.Double`           |
-|                            `1M` |              `:decimal` |  `java.math.BigDecimal`           |
-|                             `1` |                  `:int` |        `java.lang.Long`           |
-|                   `(float 1.5)` |                `:float` |       `java.lang.Float`           |
+|                      `Infinity` |             `:infinity` |      `java.lang.Double`           |
+|                     `-Infinity` |            `:-infinity` |      `java.lang.Double`           |
+|                           `NaN` |                  `:nan` |      `java.lang.Double`           |
+|                           `1/3` |               `:number` |    `clojure.lang.Ratio`           |
+|                      `(byte 0)` |               `:number` |        `java.lang.Byte`           |
+|                     `(short 3)` |               `:number` |       `java.lang.Short`           |
+|                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
+|                            `1M` |               `:number` |  `java.math.BigDecimal`           |
+|                             `1` |               `:number` |        `java.lang.Long`           |
+|                   `(float 1.5)` |               `:number` |       `java.lang.Float`           |
 |                      `(char a)` |                 `:char` |   `java.lang.Character`           |
-| `(java.math.BigInteger. "171")` | `:java.math.BigInteger` |  `java.math.BigInteger`           |
-|             `(java.util.Date.)` |       `:java.util.Date` |        `java.util.Date`           |
+| `(java.math.BigInteger. "171")` | `:number`               |  `java.math.BigInteger`           |
+|             `(java.util.Date.)` |       `:inst`           |        `java.util.Date`           |
 |                `java.util.Date` |      `:java.lang.Class` |       `java.lang.Class`           |
 
 
@@ -204,7 +204,7 @@ Excluding the JS built-in-object related entries:
 
 `lasertag.core/tag` vs `cljs.core/type`
 
-| Input value                        | `lasertag.core/tt` | `cljs.core/type`               |
+| Input value                        | `lasertag.core/tt`| `cljs.core/type`               |
 | :---                               | :---              | :---                           |
 | `"hi"`                             | `:string`         | `#object[String]`              |
 | `:hi`                              | `:keyword`        | `cljs.core/Keyword`            |
@@ -218,10 +218,10 @@ Excluding the JS built-in-object related entries:
 | `(map inc (range 3))`              | `:seq`            | `cljs.core/LazySeq`            |
 | `(range 3)`                        | `:seq`            | `cljs.core/IntegerRange`       |
 | `(:a :b :c)`                       | `:seq`            | `cljs.core/List`               |
-| `Infinity`                         | `:Infinity`       | `#object[Boolean]`             |
-| `-Infinity`                        | `:-Infinity`      | `#object[Boolean]`             |
+| `Infinity`                         | `:infinity`       | `#object[Boolean]`             |
+| `-Infinity`                        | `:-infinity`      | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`       | `#object[Function]`            |
-| `(new js/Date.)`                   | `:js/Date`        | `#object[Date]`                |
+| `(new js/Date.)`                   | `:int` .          | `#object[Date]`                |
 | `(.values #js [1 2 3])`            | `:js/Iterator`    | `#object[Object]`              |
 | `(array "a" "b")`                  | `:js/Array`       | `#object[Array]`               |
 | `(new js/Int8Array #js ["a" "b"])` | `:js/Int8Array`   | `#object[Int8Array]`           |

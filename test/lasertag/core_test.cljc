@@ -21,8 +21,8 @@
 (defn xy [x y] (+ x y))
 
 (deftest alternate-tag-format
-  (is (= "int" (tag 1 {:format :string})))
-  (is (= 'int (tag 1 {:format :symbol}))))
+  (is (= "number" (tag 1 {:format :string})))
+  (is (= 'number (tag 1 {:format :symbol}))))
 
 
 #?(:cljs
@@ -260,29 +260,29 @@
 
 
 (deftest cljc-number-types 
-  (is (= :Infinity (tag (/ 1.6 0.0))))
-  (is (= :-Infinity (tag (/ -1.0 0.0))))
-  (is (= :NaN (tag (/ 0.0 0.0)))))
+  (is (= :infinity (tag (/ 1.6 0.0))))
+  (is (= :-infinity (tag (/ -1.0 0.0))))
+  (is (= :nan (tag (/ 0.0 0.0)))))
 
 #?(:cljs
    (deftest cljs-number-types 
-     (is (= :int (tag 1)))
-     (is (= :float (tag 1.50)))
-     (is (= :js/BigInt (tag (js/BigInt 171))))
-     (is (= :js/Date (tag (new js/Date))))
+     (is (= :number (tag 1)))
+     (is (= :number (tag 1.50)))
+     (is (= :number (tag (js/BigInt 171))))
+     (is (= :inst (tag (new js/Date))))
      (is (= :function (tag js/Date))))
    :clj
    (deftest clj-number-types 
      (is (= :ratio (tag 1/3)))
-     (is (= :int (tag (byte 0))))
-     (is (= :int (tag (short 3))))
-     (is (= :double (tag (double 23.44))))
-     (is (= :decimal (tag 1M)))
-     (is (= :int (tag 1)))
-     (is (= :float (tag (float 1.50))))
+     (is (= :number (tag (byte 0))))
+     (is (= :number (tag (short 3))))
+     (is (= :number (tag (double 23.44))))
+     (is (= :number (tag 1M)))
+     (is (= :number (tag 1)))
+     (is (= :number (tag (float 1.50))))
      (is (= :char (tag (char 97))))
-     (is (= :java.math.BigInteger (tag (java.math.BigInteger. "171"))))
-     (is (= :java.util.Date (tag (java.util.Date.))))
+     (is (= :number (tag (java.math.BigInteger. "171"))))
+     (is (= :inst (tag (java.util.Date.))))
      (is (= :java.lang.Class (tag java.util.Date)))))
 
 
