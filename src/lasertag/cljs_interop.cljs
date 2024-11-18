@@ -30,18 +30,18 @@
     [js/Function {:sym 'Function :args '[...]}]
     [js/Boolean {:sym 'Boolean :args '[...]}]
     [js/Symbol {:sym 'Symbol
-                :demo (js/Symbol "my-sym")
+                :demo "(js/Symbol \"my-sym\")"
                 :not-a-constructor? true
                 :args '[s]}]]
 
    "Numbers and dates"
    [[js/Math {:sym 'Math :not-a-constructor? true}]
-    [js/Number {:sym 'Number :demo (new js/Number "3") :args '[v]}]
+    [js/Number {:sym 'Number :demo "(new js/Number \"3\")" :args '[v]}]
     [js/BigInt {:sym 'BigInt
-                :demo (js/BigInt "999999999999")
+                :demo "(js/BigInt \"999999999999\")"
                 :not-a-constructor? true
                 :args '[v]}]
-    [js/Date {:sym 'Date :demo (new js/Date) :args '[...]}]]
+    [js/Date {:sym 'Date :demo "(new js/Date)" :args '[...]}]]
 
    "Value properties" 
    [[js/NaN {:sym 'NaN}] 
@@ -49,24 +49,24 @@
     [js/globalThis {:sym 'globalThis}]]
 
    "Control abstraction objects"
-   [[js/Promise {:sym 'Promise :demo (new js/Promise (fn [x] x)) :args '[f]}]]
+   [[js/Promise {:sym 'Promise #_#_:demo "(new js/Promise (fn [x] x))" :args '[f]}]]
 
    "Error objects"
    [[js/AggregateError {:sym 'AggregateError
-                        :demo (new js/AggregateError
-                                   #js[(new js/Error "some error")] "Hello")
+                        :demo "(new js/AggregateError
+                                   #js[(new js/Error \"some error\")] \"Hello\")"
                         :args '[array]}]
-    [js/EvalError {:sym 'EvalError :demo (new js/EvalError) :args '[]}]
-    [js/RangeError {:sym 'RangeError :demo (new js/RangeError) :args '[]}]
-    [js/ReferenceError {:sym 'ReferenceError :demo (new js/ReferenceError) :args '[]}]
-    [js/SyntaxError {:sym 'SyntaxError :demo (new js/SyntaxError) :args '[]}]
-    [js/TypeError {:sym 'TypeError :demo (new js/TypeError) :args '[]}]
-    [js/URIError {:sym 'URIError :demo (new js/URIError) :args '[]}]
-    [js/Error {:sym 'Error :demo (new js/Error) :args '[]}]]
+    [js/EvalError {:sym 'EvalError :demo "(new js/EvalError)" :args '[]}]
+    [js/RangeError {:sym 'RangeError #_#_:demo "(new js/RangeError)" :args '[]}]
+    [js/ReferenceError {:sym 'ReferenceError :demo "(new js/ReferenceError)" :args '[]}]
+    [js/SyntaxError {:sym 'SyntaxError :demo "(new js/SyntaxError)" :args '[]}]
+    [js/TypeError {:sym 'TypeError :demo "(new js/TypeError)" :args '[]}]
+    [js/URIError {:sym 'URIError :demo "(new js/URIError)" :args '[]}]
+    [js/Error {:sym 'Error :demo "(new js/Error)" :args '[]}]]
 
    "Text processing"
-   [[js/String {:sym 'String :demo (new js/String "hi") :args '[s]}]
-    [js/RegExp {:sym 'RegExp :demo (new js/RegExp "^hi$") :args '[s]}]]
+   [[js/String {:sym 'String :demo "(new js/String \"hi\")" :args '[s]}]
+    [js/RegExp {:sym 'RegExp :demo "(new js/RegExp \"^hi$\")" :args '[s]}]]
 
    "Function properties"
    [[js/eval {:sym 'eval :args '[script]}] 
@@ -82,35 +82,35 @@
     [js/unescape {:sym 'unescape :args '[str]}]]
 
    "Keyed collections"
-   [[js/Map {:sym 'Map :demo (new js/Map #js[#js["a", 1], #js["b", 2]]) :args '[...]}]
-    [js/Set {:sym 'Set :demo (new js/Set #js[1 2]) :args '[...]}]
+   [[js/Map {:sym 'Map :demo "(new js/Map #js[#js[\"a\", 1], #js[\"b\", 2]])" :args '[...]}]
+    [js/Set {:sym 'Set :demo "(new js/Set #js[1 2])" :args '[...]}]
     [js/WeakMap {:sym  'WeakMap
-                 :demo (let [wm (js/WeakMap.)
-                             o  #js{:a 1}]
-                         (.set wm o 100))
+                 #_#_:demo "(let [wm (js/WeakMap.)
+                              o  #js{:a 1}]
+                         (.set wm o 100))"
                  :args '[...]}]
-    [js/WeakSet {:sym 'WeakSet :demo (new js/Set #js[1 2]) :args '[...]}]
+    [js/WeakSet {:sym 'WeakSet :demo "(new js/Set #js[1 2])" :args '[...]}]
     ]
 
    "Indexed collections"
-   [[js/Array {:sym 'Array :demo (new js/Array #js[1 2 3]) :args '[...]}]
-    [js/Int8Array {:sym 'Int8Array :demo (new js/Int8Array #js[1 2 3]) :args '[...]}]
-    [js/Uint8Array {:sym 'Uint8Array :demo (new js/Uint8Array #js[1 2 3]) :args '[...]}]
-    [js/Uint8ClampedArray {:sym  'Uint8ClampedArray :demo (new js/Uint8ClampedArray #js[1 2 3]) :args '[...]}]
-    [js/Int16Array {:sym 'Int16Array :demo (new js/Int16Array #js[1 2 3]) :args '[...]}]
-    [js/Uint16Array {:sym 'Uint16Array :demo (new js/Uint16Array #js[1 2 3]) :args '[...]}]
-    [js/Int32Array {:sym 'Int32Array :demo (new js/Int32Array #js[1 2 3]) :args '[...]}]
-    [js/Uint32Array {:sym 'Uint32Array :demo (new js/Uint32Array #js[1 2 3]) :args '[...]}]
-    [js/BigInt64Array {:sym 'BigInt64Array :demo (new js/BigInt64Array 3) :args '[...]}]
-    [js/BigUint64Array {:sym 'BigUint64Array :demo (new js/BigUint64Array 3) :args '[...]}]
-    [js/Float32Array {:sym 'Float32Array :demo (new js/Float32Array #js[1 2 3]) :args '[...]}]
-    [js/Float64Array {:sym 'Float64Array :demo (new js/Float64Array #js[1 2 3]) :args '[...]}]]
+   [[js/Array {:sym 'Array :demo "(new js/Array 1 2 3)" :args '[...]}]
+    [js/Int8Array {:sym 'Int8Array :demo "(new js/Int8Array #js[1 2 3])" :args '[...]}]
+    [js/Uint8Array {:sym 'Uint8Array :demo "(new js/Uint8Array #js[1 2 3])" :args '[...]}]
+    [js/Uint8ClampedArray {:sym  'Uint8ClampedArray :demo "(new js/Uint8ClampedArray #js[1 2 3])" :args '[...]}]
+    [js/Int16Array {:sym 'Int16Array :demo "(new js/Int16Array #js[1 2 3])" :args '[...]}]
+    [js/Uint16Array {:sym 'Uint16Array :demo "(new js/Uint16Array #js[1 2 3])" :args '[...]}]
+    [js/Int32Array {:sym 'Int32Array :demo "(new js/Int32Array #js[1 2 3])" :args '[...]}]
+    [js/Uint32Array {:sym 'Uint32Array :demo "(new js/Uint32Array #js[1 2 3])" :args '[...]}]
+    [js/BigInt64Array {:sym 'BigInt64Array #_#_:demo "(new js/BigInt64Array 3)" :args '[...]}]
+    [js/BigUint64Array {:sym 'BigUint64Array #_#_:demo "(new js/BigUint64Array 3)" :args '[...]}]
+    [js/Float32Array {:sym 'Float32Array :demo "(new js/Float32Array #js[1 2 3])" :args '[...]}]
+    [js/Float64Array {:sym 'Float64Array :demo "(new js/Float64Array #js[1 2 3])" :args '[...]}]]
 
    "Structured data"
    (into []
          (concat 
           [[js/ArrayBuffer {:sym                 'ArrayBuffer 
-                            :demo                (new js/ArrayBuffer 8) 
+                            #_#_:demo                (new js/ArrayBuffer 8) 
                             :args                '[...]
                             :instance-properties ["byteLength"
                                                   "detached"
@@ -119,7 +119,7 @@
            [js/JSON {:sym                'JSON
                      :not-a-constructor? true}]
            [js/DataView {:sym                 'DataView
-                         :demo                (new js/DataView (new js/ArrayBuffer 8))
+                         #_#_:demo                "(new js/DataView (new js/ArrayBuffer 8))"
                          :args                '[ArrayBuffer]
                          :instance-properties ["buffer"
                                                "byteLength"
@@ -130,30 +130,30 @@
    "Internationalization"
    [[js/Intl {:sym 'Intl :not-a-constructor? true}]
     [js/Intl.Collator {:sym 'Intl.Collator
-                       :demo (new js/Intl.Collator "sv")
+                       :demo "(new js/Intl.Collator \"sv\")"
                        :args '[...]}]
     [js/Intl.DateTimeFormat {:sym 'Intl.DateTimeFormat
-                             :demo (new js/Intl.DateTimeFormat
-                                        "en-US")
+                             :demo "(new js/Intl.DateTimeFormat
+                                         \"en-US\")"
                              :args '[...]}]
     [js/Intl.DisplayNames {:sym 'Intl.DisplayNames
-                           :demo (new js/Intl.DisplayNames
-                                      #js["en"]
-                                      #js {:type "region"})
+                           :demo "(new js/Intl.DisplayNames
+                                       #js[\"en\"]
+                                       #js {:type \"region\"})"
                            :args '[...]}]
     [js/Intl.ListFormat {:sym 'Intl.ListFormat
-                         :demo (new js/Intl.ListFormat 
-                                    "en-GB"
-                                    #js {:style "long",
-                                         :type "conjunction"})
+                         :demo "(new js/Intl.ListFormat 
+                                     \"en-GB\"
+                                     #js {:style \"long\",
+                                          :type \"conjunction\"})"
                          :args '[...]}]
     [js/Intl.Locale {:sym 'Intl.Locale
-                     :demo (new js/Intl.Locale
-                                "ko"
-                                #js{:script "Kore",
-                                    :region "KR",
-                                    :hourCycle "h23",
-                                    :calendar "gregory"})
+                     #_#_:demo "(new js/Intl.Locale
+                                 \"ko\"
+                                 #js{:script \"Kore\",
+                                     :region \"KR\",
+                                     :hourCycle \"h23\",
+                                     :calendar \"gregory\"})"
                      :args '[...]
                      :instance-properties ["baseName"
                                            "calendar"
@@ -173,23 +173,23 @@
                                            "timeZones"
                                            "weekInfo"]}]
     [js/Intl.NumberFormat {:sym 'Intl.NumberFormat 
-                           :demo (new js/Intl.NumberFormat
-                                      "de-DE"
-                                      #js{:style "currency",
-                                          :currency "EUR" })
+                           :demo "(new js/Intl.NumberFormat
+                                       \"de-DE\"
+                                       #js{:style \"currency\",
+                                          :currency \"EUR\" })"
                            :args '[...]}]
     [js/Intl.PluralRules {:sym 'Intl.PluralRules
-                          :demo (new js/Intl.PluralRules "en-US") 
+                          :demo "(new js/Intl.PluralRules \"en-US\")" 
                           :args '[...]}]
     [js/Intl.RelativeTimeFormat {:sym 'Intl.RelativeTimeFormat
-                                 :demo (new js/Intl.RelativeTimeFormat
-                                            "en"
-                                            #js{:style "short"}) 
+                                 :demo "(new js/Intl.RelativeTimeFormat
+                                             \"en\"
+                                             #js{:style \"short\"})" 
                                  :args '[...]}]
     [js/Intl.Segmenter {:sym 'Intl.Segmenter
-                        :demo (new js/Intl.Segmenter
-                                   "fr"
-                                   #js{:granularity "word"})
+                        :demo "(new js/Intl.Segmenter
+                                    \"fr\"
+                                    #js{:granularity \"word\"})"
                         :args '[...]}]
 
     ;; experimental, Safari-only
@@ -198,14 +198,16 @@
 
    "Managing memory"
    [[js/WeakRef {:sym 'WeakRef
-                 :demo (new js/WeakRef (fn [x])) :args '[f]}]
+                 #_#_:demo "(new js/WeakRef (fn [x]))" :args '[f]}]
     [js/FinalizationRegistry {:sym 'FinalizationRegistry
-                              :demo (new js/FinalizationRegistry (fn [x])) :args '[f]}]]    
+                              #_#_:demo "(new js/FinalizationRegistry (fn [x]))"
+                              :args '[f]}]]    
 
    "Reflection"
    [[js/Reflect {:sym 'Reflect :not-a-constructor? true}]
     [js/Proxy {:sym 'Proxy
-               :demo (new js/Proxy #js {:a 1} (fn [x])) :args '[...]}]]
+               #_#_:demo "(new js/Proxy #js {:a 1} (fn [x]))"
+               :args '[...]}]]
    ))
 
 (defonce js-built-ins-by-built-in*
