@@ -1,10 +1,31 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): Clojure(Script) utility for discerning types of values.
 ## Unreleased
-2024-11-15
-### Fixed
-- Various class resolution issues with Babashka.
 
+<br>
+<br>
+
+## 0.8.4
+2024-11-18
+### Breaking changes
+- `:inst` tags [#15](https://github.com/paintparty/lasertag/issues/15)
+- `:number` tags [#14](https://github.com/paintparty/lasertag/issues/14)
+- renamed tag `:NaN` -> `:nan`
+- renamed tag `:Infinity` -> `:infinity`
+- renamed tag `:-Infinity` -> `:-infinity`
+
+### Changed
+- Converted all `:demo` entries in `lasertag.cljs-interop` to strings
+
+### Fixed
+- `nil` value TypeError in cljs [#13](https://github.com/paintparty/lasertag/issues/13)
+
+<br>
+
+## 0.8.3
+2024-11-15
+### Added
+- Safety code for babashka
 
 <br>
 
