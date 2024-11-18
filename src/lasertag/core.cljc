@@ -4,6 +4,7 @@
 ;; - Add :array-like to all-tags
 ;; - Add :list-like to all-tags
 ;; - Add scalar-type? (or scalar?)
+;; - Figure out if you need more granular tags for time contructs
 ;; - Use :array instead of :js/Array (or any of the indexed array types)
 ;; - Use :set instead of :js/Set (or :js/WeakSet)
 ;; - Use :map instead of :js/Map (or :js/WeakMap)
@@ -101,7 +102,9 @@
       java.lang.Long       :long
       java.lang.Float      :float
       java.lang.Byte       :byte
-      java.math.BigDecimal :decimal}))
+      java.math.BigDecimal :decimal
+      java.math.BigInteger :bigint
+      }))
 
 (def scalar-types-set
   #?(:cljs
@@ -180,7 +183,6 @@
 ;; (defn- js-array? [x] #?(:cljs (array? x) :clj false))
 
 (defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
-(defn- js-date? [x] #?(:cljs (instance? js/Date x) :clj false))
 (defn- js-data-view? [x] #?(:cljs (instance? js/DataView x) :clj false))
 (defn- js-array-buffer? [x] #?(:cljs (instance? js/ArrayBuffer x) :clj false))
 
@@ -336,13 +338,21 @@
        (cond
          (contains? #{:long :short :byte} k)
          :int
+
          (= k :double)
          (cond 
-           (cljc-NaN? x) :nan
-           (java-negative-infinity? x) :-infinity
-           (infinity? x) :infinity
+           (cljc-NaN? x)
+           :nan
+
+           (java-negative-infinity? x)
+           :-infinity
+
+           (infinity? x)
+           :infinity
+
            :else
            k)
+
          :else
          k))))
 
@@ -514,7 +524,6 @@
             :object         (when (object? x) :js/Object)
             :fn             (when (fn? x) :function)
             :inst           (when (inst? x) :inst)
-            :js-date        (when (js-date? x) :js/Date)
             :defmulti       (when (defmulti? x) :defmulti)
             :js-promise     (when (js-promise? x) :js/Promise)
             :js-global-this (when (js-global-this? x) :js/globalThis)
@@ -752,6 +761,7 @@
                   (get clj-scalar-types (type x))
                   (cljc-coll-type x)
                   (when (fn? x) :function)
+                  (when (inst? x) :inst)
                   (when-let [c (type x)]
                     (or 
                      (when (instance? java.util.AbstractMap x) :map)
@@ -783,7 +793,7 @@
                   (when (array? x) :js/Array)
                   (when (object? x) :js/Object)
                   (when (fn? x) :function)
-                  (when (js-date? x) :js/Date)
+                  (when (inst? x) :inst)
                   (when (defmulti? x) :defmulti)
                   (when (js-promise? x) :js/Promise)
                   (when (js-global-this? x) :js/globalThis)
