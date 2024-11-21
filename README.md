@@ -2,15 +2,11 @@
 
 A Clojure(Script) utility for categorizing types of values.
 
-<p align="left">
+<div>
   <a href="https://clojars.org/io.github.paintparty/bling">
     <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?color=0969da&style=flat-square&cacheSeconds=3" alt="Lasertag Clojars badge"></img>
   </a>
-  <a href="https://0dependencies.dev">
-    <img src="https://0dependencies.dev/0dependencies.svg" alt="0 dependencies!"></img>
-  </a>
-</p>
-
+</div>
 
 For a quick summary of how this differs from `clojure.core/type`, view [the tables below](#examples).
 
