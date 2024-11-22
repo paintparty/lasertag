@@ -1,16 +1,16 @@
-# Lasertag
-
-A Clojure(Script) utility for categorizing types of values.
-
 <div>
   <a href="https://clojars.org/io.github.paintparty/bling">
     <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?color=0969da&style=flat-square&cacheSeconds=3" alt="Lasertag Clojars badge"></img>
   </a>
 </div>
 
-For a quick summary of how this differs from `clojure.core/type`, view [the tables below](#examples).
+<br>
+ 
+# Lasertag
 
-This lib fell out of work on other Clojure(Script) dev tooling, namely [Fireworks](https://github.com/paintparty/fireworks) so perhaps it may be useful in a similar context.
+Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka. This library fell out of work on the colorizing pretty-printing engine that powers [Fireworks](https://github.com/paintparty/fireworks).
+
+For a quick summary of the functionality, check out [this table](examples).
 
 <br>
 
@@ -28,16 +28,21 @@ Add as a dependency to your project:
 ```
 <br>
 
-Import into your namespace:
+Require it:
+```Clojure
+(require '[lasertag.core :refer [tag tag-map]])
+```
 
-```clojure
+
+Or import into your namespace:
+```Clojure
 (ns myns.core
   (:require
     [lasertag.core :refer [tag tag-map]]))
 ```
 <br>
 
-The function `lasertag.core/tag` will return a tag describing the category of data type:
+The function `lasertag.core/tag` will return a descriptive tag:
 
 ```clojure
 (tag 1)         ;; => :number
@@ -51,7 +56,7 @@ The function `lasertag.core/tag` will return a tag describing the category of da
 ```
 <br>
 
-The tag is a keyword, by default. You can pass an options map if you want a string or symbol:
+The tag is a keyword by default but you can pass an options map if you want a string or symbol:
 ```clojure
 (tag 1 {:format :string}) ;; => "number"
 (tag 1 {:format :symbol}) ;; => number
@@ -60,40 +65,64 @@ The tag is a keyword, by default. You can pass an options map if you want a stri
 
 The function `lasertag.core/tag-map` will return a map with additional info.
 
-```clojure
+```Clojure
+;; string
 (tag-map "hi")
 =>
-{:tag      :string
- :all-tags #{:string}
- :type     #object[String]}
+{:tag       :string
+ :type      java.lang.String
+ :all-tags  #{:string}
+ :classname "java.lang.String"}
 
+
+;; map 
+=>
+{:tag       :map
+ :type      clojure.lang.PersistentArrayMap
+ :all-tags  #{:coll
+              :array-map
+              :coll-type
+              :map-like
+              :map
+              :carries-meta}
+ :classname "clojure.lang.PersistentArrayMap"
+ :coll-size 1}
+
+
+;; function in ClojureScript
+(ns foo.core)
 (defn xy [x y] (+ x y))
 
 (tag-map xy)
 =>
-{:tag      :function
- :all-tags #{:function}
- :type     #object[Function]
- :fn-name  "xy" 
- :fn-ns    "myns.core"
- :fn-args  [x y]}
+{:tag       :function
+ :type      #object[Function]
+ :fn-name   "xy"
+ :fn-ns     "visual_testing.shared"
+ :fn-args   [x y]
+ :all-tags  #{:function}
+ :classname "Function"}
 
+
+;; JS function
 (tag-map js/ParseFloat)
 =>
 {:tag                   :function
  :all-tags              #{:function}
- :type                  #object[Function]
+ :type                  js/ParseFloat
  :fn-name               "parseFloat"
  :fn-args               [s]
- :js-built-in-method-of Number
+ :js-built-in-method-of js/Number
  :js-built-in-function? true}
-
-;; NOTE: :fn-args entry is only available in cljs
-;; NOTE: :fn-name will not work as expected in cljs advanced compilation
 ```
+
 <br>
 
-With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information. Depending on how you are using `tag-map`, this could also help with performance.
+> [!WARNING]
+> Currently, the `:fn-args` entry is only available in ClojureScript.
+> The `:fn-name` will not work as expected in ClojureScript advanced compilation.
+
+With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information. Depending on how you are using `tag-map`, this could help with performance.
 
 ```clojure
 :include-all-tags?              
