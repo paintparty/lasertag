@@ -24,7 +24,7 @@ If using with Babashka, requires Babashka `v1.12.196`(Coming Soon) or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.8.4"]
+[io.github.paintparty/lasertag "0.9.0"]
 ```
 <br>
 
@@ -44,7 +44,7 @@ Or import into your namespace:
 
 The function `lasertag.core/tag` will return a descriptive tag:
 
-```clojure
+```Clojure
 (tag 1)         ;; => :number
 (tag 1.5)       ;; => :number
 (tag "hi")      ;; => :string
@@ -57,7 +57,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 <br>
 
 The tag is a keyword by default but you can pass an options map if you want a string or symbol:
-```clojure
+```Clojure
 (tag 1 {:format :string}) ;; => "number"
 (tag 1 {:format :symbol}) ;; => number
 ```

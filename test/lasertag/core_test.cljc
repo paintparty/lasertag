@@ -76,14 +76,14 @@
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (= 
-          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          (dissoc (tag-map xy {:exclude [:function-info]}) :type)
           {:tag       :function
            :all-tags  #{:function}
            :classname "Function"})))
    :clj
    (deftest clj-elide-function-info
      (is (= 
-          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          (dissoc (tag-map xy {:exclude [:function-info]}) :type)
           {:tag       :function,
            :all-tags  #{:function :carries-meta},
            :classname "lasertag.core_test$xy"}))))
@@ -100,13 +100,54 @@
 
 #?(:cljs
    (deftest cljs-collection-types-map
-     (is (= 
-          (tag-map '(:a :b :c))
-          {:tag       :seq,
-           :type      cljs.core/List,
-           :all-tags  #{:seq :js/Iterable :coll :list :coll-type :carries-meta},
-           :classname "cljs.core/List",
-           :coll-size 3})))
+     (testing "cljs.core/List"
+       (is (= 
+            (tag-map '(:a :b :c))
+            {:tag       :seq,
+             :type      cljs.core/List,
+             :all-tags  #{:seq :js/Iterable :coll :list :coll-type :carries-meta},
+             :classname "cljs.core/List",
+             :coll-size 3})))
+     ;; TODO - why is :fn-args flipping from nil to []
+     #_(testing "Built-in js object method: string.concat"
+         (is (= 
+              (tag-map (aget "hi" "concat"))
+              {:fn-name                    "concat",
+               :type                       js/Function,
+               :classname                  "Function",
+               :js-built-in-function?      true,
+               :js-built-in-method-of-name "String", 
+               :all-tags                   #{:function}, 
+               :js-built-in-method-of      js/String,
+               :fn-args                    nil,
+               :tag                        :function})))
+     (testing "Built-in js/JSON., exclude :js-built-in-object-info"
+       (is (= 
+            (tag-map js/JSON 
+                     {:exclude [:js-built-in-object-info]})
+            {:coll-size 1,
+             :classname "js/Object",
+             :all-tags  #{:js/Object
+                          :js/map-like-object
+                          :coll-type
+                          :map-like
+                          :js-object},
+             :type      js/Object,
+             :tag       :js/Object})))
+
+     (testing "Built-in js/JSON."
+       (is (= (tag-map js/JSON)
+              {:tag                     :js/Object,
+               :type                    js/Object,
+               :all-tags                #{:js/Object
+                                          :js/map-like-object
+                                          :coll-type
+                                          :map-like
+                                          :js-object},
+               :classname               "js/Object",
+               :coll-size               1,
+               :js-built-in-object?     true,
+               :js-built-in-object-name "JSON"}))))
    :clj
    (deftest clj-collection-types-map
      (testing "clojure.lang.PersistentList"
@@ -224,37 +265,37 @@
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes
-     (is (= (tag-map '(:a :b :c) {:include-all-tags? false})
+     (is (= (tag-map '(:a :b :c) {:exclude [:all-tags]})
             {:tag           :seq,
              :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes 
-     (is (= (tag-map       '(:a :b :c) {:include-all-tags? false})
+     (is (= (tag-map       '(:a :b :c) {:exclude [:all-tags]})
             {:tag           :seq,
              :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false
-                                :format            :string})
+          (tag-map '(:a :b :c) {:exclude [:all-tags]
+                                :format  :string})
           {:tag           "seq",
            :type          cljs.core/List}))
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false
-                                :format            :symbol})
+          (tag-map '(:a :b :c) {:exclude [:all-tags]
+                                :format  :symbol})
           {:tag           'seq,
            :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false
-                                :format            :string})
+          (tag-map '(:a :b :c) {:exclude [:all-tags]
+                                :format  :string})
           {:tag           "seq",
            :type          clojure.lang.PersistentList}))
      (is (= 
-          (tag-map '(:a :b :c) {:include-all-tags? false
-                                :format            :symbol})
+          (tag-map '(:a :b :c) {:exclude [:all-tags]
+                                :format  :symbol})
           {:tag           'seq,
            :type          clojure.lang.PersistentList}))))
 

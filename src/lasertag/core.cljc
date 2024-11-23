@@ -679,6 +679,12 @@
        (nth dom-node-types n nil)
        (nth dom-node-type-keywords n nil)])))
 
+(defn- exclude? [opts k]
+  (some-> opts
+          :exclude
+          (->> (into #{}))
+          (contains? k)))
+
 (defn- tag-map*
   [x k k+ opts]
     (merge 
@@ -691,7 +697,7 @@
      
      ;; Optionaly get reflective function info, same for clj & cljs
      (when (contains? #{:function :defmulti :java.lang.Class} k)
-       (let [b (opt? :include-function-info? opts)]
+       (let [b (not (exclude? opts :function-info))]
          #?(:cljs (fn-info x k b)
             :clj (fn-info x k b))))
 
@@ -702,7 +708,7 @@
                dom-node-type-keyword]    (dom-node x)]
           (merge
            ;; Get all the tags
-           (when (opt? :include-all-tags? opts)
+           (when-not (exclude? opts :all-tags)
              (all-tags x k dom-node-type-keyword))
 
            ;; Get dom node info 
@@ -715,7 +721,7 @@
              {:dom-element-tag-name x.tagName})
           
            ;; Enhanced reflection for built-in js objects
-           (when (opt? :include-js-built-in-object-info? opts)
+           (when-not (exclude? opts :js-built-in-object-info)
              (when (= k :js/Object)
                (when-let [{:keys [sym]} 
                           (get cljs-interop/js-built-ins-by-built-in x)]
@@ -724,7 +730,7 @@
         
 
         ;; Just for Clojure
-        :clj (when (opt? :include-all-tags? opts)
+        :clj (when-not (exclude? opts :all-tags)
                ;; Get all the tags
                (all-tags x k nil)))))
 
