@@ -1,8 +1,28 @@
 # Changelog
-[Lasertag](https://github.com/paintparty/lasertag): Clojure(Script) utility for discerning types of values.
+[Lasertag](https://github.com/paintparty/lasertag): Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka.
+
+
 ## Unreleased
 
 <br>
+<br>
+
+## 0.9.0
+2024-11-18
+### Breaking changes
+- Removed the following options:
+```Clojure
+:include-all-tags?              
+:include-function-info?          
+:include-js-built-in-object-info?
+```
+- Added the following option (replaces the above 3)
+```Clojure
+(tag-map js/JSON
+ {:exclude [:all-tags?              
+            :function-info?          
+            :built-in-object-info?]})
+```
 <br>
 
 ## 0.8.4
