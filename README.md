@@ -44,7 +44,7 @@ Or import into your namespace:
 
 The function `lasertag.core/tag` will return a descriptive tag:
 
-```clojure
+```Clojure
 (tag 1)         ;; => :number
 (tag 1.5)       ;; => :number
 (tag "hi")      ;; => :string
@@ -57,7 +57,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 <br>
 
 The tag is a keyword by default but you can pass an options map if you want a string or symbol:
-```clojure
+```Clojure
 (tag 1 {:format :string}) ;; => "number"
 (tag 1 {:format :symbol}) ;; => number
 ```
