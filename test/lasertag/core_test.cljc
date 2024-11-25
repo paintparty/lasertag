@@ -1,5 +1,6 @@
 (ns lasertag.core-test
   (:require [lasertag.core :refer [tag tag-map]]
+            ;; [clojure.pprint :refer [pprint]]
             #?(:cljs [cljs.test :refer [deftest is testing]])
             #?(:clj [clojure.test :refer :all]))
   #?(:clj
@@ -105,7 +106,7 @@
             (tag-map '(:a :b :c))
             {:tag       :seq,
              :type      cljs.core/List,
-             :all-tags  #{:seq :js/Iterable :coll :list :coll-type :carries-meta},
+             :all-tags  #{:seq :js-iterable :coll :list :coll-type :carries-meta},
              :classname "cljs.core/List",
              :coll-size 3})))
      ;; TODO - why is :fn-args flipping from nil to []
@@ -126,25 +127,23 @@
             (tag-map js/JSON 
                      {:exclude [:js-built-in-object-info]})
             {:coll-size 1,
-             :classname "js/Object",
-             :all-tags  #{:js/Object
-                          :js/map-like-object
+             :classname "Object",
+             :all-tags  #{:js-object
+                          :js-map-like-object
                           :coll-type
-                          :map-like
-                          :js-object},
+                          :map-like},
              :type      js/Object,
-             :tag       :js/Object})))
+             :tag       :js-object})))
 
      (testing "Built-in js/JSON."
        (is (= (tag-map js/JSON)
-              {:tag                     :js/Object,
+              {:tag                     :js-object,
                :type                    js/Object,
-               :all-tags                #{:js/Object
-                                          :js/map-like-object
+               :all-tags                #{:js-map-like-object
                                           :coll-type
                                           :map-like
                                           :js-object},
-               :classname               "js/Object",
+               :classname               "Object",
                :coll-size               1,
                :js-built-in-object?     true,
                :js-built-in-object-name "JSON"}))))
@@ -327,4 +326,7 @@
      (is (= :java.lang.Class (tag java.util.Date)))))
 
 
+
+;; #?(:clj
+;;    (pprint (tag-map  (java.util.ArrayList. [1 2 3]))))
 

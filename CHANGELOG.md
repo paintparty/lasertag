@@ -7,6 +7,27 @@
 <br>
 <br>
 
+## 0.10.0
+2024-11-24
+### Breaking changes
+- Changed the following tags (result of calling `lasertag.core/tag`):<br>
+`:js/Set`     -> `:set`              
+`:js/Map`     -> `:map`              
+`:js/WeakSet` -> `:set`              
+`:js/WeakMap` -> `:map`              
+`:js/Array`   -> `:array`              
+`:js/ArrayBuffer`   -> `:byte-array`              
+
+- Changed all tags that were namespaced with `js/` to use a unified kebab-case
+convention, e.g.:<br>
+`js/Object`    -> `:js-object`<br>
+`js/Int8Array` -> `:js-int8-array`
+
+- All typed arrays in JS now get tagged with `:array`, with a more granular tag
+e.g. `:js-int8-array` in the `:all-tags` entry of return value from `lasertag.core/tag-map`   
+
+<br>
+
 ## 0.9.0
 2024-11-18
 ### Breaking changes
