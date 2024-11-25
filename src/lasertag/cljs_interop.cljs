@@ -89,6 +89,7 @@
                               o  #js{:a 1}]
                          (.set wm o 100))"
                  :args '[...]}]
+    ;; TODO - fix this WeakSet demo
     [js/WeakSet {:sym 'WeakSet :demo "(new js/Set #js[1 2])" :args '[...]}]
     ]
 
