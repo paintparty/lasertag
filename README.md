@@ -17,7 +17,7 @@ For a quick summary of the functionality, check out [this table](examples).
 ## Usage
 Requires Clojure `1.9.0` or higher
 
-If using with Babashka, requires Babashka `v1.12.196`(Coming Soon) or higher
+If using with Babashka, requires Babashka `v1.12.196` or higher
 
 <br>
 
@@ -292,6 +292,7 @@ Excluding the JS built-in-object related entries:
 (tag my-promise) 
 => :js/Promise
 ```
+<br>
 
 ### Instance methods on JavaScript built-ins
 
@@ -382,7 +383,7 @@ Issues for bugs, improvements, or features are very welcome. Please file an issu
 
 ## License
 
-Copyright © 2024 Jeremiah Coyle
+Copyright © 2024-2025 Jeremiah Coyle
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
