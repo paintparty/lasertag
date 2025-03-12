@@ -865,5 +865,3 @@
    (tag-map x nil))
   ([x opts]
    (tag* {:x x :extras? true :opts opts})))
-
-(tag-map (into-array '(1 2)))
