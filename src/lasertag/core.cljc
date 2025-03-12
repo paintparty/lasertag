@@ -187,17 +187,10 @@
 (defn- js-object-instance? [x] #?(:cljs (instance? js/Object x)))
 (defn- defmulti? [x] #?(:cljs (= (type x) cljs.core/MultiFn)))
 
-;; (defn- js-object? [x] #?(:cljs (object? x) :clj false))
-;; (defn- js-array? [x] #?(:cljs (array? x) :clj false))
-
 (defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
 (defn- js-data-view? [x] #?(:cljs (instance? js/DataView x) :clj false))
 (defn- js-array-buffer? [x] #?(:cljs (instance? js/ArrayBuffer x) :clj false))
 
-;; (defn- java-byte? [x] #?(:clj (instance? Byte x) :cljs false))
-;; (defn- java-short? [x] #?(:clj (instance? Short x) :cljs false))
-;; (defn- java-long? [x] #?(:clj (instance? Short x) :cljs false))
-;; (defn- java-decimal? [x] #?(:clj (decimal? x) :cljs false))
 
 #?(:cljs 
    (defn typed-array? [x]
@@ -205,7 +198,8 @@
           (not (instance? js/ArrayBuffer x))
           (not (instance? js/DataView x)))))
 
-;; cljs fn resolution functions start---------------
+
+;; cljs fn resolution functions start-------------------------------------------
 #?(:cljs 
    (do 
      (defn- js-built-in-map [o]
@@ -298,6 +292,7 @@
         strings (some-> s
                         (string/split #","))
         syms    (some->> strings
+                         ;; change to mapv?
                          (map (comp symbol
                                     string/trim)))]
     syms))
@@ -329,7 +324,8 @@
             {:js-built-in-function? true
              :fn-args               args}
             (when (:js-built-in-method-of fn-info)
-              {:fn-args :lasertag/unknown-function-signature-on-js-built-in-method})))))))
+              {:fn-args
+               :lasertag/unknown-function-signature-on-js-built-in-method})))))))
 
 (defn- fn-info [x k include-fn-info?]
   (when include-fn-info?
@@ -344,7 +340,9 @@
              #?(:cljs 
                 (cljs-fn-args x fn-args fn-info))))))
 
-;; function resolution functions end---------------
+;; function resolution functions end--------------------------------------------
+
+
 
 #?(:clj 
    (defn- clj-number-type [x]
@@ -675,22 +673,27 @@
                                     (contains? all-tags :js-map))
                                 (.-size x)
 
+                                ;; js-array or java primitive-array
                                 (and (or (= k :array)
                                          #?(:cljs (typed-array? x)))
                                      (not (contains? all-tags :java-util-class)))
-                                (.-length x)
+                                #?(:cljs
+                                   (.-length x)
+                                   :clj
+                                   (alength x))
 
                                 :else
                                 (count x))))
                           #?(:cljs
                              (catch js/Object e e)
                              :clj
-                             (catch Exception e)))]
+                             (catch Exception e (println (str e)))))]
 
     (merge 
      {:all-tags  all-tags
       :classname classname}
      (when coll-size {:coll-size coll-size}))))
+
 
 (defn- dom-node 
   "Helper fn which takes an HTML dom element and returns a 3-element vector.
@@ -858,3 +861,4 @@
   ([x opts]
    (tag* {:x x :extras? true :opts opts})))
 
+(? (tag-map (into-array '(1 2))))

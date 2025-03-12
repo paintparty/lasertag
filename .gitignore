@@ -11,6 +11,7 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
+output.calva-repl
 out/
 node_modules/*
 .shadow-cljs/*
