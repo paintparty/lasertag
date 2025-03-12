@@ -8,6 +8,14 @@
 <br>
 
 ## 0.10.0
+2025-03-12
+### Fixed
+- Length of java primitive array using `alength`
+- Added error message for try-catch in all-tags, when resolving `coll-size`
+
+<br>
+
+## 0.10.0
 2024-11-24
 ### Breaking changes
 - Changed the following tags (result of calling `lasertag.core/tag`):<br>
