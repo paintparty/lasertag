@@ -687,7 +687,12 @@
                           #?(:cljs
                              (catch js/Object e e)
                              :clj
-                             (catch Exception e (println (str e)))))]
+                             (catch Exception e
+                               (println 
+                                (str "\n"
+                                     "Error (Caught) in 'lasertag.core/all-tags:"
+                                     "\n"
+                                     (str e))))))]
 
     (merge 
      {:all-tags  all-tags
@@ -861,4 +866,4 @@
   ([x opts]
    (tag* {:x x :extras? true :opts opts})))
 
-(? (tag-map (into-array '(1 2))))
+(tag-map (into-array '(1 2)))
