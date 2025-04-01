@@ -150,7 +150,8 @@
 
 (def clj-names
   {:clojure.lang.MultiFn :defmulti
-   :clojure.lang.Ratio :ratio})
+   :clojure.lang.Ratio   :ratio
+   :java.lang.Class      :class})
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
