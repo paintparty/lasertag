@@ -399,8 +399,8 @@
      (defn- cljs-iterable-type [x]
        (when (js-iterable? x)
          (if (= (str x) "[object Generator]") 
-           :js-generator
-           :js-iterable)))
+           :generator
+           :iterable)))
      
      (defn- js-object-instance-map-like
        [x types]
@@ -640,6 +640,8 @@
         java-util-class? (boolean (when-not scalar-type?
                                     #?(:clj (java-util-class? classname)
                                        :cljs nil)))
+        iterable?        #?(:cljs (js-iterable? x)
+                            :clj (instance? java.lang.Iterable x))  
         transient?       (contains? all-tags :transient)
         number-type?     (contains? all-tags :number)
         carries-meta?    (carries-meta? x)
@@ -654,7 +656,8 @@
                                           (when transient? :transient)
                                           (when number-type? :number-type)
                                           (when java-lang-class? :java-lang-class)
-                                          (when java-util-class? :java-util-class)]
+                                          (when java-util-class? :java-util-class)
+                                          (when iterable? :iterable)]
                                          #?(:cljs
                                             [(when (object? x) :js-object)
                                              (when (array? x) :js-array)]))))
