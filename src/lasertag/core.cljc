@@ -253,14 +253,9 @@
   #?(:cljs 
      (let [name-prop (.-name x)]
        (cond
-         (= k :defmulti)
-         (cljs-defmulti name-prop)
-
-         (not (string/blank? name-prop))
-         (cljs-fn x name-prop)
-
-         :else
-         (cljs-fn-alt x)))
+         (= k :defmulti)                 (cljs-defmulti name-prop)
+         (not (string/blank? name-prop)) (cljs-fn x name-prop)
+         :else                           (cljs-fn-alt x)))
      :clj
      (if (= k :defmulti)
       {:fn-args :lasertag/multimethod}
@@ -343,31 +338,20 @@
 
 ;; function resolution functions end--------------------------------------------
 
-
+(defn lsb? [k]
+  (contains? #{:long :short :byte} k))
 
 #?(:clj 
    (defn- clj-number-type [x]
      (when-let [k (get java-number-types (type x))]
        (cond
-         (contains? #{:long :short :byte} k)
-         :int
-
-         (= k :double)
-         (cond 
-           (cljc-NaN? x)
-           :nan
-
-           (java-negative-infinity? x)
-           :-infinity
-
-           (infinity? x)
-           :infinity
-
-           :else
-           k)
-
-         :else
-         k))))
+         (lsb? k)      :int
+         (= k :double) (cond 
+                         (cljc-NaN? x)               :nan
+                         (java-negative-infinity? x) :-infinity
+                         (infinity? x)               :infinity
+                         :else                       k)
+         :else         k))))
 
 #?(:cljs 
    (do
@@ -375,25 +359,13 @@
        (when-let [k (get js-number-types (type x))]
          (if (= k :js-number)
            (cond 
-             (int? x)
-             :int
-
-             (float? x)
-             (cond 
-               (cljc-NaN? x)
-               :nan
-
-               (= x js/Number.POSITIVE_INFINITY)
-               :infinity
-
-               (= x js/Number.NEGATIVE_INFINITY)
-               :-infinity
-
-               :else
-               :float)
-
-             :else
-             :number)
+             (int? x)   :int
+             (float? x) (cond 
+                          (cljc-NaN? x)                     :nan
+                          (= x js/Number.POSITIVE_INFINITY) :infinity
+                          (= x js/Number.NEGATIVE_INFINITY) :-infinity
+                          :else                             :float)
+             :else      :number)
            k)))
 
      (defn- cljs-iterable-type [x]
@@ -421,6 +393,8 @@
                           (select-keys types)
                           vals
                           (some #(when (keyword? %) %))))
+         ;; TODO is having :js-map-like-object and :js-object redundant?
+         ;; maybe we don't need either of those, just :map-like and :js are fine
          (when (js-object-instance? x)
            :js-map-like-object)))
 
@@ -429,11 +403,11 @@
         (let [k (if-let [c (.-constructor x)] 
                   (let [nm (.-name c)]
                     (if-not (string/blank? nm)
-                     ;; js class instances
+                      ;; js class instances
                       (let [ret (keyword nm)]
                         (if (= ret :Object) :Object ret))
 
-                     ;; cljs datatype and recordtype instances
+                      ;; cljs datatype and recordtype instances
                       (some-> c pwos keyword)))
                   :Object)]
           k)))
@@ -467,11 +441,11 @@
    :dom-document-fragment-node])
 
 (defn- cljc-coll-type [x]
-  (cond (vector? x)             :vector
-        (and (map? x)
-             (not (record? x))) :map
-        (set? x)                :set
-        (seq? x)                :seq
+  (cond (vector? x) :vector
+        (record? x) :record
+        (map? x)    :map
+        (set? x)    :set
+        (seq? x)    :seq
         :else
         (get cljc-transients (type x) nil)))
 
@@ -611,7 +585,7 @@
                (string/replace #"^\[" "")
                (string/replace #";$" "")))))
 
-;; TODO - Add array-like? and maybe list-like?
+;; TODO - Add :array-like? and maybe :list-like?
 (defn- all-tags [x k dom-node-type-keyword]
   (let [all-tags    #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                        :clj (clj-all-value-types x k))
@@ -779,17 +753,14 @@
                (all-tags x k nil)))))
 
 
-(defn- format-result [k x {:keys [format]}]
+(defn- format-result [k {:keys [format]}]
   (if format
     (case format
       :keyword k
       :symbol (symbol (subs (str k) 1))
       :string (str (subs (str k) 1))
       k)
-    #?(:cljs k
-       :clj (if (record? x)
-              (-> k name (string/split #"\.") last keyword)
-              k))))
+    k))
 
 #?(:cljs 
    (defn- js-intl-object-key [x]
