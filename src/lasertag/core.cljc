@@ -537,7 +537,7 @@
             :array          (when (array? x) :array)
             :array-map      (when (= cljs.core/PersistentArrayMap t) :array-map)
             :list           (when (= cljs.core/List t) :list)
-            :object         (when (object? x) :js-object)
+            :object         (when (object? x) :object)
             :fn             (when (fn? x) :function)
             :inst           (when (inst? x) :inst)
             :defmulti       (when (defmulti? x) :defmulti)
@@ -763,7 +763,7 @@
           
            ;; Enhanced reflection for built-in js objects
            (when-not (exclude? opts :js-built-in-object-info)
-             (when (= k :js-object)
+             (when (= k :object)
                (when-let [{:keys [sym]} 
                           (get jsi/js-built-ins-by-built-in x)]
                  {:js-built-in-object?     true
@@ -827,7 +827,7 @@
                        (let [k (keyword nm)
                              k (get clj-names k k)]
                          k)))))
-           k+ (format-result k x opts)]
+           k+ (format-result k opts)]
        (if extras? (tag-map* x k k+ opts) k+))
      :cljs
      (let [t  (type x)
@@ -838,7 +838,7 @@
                   (when (get js-set-types t) :set)
                   (when (contains? js-indexed-coll-types-set t) :array)
                   (cljs-iterable-type x)
-                  (when (object? x) :js-object)
+                  (when (object? x) :object)
                   (when (fn? x) :function)
                   (when (inst? x) :inst)
                   (when (defmulti? x) :defmulti)
@@ -850,7 +850,7 @@
                   (js-object-instance x)
                   (when (js/Number.isNaN x) :nan)
                   :lasertag/value-type-unknown)
-           k+ (format-result k x opts)]
+           k+ (format-result k opts)]
        (if extras? (tag-map* x k k+ opts) k+))))
 
 (defn tag
