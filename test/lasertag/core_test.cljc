@@ -10,6 +10,11 @@
                             PersistentHashMap$TransientHashMap))))
 
 
+;; #?(:clj
+;; (do 
+;;   (pprint (instance? java.lang.Iterable (java.util.ArrayList. [1 2 3])))
+;;   (pprint (tag-map       (java.util.ArrayList. [1 2 3])))))
+
 ;; Samples
 (deftype MyType [a b])
 (def my-data-type (->MyType 2 3))
@@ -32,15 +37,15 @@
      (is (= :function (tag MyType)))
      (is (= :function (tag MyRecordType)))
      (is (= :lasertag.core-test/MyType (tag my-data-type)))
-     (is (= :lasertag.core-test/MyRecordType (tag my-record-type)))
+     (is (= :record (tag my-record-type)))
      (is (= :defmulti (tag different-behavior))))
    :clj
    (deftest clj-function-types
      (is (= :function (tag #(inc %))))
-     (is (= :java.lang.Class (tag MyType)))
-     (is (= :java.lang.Class (tag MyRecordType)))
+     (is (= :class (tag MyType)))
+     (is (= :class (tag MyRecordType)))
      (is (= :lasertag.core_test.MyType (tag my-data-type)))
-     (is (= :MyRecordType (tag my-record-type)))
+     (is (= :record (tag my-record-type)))
      (is (= :defmulti (tag different-behavior)))))
 
 
@@ -106,7 +111,7 @@
             (tag-map '(:a :b :c))
             {:tag       :seq,
              :type      cljs.core/List,
-             :all-tags  #{:seq :js-iterable :coll :list :coll-type :carries-meta},
+             :all-tags  #{:seq :iterable :coll :list :coll-type :carries-meta},
              :classname "cljs.core/List",
              :coll-size 3})))
      ;; TODO - why is :fn-args flipping from nil to []
@@ -128,18 +133,20 @@
                      {:exclude [:js-built-in-object-info]})
             {:coll-size 1,
              :classname "Object",
-             :all-tags  #{:js-object
+             :all-tags  #{:object
+                          :js-object
                           :js-map-like-object
                           :coll-type
                           :map-like},
              :type      js/Object,
-             :tag       :js-object})))
+             :tag       :object})))
 
      (testing "Built-in js/JSON."
        (is (= (tag-map js/JSON)
-              {:tag                     :js-object,
+              {:tag                     :object,
                :type                    js/Object,
-               :all-tags                #{:js-map-like-object
+               :all-tags                #{:object
+                                          :js-map-like-object
                                           :coll-type
                                           :map-like
                                           :js-object},
@@ -154,7 +161,7 @@
             (tag-map       '(:a :b :c))
             {:tag       :seq,
              :type      clojure.lang.PersistentList,
-             :all-tags  #{:coll :list :coll-type :seq :carries-meta},
+             :all-tags  #{:iterable :coll :list :coll-type :seq :carries-meta},
              :classname "clojure.lang.PersistentList",
              :coll-size 3})))
      (testing "java.util.HashMap"
@@ -172,7 +179,7 @@
                                                  "b" 2}))
             {:tag       :set,
              :type      java.util.HashSet,
-             :all-tags  #{:coll :java-util-class :coll-type :set :set-like},
+             :all-tags  #{:iterable :coll :java-util-class :coll-type :set :set-like},
              :classname "java.util.HashSet",
              :coll-size 4})))
      (testing "java.util.ArrayList"
@@ -180,7 +187,7 @@
             (tag-map       (java.util.ArrayList. [1 2 3]))
             {:tag       :array,
              :type      java.util.ArrayList,
-             :all-tags  #{:coll :array :java-util-class :coll-type},
+             :all-tags  #{:iterable :coll :array :java-util-class :coll-type},
              :classname "java.util.ArrayList",
              :coll-size 3})))
 
@@ -323,7 +330,7 @@
      (is (= :char (tag (char 97))))
      (is (= :number (tag (java.math.BigInteger. "171"))))
      (is (= :inst (tag (java.util.Date.))))
-     (is (= :java.lang.Class (tag java.util.Date)))))
+     (is (= :class (tag java.util.Date)))))
 
 
 
