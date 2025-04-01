@@ -1,5 +1,5 @@
 # Changelog
-[Lasertag](https://github.com/paintparty/lasertag): Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka.
+[Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
 
 ## Unreleased
@@ -7,7 +7,21 @@
 <br>
 <br>
 
-## 0.10.0
+## 0.11.0
+2025-04-01
+### Breaking changes
+- Changed the following tags (result of calling `lasertag.core/tag`):<br>
+`:js-object`   -> `:object`              
+`:js-promise`  -> `:promise`              
+`:js-iterable` -> `:iterable`              
+`:java.lang.Class` -> `:class`              
+
+- Added `:iterable` to `:all-tags` entry of `lasertag.core/tag-map` return value, for all java
+values that are instances of `java.lang.Iterable`<br>
+
+<br>
+
+## 0.10.1
 2025-03-12
 ### Fixed
 - Length of java primitive array using `alength`

@@ -24,7 +24,7 @@ If using with Babashka, requires Babashka `v1.12.196` or higher
 Add as a dependency to your project:
 
 ```clojure
-[io.github.paintparty/lasertag "0.10.0"]
+[io.github.paintparty/lasertag "0.11.0"]
 ```
 <br>
 
@@ -76,6 +76,7 @@ The function `lasertag.core/tag-map` will return a map with additional info.
 
 
 ;; map 
+{:a :foo}
 =>
 {:tag       :map
  :type      clojure.lang.PersistentArrayMap
@@ -181,16 +182,16 @@ Excluding the JS built-in-object related entries:
 ```clojure
 (tag-map js/JSON)
 =>
-{:tag                     :js/Object
- :all-tags                #{:js/Object :map-like :coll-type}
+{:tag                     :object
+ :all-tags                #{:object :js-object :map-like :coll-type}
  :type                    #object[Object]
  :js-built-in-object?     true
  :js-built-in-object-name "JSON"}
 
 (tag-map js/JSON {:include-js-built-in-object-info? false})
 =>
-{:tag      :js/Object
- :all-tags #{:js/Object :map-like :coll-type}
+{:tag      :object
+ :all-tags #{:object :js-object :map-like :coll-type}
  :type     #object[Object]}
 ```
 <br>
@@ -226,9 +227,9 @@ Excluding the JS built-in-object related entries:
 |                             `1` |               `:number` |        `java.lang.Long`           |
 |                   `(float 1.5)` |               `:number` |       `java.lang.Float`           |
 |                      `(char a)` |                 `:char` |   `java.lang.Character`           |
-| `(java.math.BigInteger. "171")` | `:number`               |  `java.math.BigInteger`           |
-|             `(java.util.Date.)` |       `:inst`           |        `java.util.Date`           |
-|                `java.util.Date` |      `:java.lang.Class` |       `java.lang.Class`           |
+| `(java.math.BigInteger. "171")` |               `:number` |  `java.math.BigInteger`           |
+|             `(java.util.Date.)` |                 `:inst` |        `java.util.Date`           |
+|                `java.util.Date` |                `:class` |       `java.lang.Class`           |
 
 
 <br>
@@ -254,11 +255,12 @@ Excluding the JS built-in-object related entries:
 | `Infinity`                         | `:infinity`       | `#object[Boolean]`             |
 | `-Infinity`                        | `:-infinity`      | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`       | `#object[Function]`            |
-| `(new js/Date.)`                   | `:int` .          | `#object[Date]`                |
-| `(.values #js [1 2 3])`            | `:js/Iterator`    | `#object[Object]`              |
-| `(array "a" "b")`                  | `:js/Array`       | `#object[Array]`               |
-| `(new js/Int8Array #js ["a" "b"])` | `:js/Int8Array`   | `#object[Int8Array]`           |
-| `(new js/Set #js[1 2 3])`          | `:js/Set`         | `#object[Set]`                 |
+| `(new js/Date.)`                   | `:inst`           | `#object[Date]`                |
+| `(.values #js [1 2 3])`            | `:iterable`       | `#object[Object]`              |
+| `(array "a" "b")`                  | `:array`          | `#object[Array]`               |
+| `(new js/Int8Array #js ["a" "b"])` | `:array`          | `#object[Int8Array]`           |
+| `(new js/Set #js[1 2 3])`          | `:set`            | `#object[Set]`                 |
+| `(js/Promise. (fn [x] x))`         | `:promise`        | `#object[Promise]`             |
 
 <br>
 
@@ -272,7 +274,7 @@ Excluding the JS built-in-object related entries:
 (def my-record-type (->MyRecordType 4 8 4 5))
 
 (tag my-record-type) 
-=> :myns.core/MyRecordType
+=> :record
 
 
 
@@ -290,7 +292,7 @@ Excluding the JS built-in-object related entries:
 (def my-promise (js/Promise. (fn [x] x)))
 
 (tag my-promise) 
-=> :js/Promise
+=> :promise
 ```
 <br>
 
