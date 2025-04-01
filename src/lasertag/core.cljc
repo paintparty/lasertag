@@ -493,6 +493,7 @@
             (remove nil?)
             (cons k)
             (into #{})))))
+;; TODO - consider removing `js-` prefixes and just adding an additional :js tag
 #?(:cljs 
    (defn- cljs-all-value-types [x k dom-node-type-keyword]
      (let [number-type
@@ -816,7 +817,7 @@
                   (when (fn? x) :function)
                   (when (inst? x) :inst)
                   (when (defmulti? x) :defmulti)
-                  (when (js-promise? x) :js-promise)
+                  (when (js-promise? x) :promise)
                   (when (js-global-this? x) :js-global-this)
                   (js-intl-object-key x)
                   (when (js-data-view? x) :js-data-view)
