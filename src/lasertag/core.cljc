@@ -258,30 +258,28 @@
          :else                           (cljs-fn-alt x)))
      :clj
      (if (= k :defmulti)
-      {:fn-args :lasertag/multimethod}
-      (if (= k :java.lang.Class)
-        (let [[_ nm] (re-find #"^class (.*)$" (str x))
-              bits   (string/split nm #"\.")
-              fn-ns  (string/join "." (drop-last bits))
-              fn-nm  (last bits)]
-          {:fn-ns   (string/replace fn-ns #"_" "-")
-           :fn-name fn-nm
-           :fn-args :lasertag/unknown-function-signature-on-java-class})
-        (let [pwo-stringified (pwos x)
-              [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-          (when (and nm* (not (string/blank? nm*)))
-            (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                  fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-              (merge (if fn-nm 
-                       (if (re-find #"^fn--\d+$" fn-nm)
-                         {:lambda? true}
-                         {:fn-name fn-nm})
-                       {:lambda? true})
-                     {:fn-ns
-                      (string/replace fn-ns #"_" "-")
+       {:fn-args :lasertag/multimethod}
+       (if (= k :class)
+         (let [[_ nm] (re-find #"^class (.*)$" (str x))
+               bits   (string/split nm #"\.")
+               fn-ns  (string/join "." (drop-last bits))
+               fn-nm  (last bits)]
+           {:fn-ns   (string/replace fn-ns #"_" "-")
+            :fn-name fn-nm
+            :fn-args :lasertag/unknown-function-signature-on-java-class})
+         (let [pwo-stringified (pwos x)
+               [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
+           (when (and nm* (not (string/blank? nm*)))
+             (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+                   fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+               (merge (if fn-nm 
+                        (if (re-find #"^fn--\d+$" fn-nm)
+                          {:lambda? true}
+                          {:fn-name fn-nm})
+                        {:lambda? true})
+                      {:fn-ns   (string/replace fn-ns #"_" "-")
 
-                      :fn-args
-                      :lasertag/unknown-function-signature-on-clj-function}))))))))
+                       :fn-args :lasertag/unknown-function-signature-on-clj-function}))))))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -715,7 +713,7 @@
                :clj (type x))}
      
      ;; Optionaly get reflective function info, same for clj & cljs
-     (when (contains? #{:function :defmulti :java.lang.Class} k)
+     (when (contains? #{:function :defmulti :class} k)
        (let [b (not (exclude? opts :function-info))]
          #?(:cljs (fn-info x k b)
             :clj (fn-info x k b))))

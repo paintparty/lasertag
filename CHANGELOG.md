@@ -7,6 +7,15 @@
 <br>
 <br>
 
+## 0.11.1
+2025-04-25
+### Fixed
+- Changed the following keywords, internally only:<br>
+`:java.lang.Class`   -> `:class`              
+
+<br>
+
+
 ## 0.11.0
 2025-04-01
 ### Breaking changes
