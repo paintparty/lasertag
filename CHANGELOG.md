@@ -7,6 +7,15 @@
 <br>
 <br>
 
+
+## 0.11.2
+2025-06-14
+### Fixed
+- Refactored `coll-size` logic in `lasertag.core/all-tags`.
+- If coll-size cannot be determined `:coll-size` is now set to `:lasertag.core/unknown-coll-size`: 
+
+<br>
+
 ## 0.11.1
 2025-04-25
 ### Fixed
@@ -14,7 +23,6 @@
 `:java.lang.Class`   -> `:class`              
 
 <br>
-
 
 ## 0.11.0
 2025-04-01
