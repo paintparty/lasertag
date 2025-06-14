@@ -584,6 +584,65 @@
                (string/replace #"^\[" "")
                (string/replace #";$" "")))))
 
+(defn- yellow [s]
+  (str #?(:cljs nil :clj "\033[38;5;136m") s #?(:cljs nil :clj "\033[0;m")))
+
+(defn- orange [s]
+  (str #?(:cljs nil :clj"\033[38;5;208;1m") s #?(:cljs nil :clj "\033[0;m")))
+
+(defn- italic [s]
+  (str #?(:cljs nil :clj "\033[3m") s #?(:cljs nil :clj "\033[0;m")))
+
+(defn- bold [s]
+  (str #?(:cljs nil :clj "\033[1m") s #?(:cljs nil :clj "\033[0;m")))
+
+(defn- print-unknown-coll-size-warning [e]
+  (println 
+   (str (orange "══") (bold " Exception (Caught): lasertag.core/all-tags ") (orange "════════════════") 
+        "\n\n"
+        "Problem determining the size of a collection"
+        "\n\n"
+        (italic "Error message:")"\n"
+        #?(:cljs
+           (.-message e)
+           :clj
+           (.getMessage e)) 
+        "\n\n"
+        "You are most like seeing this as a result of using the API\n"
+        "of Fireworks or Bling. Please consider filing a ticket\n"
+        "that includes the following:\n\n"
+        "  - This error message\n"
+        "  - An example (or contrived example) of the val to be printed\n"
+        "  - The val's class or type, if you know it.\n"
+        "  - Which context? JVM Clojure, bb, cljs browser, or cljs node?"
+        "\n\n"
+        "https://github.com/paintparty/lasertag/issues"
+        "\n\n"
+        (orange "───────────────────────────────────────────────────────────────")))
+  )
+
+(defn- mock-unknown-coll-size [x]
+  #?(:cljs
+     (do (println "ClojureScript :: lasertag.core/all-tags")
+         (println x)
+         (println "\n")
+         (try (new js/Error (str :lasertag.core/unknown-coll-size))
+              (catch js/Object e
+                (print-unknown-coll-size-warning e)
+                :lasertag.core/unknown-coll-size))
+         :lasertag.core/unknown-coll-size)
+     :clj
+     (do (println "JVM Clojure :: lasertag.core/all-tags")
+         (println x)
+         (println "\n")
+         (try (throw (Throwable. (str :lasertag.core/unknown-coll-size)))
+              (catch Throwable e
+                (print-unknown-coll-size-warning e)
+                :lasertag.core/unknown-coll-size))
+         :lasertag.core/unknown-coll-size
+         ))
+  )
+
 ;; TODO - Add :array-like? and maybe :list-like?
 (defn- all-tags [x k dom-node-type-keyword]
   (let [all-tags    #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
@@ -635,41 +694,52 @@
                                             [(when (object? x) :js-object)
                                              (when (array? x) :js-array)]))))
         
-        ;; TODO - maybe we need a try/catch here 
-        coll-size    (try (when coll-type?
-                            (when-not (or (contains? all-tags :js-weak-map)
-                                          (contains? all-tags :js-weak-set))
-                              (cond 
-                                (or (= :js-object k)
-                                    (contains? all-tags :js-map-like-object))
-                                #?(:cljs
-                                   (.-length (js/Object.keys x))
-                                   :clj nil)
+        coll-size     (when coll-type?
+                        (when-not (or (contains? all-tags :js-weak-map)
+                                      (contains? all-tags :js-weak-set))
+                          (let [debug-unknown-coll-size? false] 
+                            (if debug-unknown-coll-size? 
+                              (mock-unknown-coll-size x)
+                              #?(:cljs
+                                 (try (cond
+                                        (or (= :js-object k)
+                                            (contains? all-tags :js-map-like-object))
+                                        (.-length (js/Object.keys x))
 
-                                (or (contains? all-tags :js-set)
-                                    (contains? all-tags :js-map))
-                                (.-size x)
+                                        (or (contains? all-tags :js-set)
+                                            (contains? all-tags :js-map))
+                                        (.-size x)
+                                        
+                                        (or (= k :array)
+                                            (typed-array? x))
+                                        (.-length x)
 
-                                ;; js-array or java primitive-array
-                                (and (or (= k :array)
-                                         #?(:cljs (typed-array? x)))
-                                     (not (contains? all-tags :java-util-class)))
-                                #?(:cljs
-                                   (.-length x)
-                                   :clj
-                                   (alength x))
+                                        :else
+                                        (count x))
 
-                                :else
-                                (count x))))
-                          #?(:cljs
-                             (catch js/Object e e)
-                             :clj
-                             (catch Exception e
-                               (println 
-                                (str "\n"
-                                     "Error (Caught) in 'lasertag.core/all-tags:"
-                                     "\n"
-                                     (str e))))))]
+                                      (catch js/Object e
+                                        (print-unknown-coll-size-warning e)
+                                        :lasertag.core/unknown-coll-size))
+
+                                 :clj
+                                 (do 
+                                   (try (cond
+                                          (or (instance? java.util.AbstractCollection x)
+                                              (instance? java.util.AbstractMap x))
+                                          (.size x)
+
+                                          (and (= k :array)
+                                               (not (contains? all-tags :java-util-class)))
+                                          (alength x)
+
+                                          :else
+                                          (count x))
+
+                                        (catch Exception e
+                                          (print-unknown-coll-size-warning e)
+                                          :lasertag.core/unknown-coll-size))))))))]
+
+    
 
     (merge 
      {:all-tags  all-tags
