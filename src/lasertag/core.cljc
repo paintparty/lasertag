@@ -697,7 +697,7 @@
         coll-size     (when coll-type?
                         (when-not (or (contains? all-tags :js-weak-map)
                                       (contains? all-tags :js-weak-set))
-                          (let [debug-unknown-coll-size? false] 
+                          (let [debug-unknown-coll-size? #_true false] 
                             (if debug-unknown-coll-size? 
                               (mock-unknown-coll-size x)
                               #?(:cljs
