@@ -50,7 +50,9 @@
   ([x]
    (? nil x))
   ([l x]
-   (println (when l (str " " l "\n")) x)
+   (if l
+     (println (str " " l "\n") x)
+     (println x))
    x))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
