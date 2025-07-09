@@ -1,4 +1,4 @@
-(defproject io.github.paintparty/lasertag "0.11.2"
+(defproject io.github.paintparty/lasertag "0.11.3-SNAPSHOT"
   :description "Clojure(Script) utility for discerning types of values."
   :url "https://github.com/paintparty/lasertag"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
