@@ -1,6 +1,6 @@
 (ns lasertag.core-test
   (:require [lasertag.core :refer [tag tag-map]]
-            ;; [clojure.pprint :refer [pprint]]
+            [clojure.pprint :refer [pprint]]
             #?(:cljs [cljs.test :refer [deftest is testing]])
             #?(:clj [clojure.test :refer :all]))
   #?(:clj
@@ -30,7 +30,6 @@
   (is (= "number" (tag 1 {:format :string})))
   (is (= 'number (tag 1 {:format :symbol}))))
 
-
 #?(:cljs
    (deftest cljs-function-types
      (is (= :function (tag #(inc %))))
@@ -40,13 +39,15 @@
      (is (= :record (tag my-record-type)))
      (is (= :defmulti (tag different-behavior))))
    :clj
-   (deftest clj-function-types
-     (is (= :function (tag #(inc %))))
-     (is (= :class (tag MyType)))
-     (is (= :class (tag MyRecordType)))
-     (is (= :lasertag.core_test.MyType (tag my-data-type)))
-     (is (= :record (tag my-record-type)))
-     (is (= :defmulti (tag different-behavior)))))
+   (do
+     (deftest clj-function-types
+       (is (= :function (tag #(inc %))))
+       (is (= :class (tag MyType)))
+       (is (= :class (tag MyRecordType)))
+       (is (= :lasertag.core_test.MyType (tag my-data-type)))
+       (is (= :record (tag my-record-type)))
+       (is (= :defmulti (tag different-behavior)))
+       )))
 
 
 (deftest cljc-scalar-types
@@ -62,21 +63,31 @@
      (is (= 
           (dissoc (tag-map #(inc %)) :type)
           {:tag       :function,
-           :lambda?    true,
+           :lambda?   true,
            :fn-args   '[%1],
            :all-tags  #{:function},
            :classname "Function"})))
+   :bb
+   (deftest clj-function-types-map
+     ;; TODO - Address :classname dissoc
+     (is (= 
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                  :classname)
+          {:tag      :function,
+           :lambda?  true,
+           :fn-ns    "sci.impl.fns",
+           :fn-args  :lasertag/unknown-function-signature-on-clj-function,
+           :all-tags #{:function :carries-meta}})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
      (is (= 
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
-          {:tag :function,
-           :lambda? true,
-           :fn-ns "lasertag.core-test",
-           :fn-args
-           :lasertag/unknown-function-signature-on-clj-function,
+          {:tag      :function,
+           :lambda?  true,
+           :fn-ns    "lasertag.core-test",
+           :fn-args  :lasertag/unknown-function-signature-on-clj-function,
            :all-tags #{:function :carries-meta}}))))
 
 #?(:cljs
@@ -86,6 +97,20 @@
           {:tag       :function
            :all-tags  #{:function}
            :classname "Function"})))
+   :bb
+   (deftest clj-elide-function-info
+     #_(testing "clojure.core/inc, in bb"
+       (is (= 
+            (dissoc (tag-map inc {:exclude [:function-info]}) :type)
+            {:tag       :function,
+             :all-tags  #{:function :carries-meta},
+             :classname "clojure.core$inc"})))
+     (testing "custom xy fn, in bb"
+       (is (= 
+            (dissoc (tag-map xy {:exclude [:function-info]}) :type)
+            {:tag       :function,
+             :all-tags  #{:function :carries-meta},
+             :classname "sci.impl.fns"}))))
    :clj
    (deftest clj-elide-function-info
      (is (= 
@@ -158,12 +183,13 @@
    (deftest clj-collection-types-map
      (testing "clojure.lang.PersistentList"
        (is (= 
-            (tag-map       '(:a :b :c))
+            (tag-map '(:a :b :c))
             {:tag       :seq,
              :type      clojure.lang.PersistentList,
              :all-tags  #{:iterable :coll :list :coll-type :seq :carries-meta},
              :classname "clojure.lang.PersistentList",
              :coll-size 3})))
+
      (testing "java.util.HashMap"
        (is (= 
             (tag-map       (java.util.HashMap. {"a" 1
@@ -173,6 +199,7 @@
              :all-tags  #{:coll :java-util-class :coll-type :map-like :map},
              :classname "java.util.HashMap",
              :coll-size 2})))
+
      (testing "java.util.HashSet"
        (is (= 
             (tag-map       (java.util.HashSet. #{"a" 1
@@ -182,6 +209,7 @@
              :all-tags  #{:iterable :coll :java-util-class :coll-type :set :set-like},
              :classname "java.util.HashSet",
              :coll-size 4})))
+
      (testing "java.util.ArrayList"
        (is (= 
             (tag-map       (java.util.ArrayList. [1 2 3]))
@@ -189,9 +217,7 @@
              :type      java.util.ArrayList,
              :all-tags  #{:iterable :coll :array :java-util-class :coll-type},
              :classname "java.util.ArrayList",
-             :coll-size 3})))
-
-     ))
+             :coll-size 3})))))
 
 
 #?(:cljs
@@ -285,31 +311,40 @@
      (is (= 
           (tag-map '(:a :b :c) {:exclude [:all-tags]
                                 :format  :string})
-          {:tag           "seq",
-           :type          cljs.core/List}))
+          {:tag  "seq",
+           :type cljs.core/List}))
      (is (= 
           (tag-map '(:a :b :c) {:exclude [:all-tags]
                                 :format  :symbol})
-          {:tag           'seq,
-           :type          cljs.core/List})))
+          {:tag  'seq,
+           :type cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes+alternate-tag-type
      (is (= 
           (tag-map '(:a :b :c) {:exclude [:all-tags]
                                 :format  :string})
-          {:tag           "seq",
-           :type          clojure.lang.PersistentList}))
+          {:tag  "seq",
+           :type clojure.lang.PersistentList}))
      (is (= 
           (tag-map '(:a :b :c) {:exclude [:all-tags]
                                 :format  :symbol})
-          {:tag           'seq,
-           :type          clojure.lang.PersistentList}))))
+          {:tag  'seq,
+           :type clojure.lang.PersistentList}))))
 
 
-(deftest cljc-number-types 
-  (is (= :infinity (tag (/ 1.6 0.0))))
-  (is (= :-infinity (tag (/ -1.0 0.0))))
-  (is (= :nan (tag (/ 0.0 0.0)))))
+#?(:cljs
+   (deftest cljs-inf-and-nan-types 
+     (is (= :infinity (tag (/ 1.6 0.0))))
+     (is (= :-infinity (tag (/ -1.0 0.0))))
+     (is (= :nan (tag (/ 0.0 0.0)))))
+   :bb
+   nil
+   :clj
+   (deftest cljs-inf-and-nan-types 
+     (is (= :infinity (tag (/ 1.6 0.0))))
+     (is (= :-infinity (tag (/ -1.0 0.0))))
+     (is (= :nan (tag (/ 0.0 0.0))))))
+
 
 #?(:cljs
    (deftest cljs-number-types 
