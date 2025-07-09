@@ -153,7 +153,8 @@
 (def clj-names
   {:clojure.lang.MultiFn :defmulti
    :clojure.lang.Ratio   :ratio
-   :java.lang.Class      :class})
+   :java.lang.Class      :class
+   :sci.lang.Type        :class})
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
@@ -251,6 +252,7 @@
             :cljs-datatype-fn? true}
            {:lambda? true})))))
 
+
 (defn- fn-info* [x k]
   #?(:cljs 
      (let [name-prop (.-name x)]
@@ -261,27 +263,28 @@
      :clj
      (if (= k :defmulti)
        {:fn-args :lasertag/multimethod}
-       (if (= k :class)
-         (let [[_ nm] (re-find #"^class (.*)$" (str x))
-               bits   (string/split nm #"\.")
-               fn-ns  (string/join "." (drop-last bits))
-               fn-nm  (last bits)]
-           {:fn-ns   (string/replace fn-ns #"_" "-")
-            :fn-name fn-nm
-            :fn-args :lasertag/unknown-function-signature-on-java-class})
-         (let [pwo-stringified (pwos x)
-               [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-           (when (and nm* (not (string/blank? nm*)))
-             (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                   fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-               (merge (if fn-nm 
-                        (if (re-find #"^fn--\d+$" fn-nm)
-                          {:lambda? true}
-                          {:fn-name fn-nm})
-                        {:lambda? true})
-                      {:fn-ns   (string/replace fn-ns #"_" "-")
-
-                       :fn-args :lasertag/unknown-function-signature-on-clj-function}))))))))
+       (do 
+           (if (= k :class)
+             (let [[_ nm] (re-find #"^class (.*)$" (str x))
+                   bits   (string/split nm #"\.")
+                   fn-ns  (string/replace (string/join "." (drop-last bits)) #"_" "-")
+                   fn-nm  (last bits)]
+               {:fn-ns   fn-ns 
+                :fn-name fn-nm
+                :fn-args :lasertag/unknown-function-signature-on-java-class})
+             (let [pwo-stringified (pwos x)
+                   [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
+               (when (and nm* (not (string/blank? nm*)))
+                 (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+                       fn-ns               (string/replace fn-ns #"_" "-")
+                       fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+                   (merge (if fn-nm 
+                            (if (re-find #"^fn--\d+$" fn-nm)
+                              {:lambda? true}
+                              {:fn-name fn-nm})
+                            {:lambda? true})
+                          {:fn-ns   fn-ns
+                           :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -666,6 +669,11 @@
         scalar-type? (contains? scalar-types-set k) 
         classname    #?(:cljs
                         (cljs-class-name x)
+                        :bb
+                        (let [nm (java-class-name x)]
+                          (if (string/starts-with? nm "sci.impl.fns")
+                            "sci.impl.fns"
+                            nm))
                         :clj
                         (java-class-name x))
         java-lang-class? (boolean (when-not scalar-type?
@@ -723,23 +731,39 @@
                                         (print-unknown-coll-size-warning e)
                                         :lasertag.core/unknown-coll-size))
 
+                                 ;; TODO open PR to add java.util.AbstractCollection to bb,
+                                 ;; then eliminate this branch
+                                 :bb
+                                 (try (cond
+                                        (instance? java.util.AbstractMap x)
+                                        (.size x)
+
+                                        (and (= k :array)
+                                             (not (contains? all-tags :java-util-class)))
+                                        (alength x)
+
+                                        :else
+                                        (count x))
+
+                                      (catch Exception e
+                                        (print-unknown-coll-size-warning e)
+                                        :lasertag.core/unknown-coll-size))
                                  :clj
-                                 (do 
-                                   (try (cond
-                                          (or (instance? java.util.AbstractCollection x)
-                                              (instance? java.util.AbstractMap x))
-                                          (.size x)
+                                 (try (cond
+                                        (or (instance? java.util.AbstractCollection x)
+                                            (instance? java.util.AbstractMap x))
+                                        (.size x)
 
-                                          (and (= k :array)
-                                               (not (contains? all-tags :java-util-class)))
-                                          (alength x)
+                                        (and (= k :array)
+                                             (not (contains? all-tags :java-util-class)))
+                                        (alength x)
 
-                                          :else
-                                          (count x))
+                                        :else
+                                        (count x))
 
-                                        (catch Exception e
-                                          (print-unknown-coll-size-warning e)
-                                          :lasertag.core/unknown-coll-size))))))))]
+                                      (catch Exception e
+                                        (print-unknown-coll-size-warning e)
+                                        :lasertag.core/unknown-coll-size)))))))]
 
     
 
