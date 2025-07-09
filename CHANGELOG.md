@@ -7,6 +7,10 @@
 <br>
 <br>
 
+## 0.11.3
+2025-06-14
+### Fixed
+- Missing instance check for `java.util.AbstractCollection` in `Babashka` context [#23](https://github.com/paintparty/lasertag/issues/23)
 
 ## 0.11.2
 2025-06-14
