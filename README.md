@@ -363,12 +363,17 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 lein test
 ```
 
-The ClojureScript tests:
+ClojureScript tests:
 
 ```Clojure
 npm run test
 ```
 
+Babashka tests:
+
+```Clojure
+bb test:bb
+```
 
 <br>
 
