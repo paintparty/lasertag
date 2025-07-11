@@ -9,9 +9,6 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
-(defrecord MyRecordType [a b c d])
-
-(pprint (tag-map MyRecordType))
 
 ;; #?(
 ;;    :clj
