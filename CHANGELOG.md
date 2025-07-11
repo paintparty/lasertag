@@ -7,10 +7,21 @@
 <br>
 <br>
 
+## 0.11.4
+2025-07-12
+### Fixed
+- Catch Throwable when custom datatype `coll-size` cannot be determined [#38](https://github.com/paintparty/lasertag/issues/38)
+
+<br>
+<br>
+
 ## 0.11.3
-2025-06-14
+2025-07-08
 ### Fixed
 - Missing instance check for `java.util.AbstractCollection` in `Babashka` context [#23](https://github.com/paintparty/lasertag/issues/23)
+
+<br>
+<br>
 
 ## 0.11.2
 2025-06-14
