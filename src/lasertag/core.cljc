@@ -252,6 +252,28 @@
             :cljs-datatype-fn? true}
            {:lambda? true})))))
 
+#?(:clj
+   (do
+     (defn- java-util-class? [s]
+       (boolean (some-> s (string/starts-with? "java.util"))))
+
+     (defn- java-lang-class? [s]
+       (boolean (some->> s (re-find #"java\.lang"))))
+     
+     (defn java-class-name [x]
+       ;; TODO - Consider using clojure.lang.Compiler/demunge here: (some-> x type .getName Compiler/demunge)
+       (some-> (or (try (some-> x type .getName)
+                        (catch Exception e))
+                   (some-> x
+                           type
+                           str
+                           (string/replace #"^class (.*)$" "")))
+
+               ;; Example of what these last 2 do:
+               ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
+               (string/replace #"^\[" "")
+               (string/replace #";$" "")))))
+
 
 (defn- fn-info* [x k]
   #?(:cljs 
@@ -264,27 +286,28 @@
      (if (= k :defmulti)
        {:fn-args :lasertag/multimethod}
        (do 
-           (if (= k :class)
-             (let [[_ nm] (re-find #"^class (.*)$" (str x))
-                   bits   (string/split nm #"\.")
-                   fn-ns  (string/replace (string/join "." (drop-last bits)) #"_" "-")
-                   fn-nm  (last bits)]
-               {:fn-ns   fn-ns 
-                :fn-name fn-nm
-                :fn-args :lasertag/unknown-function-signature-on-java-class})
-             (let [pwo-stringified (pwos x)
-                   [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-               (when (and nm* (not (string/blank? nm*)))
-                 (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                       fn-ns               (string/replace fn-ns #"_" "-")
-                       fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-                   (merge (if fn-nm 
-                            (if (re-find #"^fn--\d+$" fn-nm)
-                              {:lambda? true}
-                              {:fn-name fn-nm})
-                            {:lambda? true})
-                          {:fn-ns   fn-ns
-                           :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))))
+         (if (= k :class)
+           ;; For custom datatypes ^class prefix is not is not present in babashka, when class is str'd
+           (let [[_ nm] (re-find #"(?:^class )?(.*)$" (str x))
+                 bits   (string/split nm #"\.")
+                 fn-ns  (string/replace (string/join "." (drop-last bits)) #"_" "-")
+                 fn-nm  (last bits)]
+             {:fn-ns   fn-ns 
+              :fn-name fn-nm
+              :fn-args :lasertag/unknown-function-signature-on-java-class})
+           (let [pwo-stringified (pwos x)
+                 [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
+             (when (and nm* (not (string/blank? nm*)))
+               (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+                     fn-ns               (string/replace fn-ns #"_" "-")
+                     fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+                 (merge (if fn-nm 
+                          (if (re-find #"^fn--\d+$" fn-nm)
+                            {:lambda? true}
+                            {:fn-name fn-nm})
+                          {:lambda? true})
+                        {:fn-ns   fn-ns
+                         :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -564,27 +587,6 @@
                      (js-classname x))]
          (if (keyword? ret) (subs (str ret) 1) ret)))))
 
-#?(:clj
-   (do
-     (defn- java-util-class? [s]
-       (boolean (some-> s (string/starts-with? "java.util"))))
-
-     (defn- java-lang-class? [s]
-       (boolean (some->> s (re-find #"java\.lang"))))
-     
-     (defn java-class-name [x]
-       ;; TODO - Consider using clojure.lang.Compiler/demunge here: (some-> x type .getName Compiler/demunge)
-       (some-> (or (try (some-> x type .getName)
-                        (catch Exception e))
-                   (some-> x
-                              type
-                              str
-                              (string/replace #"^class (.*)$" "")))
-
-               ;; Example of what these last 2 do:
-               ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
-               (string/replace #"^\[" "")
-               (string/replace #";$" "")))))
 
 (defn- yellow [s]
   (str #?(:cljs nil :clj "\033[38;5;136m") s #?(:cljs nil :clj "\033[0;m")))
@@ -669,7 +671,7 @@
                         (cljs-class-name x)
                         :bb
                         (let [nm (java-class-name x)]
-                          (if (string/starts-with? nm "sci.impl.fns")
+                          (if (some-> nm (string/starts-with? "sci.impl.fns"))
                             "sci.impl.fns"
                             nm))
                         :clj

@@ -7,8 +7,20 @@
 <br>
 <br>
 
+## 0.11.5
+2025-07-11
+### Fixed
+- Function name resolution bug for custom datatypes in Babashka
+
+### Added
+- Test runner for Babashka [#24](https://github.com/paintparty/lasertag/issues/24)
+
+<br>
+<br>
+
+
 ## 0.11.4
-2025-07-12
+2025-07-10
 ### Fixed
 - Catch Throwable when custom datatype `coll-size` cannot be determined [#38](https://github.com/paintparty/lasertag/issues/38)
 
