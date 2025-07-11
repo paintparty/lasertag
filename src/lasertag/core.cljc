@@ -486,12 +486,9 @@
                        (instance? java.util.Collection x)
                        (clj-or-bb-array? x))
                :coll)
-
-             ;; TODO - leave this out for now
-             ;;  (when (instance? java.util.AbstractList x)
-             ;;    :java.util.AbstractList)
-             
+             (when (instance? clojure.lang.IType x) :datatype)
              (when (record? x) :record)
+             (when (record? x) :datatype)
              (when (cljc-number? x number-type) :number)]
             (remove nil?)
             (cons k)
@@ -577,6 +574,7 @@
        (boolean (some->> s (re-find #"java\.lang"))))
      
      (defn java-class-name [x]
+       ;; TODO - Consider using clojure.lang.Compiler/demunge here: (some-> x type .getName Compiler/demunge)
        (some-> (or (try (some-> x type .getName)
                         (catch Exception e))
                    (some-> x
@@ -605,26 +603,26 @@
   (println 
    (str (orange "══") (bold " Exception (Caught): lasertag.core/all-tags ") (orange "════════════════") 
         "\n\n"
-        "Problem determining the size of a collection"
-        "\n\n"
-        (italic "Error message:")"\n"
+        (italic "Error Description:")"\n\n"
+        "  Problem determining the size of a collection"
+        "\n\n\n"
+        (italic "Error Message, from Clojure:")"\n\n"
         #?(:cljs
            (.-message e)
            :clj
-           (.getMessage e)) 
-        "\n\n"
-        "You are most like seeing this as a result of using the API\n"
-        "of Fireworks or Bling. Please consider filing a ticket\n"
-        "that includes the following:\n\n"
+           (str "  " (.getMessage e))) 
+        "\n\n\n"
+        (italic "You are most like seeing this as a result of using the API\n")
+        (italic "of Fireworks or Bling. Please consider filing a ticket\n")
+        (italic "that includes the following:\n\n")
         "  - This error message\n"
         "  - An example (or contrived example) of the val to be printed\n"
         "  - The val's class or type, if you know it.\n"
         "  - Which context? JVM Clojure, bb, cljs browser, or cljs node?"
         "\n\n"
-        "https://github.com/paintparty/lasertag/issues"
+        (italic "https://github.com/paintparty/lasertag/issues")
         "\n\n"
-        (orange "───────────────────────────────────────────────────────────────")))
-  )
+        (orange "───────────────────────────────────────────────────────────────"))))
 
 (defn- mock-unknown-coll-size [x]
   #?(:cljs
@@ -649,7 +647,8 @@
   )
 
 ;; TODO - Add :array-like? and maybe :list-like?
-(defn- all-tags [x k dom-node-type-keyword]
+(defn- all-tags
+  [{:keys [x k dom-node-type-keyword opts]}]
   (let [all-tags    #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
                        :clj (clj-all-value-types x k))
         map-like?    (or (contains? #{:map :js-object :js-map :js-data-view} k)
@@ -746,7 +745,8 @@
                                         (count x))
 
                                       (catch Exception e
-                                        (print-unknown-coll-size-warning e)
+                                        (when (:suppress-coll-size-warning? opts)
+                                          (print-unknown-coll-size-warning e))
                                         :lasertag.core/unknown-coll-size))
                                  :clj
                                  (try (cond
@@ -759,13 +759,13 @@
                                         (alength x)
 
                                         :else
-                                        (count x))
+                                        (do 
+                                          (count x)))
 
-                                      (catch Exception e
-                                        (print-unknown-coll-size-warning e)
+                                      (catch Throwable e
+                                        (when (:suppress-coll-size-warning? opts)
+                                          (print-unknown-coll-size-warning e))
                                         :lasertag.core/unknown-coll-size)))))))]
-
-    
 
     (merge 
      {:all-tags  all-tags
@@ -822,7 +822,9 @@
           (merge
            ;; Get all the tags
            (when-not (exclude? opts :all-tags)
-             (all-tags x k dom-node-type-keyword))
+             (all-tags {:x                     x
+                        :k                     k 
+                        :dom-node-type-keyword dom-node-type-keyword}))
 
            ;; Get dom node info 
            (when dom-node-type
@@ -845,7 +847,9 @@
         ;; Just for Clojure
         :clj (when-not (exclude? opts :all-tags)
                ;; Get all the tags
-               (all-tags x k nil)))))
+               (all-tags {:x    x
+                          :k    k 
+                          :opts opts})))))
 
 
 (defn- format-result [k {:keys [format]}]

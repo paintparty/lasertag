@@ -9,11 +9,44 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
+#?(:clj
+   (do
+     
+     (deftype CustomMap [m]
+       clojure.lang.IPersistentMap
+      ;;  (count [_] (count m))
+       (assoc [this _ _] this))
+
+    ;; (println (.size {:a 1}))
+     
+    ;;  (.size (->CustomMap {:a 1}) :a)
+     
+    ;;  (println #{:a 1 2 3 4 5 6 8 9 :b :C :d})
+    ;;  (tag-map #{:a 1 2 3 4 5 6 8 9 :b :C :d})
+
+    ;;  (println 'range)
+    ;;  (tag-map (range 10))
+
+    ;;  (println 'range)
+    ;;  (tag-map (reverse (range 10)))
+
+    ;;  (println '(:a 1))
+    ;;  (tag-map '(:a 1))
+
+    ;;  (println '[:a 1])
+    ;;  (tag-map [:a 1])
+
+    ;;  (println 'CustomMap) 
+    ;;  (println (count (->CustomMap {:a 1 :b 3})))
+    ;;  (println (tag-map (->CustomMap {:a 1 :b 3})))
+     
+     ))
+
 
 ;; #?(:clj
 ;; (do 
 ;;   (pprint (instance? java.lang.Iterable (java.util.ArrayList. [1 2 3])))
-;;   (pprint (tag-map       (java.util.ArrayList. [1 2 3])))))
+;;   (pprint (tag-map (java.util.ArrayList. [1 2 3])))))
 
 ;; Samples
 (deftype MyType [a b])
