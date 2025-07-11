@@ -486,7 +486,6 @@
                        (instance? java.util.Collection x)
                        (clj-or-bb-array? x))
                :coll)
-             (when (instance? clojure.lang.IType x) :datatype)
              (when (record? x) :record)
              (when (record? x) :datatype)
              (when (cljc-number? x number-type) :number)]
@@ -701,7 +700,12 @@
                                           (when iterable? :iterable)]
                                          #?(:cljs
                                             [(when (object? x) :js-object)
-                                             (when (array? x) :js-array)]))))
+                                             (when (array? x) :js-array)]
+                                            :bb
+                                            nil
+                                            :clj 
+                                            [(when (instance? clojure.lang.IType x) :datatype)]))))
+             
         
         coll-size     (when coll-type?
                         (when-not (or (contains? all-tags :js-weak-map)
@@ -744,7 +748,7 @@
                                         :else
                                         (count x))
 
-                                      (catch Exception e
+                                      (catch Throwable e
                                         (when (:suppress-coll-size-warning? opts)
                                           (print-unknown-coll-size-warning e))
                                         :lasertag.core/unknown-coll-size))

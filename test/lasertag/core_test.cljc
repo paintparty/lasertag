@@ -9,7 +9,9 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
-#?(:clj
+#?(:bb
+   nil
+   :clj
    (do
      
      (deftype CustomMap [m]
