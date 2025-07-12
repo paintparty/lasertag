@@ -13,6 +13,7 @@
 (ns lasertag.core
   (:require 
    [clojure.string :as string]
+   [lasertag.messaging :as messaging]
    #?(:cljs [lasertag.cljs-interop :as jsi]))
   #?(:clj
      (:import (clojure.lang PersistentVector$TransientVector
@@ -71,43 +72,74 @@
    ["_STAR_"        "*"]
    ["_"             "-"]])  
 
+#?(:clj 
+   (do 
+     (def clj-scalar-types
+       {nil                        :nil
+        clojure.lang.Symbol     :symbol
+        clojure.lang.Keyword    :keyword
+        java.lang.String        :string
+        java.lang.Boolean       :boolean
+        java.util.regex.Pattern :regex
+        java.lang.Character     :char
+        java.util.UUID          :uuid})
+     (def java-number-types
+       {java.lang.Double     :double
+        java.lang.Short      :short
+        java.lang.Long       :long
+        java.lang.Float      :float
+        java.lang.Byte       :byte
+        java.math.BigDecimal :decimal
+        java.math.BigInteger :big-int})))
 
-(def clj-scalar-types
-  #?(:clj 
-     {nil                     :nil
-      clojure.lang.Symbol     :symbol
-      clojure.lang.Keyword    :keyword
-      java.lang.String        :string
-      java.lang.Boolean       :boolean
-      java.util.regex.Pattern :regex
-      java.lang.Character     :char
-      java.util.UUID          :uuid}))
 
-(def cljs-scalar-types
-  #?(:cljs 
-     {cljs.core/Symbol  :symbol
-      cljs.core/Keyword :keyword
-      cljs.core/UUID    :uuid
-      js/String         :string
-      js/Boolean        :boolean
-      js/RegExp         :regex
-      nil               :nil}))
+#?(:cljs 
+   (do
+     (def cljs-scalar-types
+       {cljs.core/Symbol  :symbol
+        cljs.core/Keyword :keyword
+        cljs.core/UUID    :uuid
+        js/String         :string
+        js/Boolean        :boolean
+        js/RegExp         :regex
+        nil                  :nil})
+          
+     (def js-number-types
+       {js/Number :js-number
+        js/BigInt :js-big-int})
 
-(def js-number-types
-  #?(:cljs 
-     {js/Number :js-number
-      js/BigInt :js-big-int}))
+     (def js-map-types
+       {js/Map     :js-map
+        js/WeakMap :js-weak-map})
 
-(def java-number-types
-  #?(:clj 
-     {java.lang.Double     :double
-      java.lang.Short      :short
-      java.lang.Long       :long
-      java.lang.Float      :float
-      java.lang.Byte       :byte
-      java.math.BigDecimal :decimal
-      java.math.BigInteger :big-int
-      }))
+     (def js-set-types
+       {js/Set     :js-set
+        js/WeakSet :js-weak-set})
+
+     (def js-indexed-coll-types
+       {js/Array             :array
+        js/Int8Array         :js-int8-array
+        js/Uint8Array        :js-unsigned-int8-array
+        js/Uint8ClampedArray :js-unsigned-int8-clamped-array
+        js/Int16Array        :js-int16-array
+        js/Uint16Array       :js-unsigned-int16-array
+        js/Int32Array        :js-int32-array
+        js/Uint32Array       :js-unsigned-int32-array
+        js/BigInt64Array     :js-big-int64-array
+        js/BigUint64Array    :js-big-unsigned-int64-array
+        js/Float32Array      :js-float32-array
+        js/Float64Array      :js-float64-array})
+
+     (def js-indexed-coll-types-set
+       (->> js-indexed-coll-types
+            keys
+            (into #{})))))
+
+(def clj-names
+  {:clojure.lang.MultiFn :defmulti
+   :clojure.lang.Ratio   :ratio
+   :java.lang.Class      :class
+   :sci.lang.Type        :class})
 
 (def scalar-types-set
   #?(:cljs
@@ -118,43 +150,6 @@
      (as-> #{} $
        (apply conj $ (vals clj-scalar-types))
        (apply conj $ (vals java-number-types)))))
-
-(def js-map-types
-  #?(:cljs
-     {js/Map     :js-map
-      js/WeakMap :js-weak-map}))
-
-(def js-set-types
-  #?(:cljs
-     {js/Set     :js-set
-      js/WeakSet :js-weak-set}))
-
-(def js-indexed-coll-types
-  #?(:cljs
-     {js/Array             :array
-      js/Int8Array         :js-int8-array
-      js/Uint8Array        :js-unsigned-int8-array
-      js/Uint8ClampedArray :js-unsigned-int8-clamped-array
-      js/Int16Array        :js-int16-array
-      js/Uint16Array       :js-unsigned-int16-array
-      js/Int32Array        :js-int32-array
-      js/Uint32Array       :js-unsigned-int32-array
-      js/BigInt64Array     :js-big-int64-array
-      js/BigUint64Array    :js-big-unsigned-int64-array
-      js/Float32Array      :js-float32-array
-      js/Float64Array      :js-float64-array}))
-
-(def js-indexed-coll-types-set
-  #?(:cljs
-     (->> js-indexed-coll-types
-          keys
-          (into #{}))))
-
-(def clj-names
-  {:clojure.lang.MultiFn :defmulti
-   :clojure.lang.Ratio   :ratio
-   :java.lang.Class      :class
-   :sci.lang.Type        :class})
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
@@ -187,25 +182,21 @@
 (defn- infinity? [x] (and (number? x) (= "Infinity" (str x))))
 (defn- java-negative-infinity? [x] #?(:clj (and (number? x)
                                                 (= "-Infinity" (str x)))))
-(defn- js-global-this? [x] #?(:cljs (= x js/globalThis)))
-(defn- js-object-instance? [x] #?(:cljs (instance? js/Object x)))
-(defn- defmulti? [x] #?(:cljs (= (type x) cljs.core/MultiFn)))
-
-(defn- js-promise? [x] #?(:cljs (instance? js/Promise x) :clj false))
-(defn- js-data-view? [x] #?(:cljs (instance? js/DataView x) :clj false))
-(defn- js-array-buffer? [x] #?(:cljs (instance? js/ArrayBuffer x) :clj false))
 
 
-#?(:cljs 
-   (defn typed-array? [x]
-     (and (js/ArrayBuffer.isView x)
-          (not (instance? js/ArrayBuffer x))
-          (not (instance? js/DataView x)))))
-
-
-;; cljs fn resolution functions start-------------------------------------------
+;; cljs and js instance checks, cljs fn resolution functions start -------------
 #?(:cljs 
    (do 
+     (defn- js-global-this? [x] (= x js/globalThis))
+     (defn- js-object-instance? [x] (instance? js/Object x))
+     (defn- defmulti? [x] (= (type x) cljs.core/MultiFn))
+     (defn- js-promise? [x] (instance? js/Promise x))
+     (defn- js-data-view? [x] (instance? js/DataView x))
+     (defn- js-array-buffer? [x] (instance? js/ArrayBuffer x))
+     (defn- typed-array? [x]
+       (and (js/ArrayBuffer.isView x)
+            (not (instance? js/ArrayBuffer x))
+            (not (instance? js/DataView x))))
      (defn- js-built-in-map [o]
        (let [{:keys [sym]} (get jsi/js-built-ins-by-built-in o)]
          {:js-built-in-method-of      o
@@ -219,7 +210,7 @@
          (if-let [built-in-candidates
                   (get jsi/objects-by-method-name fn-nm)]
            (let [o (first (filter #(= x (aget (.-prototype %) fn-nm)) 
-                                              built-in-candidates))]
+                                  built-in-candidates))]
              (js-built-in-map o))
            (when-let [built-in (get jsi/objects-by-unique-method-name
                                     fn-nm)]
@@ -261,7 +252,8 @@
        (boolean (some->> s (re-find #"java\.lang"))))
      
      (defn java-class-name [x]
-       ;; TODO - Consider using clojure.lang.Compiler/demunge here: (some-> x type .getName Compiler/demunge)
+       ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
+       ;; (some-> x type .getName Compiler/demunge)
        (some-> (or (try (some-> x type .getName)
                         (catch Exception e))
                    (some-> x
@@ -272,8 +264,36 @@
                ;; Example of what these last 2 do:
                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
                (string/replace #"^\[" "")
-               (string/replace #";$" "")))))
+               (string/replace #";$" "")))
+     
+     (defn- find-classname [x]
+       ;; For custom datatypes ^class prefix is not present in str'd babashka classname
+       (re-find #"(?:^class )?(.*)$" (str x)))
 
+     (defn- resolve-classname [x]
+       (let [[_ nm] (find-classname x)
+             bits   (some-> nm (string/split #"\."))]
+         {:fn-ns   (-> bits
+                       drop-last
+                       (->> (string/join "."))
+                       (string/replace #"_" "-")) 
+          :fn-name (last bits)
+          :fn-args :lasertag/unknown-function-signature-on-java-class}))
+
+     (defn- resolve-fn-name [x]
+       (let [pwo-stringified (pwos x)
+             [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
+         (when (and nm* (not (string/blank? nm*)))
+           (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+                 fn-ns               (string/replace fn-ns #"_" "-")
+                 fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+             (merge (if fn-nm 
+                      (if (re-find #"^fn--\d+$" fn-nm)
+                        {:lambda? true}
+                        {:fn-name fn-nm})
+                      {:lambda? true})
+                    {:fn-ns   fn-ns
+                     :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))
 
 (defn- fn-info* [x k]
   #?(:cljs 
@@ -285,29 +305,9 @@
      :clj
      (if (= k :defmulti)
        {:fn-args :lasertag/multimethod}
-       (do 
-         (if (= k :class)
-           ;; For custom datatypes ^class prefix is not is not present in babashka, when class is str'd
-           (let [[_ nm] (re-find #"(?:^class )?(.*)$" (str x))
-                 bits   (string/split nm #"\.")
-                 fn-ns  (string/replace (string/join "." (drop-last bits)) #"_" "-")
-                 fn-nm  (last bits)]
-             {:fn-ns   fn-ns 
-              :fn-name fn-nm
-              :fn-args :lasertag/unknown-function-signature-on-java-class})
-           (let [pwo-stringified (pwos x)
-                 [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-             (when (and nm* (not (string/blank? nm*)))
-               (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                     fn-ns               (string/replace fn-ns #"_" "-")
-                     fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-                 (merge (if fn-nm 
-                          (if (re-find #"^fn--\d+$" fn-nm)
-                            {:lambda? true}
-                            {:fn-name fn-nm})
-                          {:lambda? true})
-                        {:fn-ns   fn-ns
-                         :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))))
+       (if (= k :class)
+         (resolve-classname x)
+         (resolve-fn-name x)))))
 
 (defn- fn-args* [x]
   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -362,7 +362,9 @@
              #?(:cljs 
                 (cljs-fn-args x fn-args fn-info))))))
 
+
 ;; function resolution functions end--------------------------------------------
+
 
 (defn lsb? [k]
   (contains? #{:long :short :byte} k))
@@ -379,6 +381,8 @@
                          :else                       k)
          :else         k))))
 
+
+;; cljs value type helpers -----------------------------------------------------
 #?(:cljs 
    (do
      (defn- cljs-number-type [x]
@@ -443,6 +447,8 @@
           (when (js-object-instance? x)
             (js-classname x))))))
 
+;; cljs value type helpers end -------------------------------------------------
+
 
 (def dom-node-types
   ["ELEMENT_NODE"
@@ -493,14 +499,13 @@
         (not (contains? #{:nan :-infinity :infinity} k)))))
 
 #?(:clj 
-   (defn- clj-all-value-types [x k]
+   (defn- clj-all-value-types [{:keys [x k]}]
      (let [number-type (clj-number-type x)]
        (->> [number-type
              (get clj-scalar-types (type x))
              (cljc-coll-type x)
              (when (fn? x) :function)
              (when (contains? cljc-transients-set (type x)) :transient)
-             ;; Extra types - useful info
              (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
              (when (= clojure.lang.PersistentList (type x)) :list)
              (when (inst? x) :inst)
@@ -515,9 +520,10 @@
             (remove nil?)
             (cons k)
             (into #{})))))
+
 ;; TODO - consider removing `js-` prefixes and just adding an additional :js tag
 #?(:cljs 
-   (defn- cljs-all-value-types [x k dom-node-type-keyword]
+   (defn- cljs-all-value-types [{:keys [x k dom-node-type-keyword]}]
      (let [number-type
            (cljs-number-type x)
 
@@ -588,199 +594,179 @@
          (if (keyword? ret) (subs (str ret) 1) ret)))))
 
 
-(defn- yellow [s]
-  (str #?(:cljs nil :clj "\033[38;5;136m") s #?(:cljs nil :clj "\033[0;m")))
+(defn- map-like?* [x k all-tags]
+  (or (contains? #{:map :js-object :js-map :js-data-view} k)
+      (contains? all-tags :record)
+      (contains? all-tags :js-map-like-object)
+      #?(:clj (instance? java.util.AbstractMap x))))
 
-(defn- orange [s]
-  (str #?(:cljs nil :clj"\033[38;5;208;1m") s #?(:cljs nil :clj "\033[0;m")))
-
-(defn- italic [s]
-  (str #?(:cljs nil :clj "\033[3m") s #?(:cljs nil :clj "\033[0;m")))
-
-(defn- bold [s]
-  (str #?(:cljs nil :clj "\033[1m") s #?(:cljs nil :clj "\033[0;m")))
-
-(defn- print-unknown-coll-size-warning [e]
-  (println 
-   (str (orange "══") (bold " Exception (Caught): lasertag.core/all-tags ") (orange "════════════════") 
-        "\n\n"
-        (italic "Error Description:")"\n\n"
-        "  Problem determining the size of a collection"
-        "\n\n\n"
-        (italic "Error Message, from Clojure:")"\n\n"
-        #?(:cljs
-           (.-message e)
-           :clj
-           (str "  " (.getMessage e))) 
-        "\n\n\n"
-        (italic "You are most like seeing this as a result of using the API\n")
-        (italic "of Fireworks or Bling. Please consider filing a ticket\n")
-        (italic "that includes the following:\n\n")
-        "  - This error message\n"
-        "  - An example (or contrived example) of the val to be printed\n"
-        "  - The val's class or type, if you know it.\n"
-        "  - Which context? JVM Clojure, bb, cljs browser, or cljs node?"
-        "\n\n"
-        (italic "https://github.com/paintparty/lasertag/issues")
-        "\n\n"
-        (orange "───────────────────────────────────────────────────────────────"))))
-
-(defn- mock-unknown-coll-size [x]
+(defn- classname* [x]
   #?(:cljs
-     (do (println "ClojureScript :: lasertag.core/all-tags")
-         (println x)
-         (println "\n")
-         (try (new js/Error (str :lasertag.core/unknown-coll-size))
-              (catch js/Object e
-                (print-unknown-coll-size-warning e)
-                :lasertag.core/unknown-coll-size))
-         :lasertag.core/unknown-coll-size)
+     (cljs-class-name x)
+     :bb
+     (let [nm (java-class-name x)]
+       (if (some-> nm (string/starts-with? "sci.impl.fns"))
+         "sci.impl.fns"
+         nm))
      :clj
-     (do (println "JVM Clojure :: lasertag.core/all-tags")
-         (println x)
-         (println "\n")
-         (try (throw (Throwable. (str :lasertag.core/unknown-coll-size)))
-              (catch Throwable e
-                (print-unknown-coll-size-warning e)
-                :lasertag.core/unknown-coll-size))
-         :lasertag.core/unknown-coll-size
-         ))
-  )
+     (java-class-name x)))
 
-;; TODO - Add :array-like? and maybe :list-like?
+#?(:clj
+   (defn- java-*-class? [scalar-type? classname f]
+     (boolean (when-not scalar-type?
+                (f classname)))))
+
+(defn- cljc-iterable? [x]
+  #?(:cljs (js-iterable? x)
+     :clj (instance? java.lang.Iterable x)))
+
+(defn- scalar-type? [k]
+  ;; TODO - make sure this scalar-type? is accurate for all
+  ;; js and java scalars/primitives, then include it in the returned
+  ;; entries from tag-map?, and/or include :scalar (or :primitive, or
+  ;; both) in the :all-tags set.
+  (contains? scalar-types-set k))
+
+
+;; TODO open PR to add java.util.AbstractCollection to bb,
+;; then eliminate this branch
+
+(defn- abstract-instance?* [x]
+  #?(:bb
+     (instance? java.util.AbstractMap x)
+     :clj
+     (or (instance? java.util.AbstractCollection x)
+         (instance? java.util.AbstractMap x))
+     :cljs
+     nil))
+
+
+#?(:cljs
+   (defn- cljs-coll-size-try 
+     [{:keys [x k all-tags]}]
+     (cond
+       (or (= :js-object k)
+           (contains? all-tags :js-map-like-object))
+       (.-length (js/Object.keys x))
+
+       (or (contains? all-tags :js-set)
+           (contains? all-tags :js-map))
+       (.-size x)
+       
+       (or (= k :array)
+           (typed-array? x))
+       (.-length x)
+
+       :else
+       (count x))))
+
+
+#?(:clj
+   (defn- clj-coll-size-try 
+     [{:keys [x k all-tags abstract-instance?]}]
+     (cond
+       abstract-instance?
+       (.size x)
+
+       (and (= k :array)
+            (not (contains? all-tags :java-util-class)))
+       (alength x)
+
+       :else
+       (count x))))
+
+
+(defn- cljc-coll-size* [m] 
+  (try #?(:clj 
+          (clj-coll-size-try m)
+          :cljs
+          (cljs-coll-size-try m))
+       (catch #?(:cljs js/Object :clj Throwable)  e
+         (when (:suppress-coll-size-warning? (:opts m))
+           (messaging/print-unknown-coll-size-warning e))
+         :lasertag.core/unknown-coll-size)))
+
+
+(defn- coll-size* [{:keys [x coll-type? all-tags] :as m}]
+  (when coll-type?
+    (when-not (or (contains? all-tags :js-weak-map)
+                  (contains? all-tags :js-weak-set))
+      (let [debug-unknown-coll-size?
+            #_true false] 
+        (if debug-unknown-coll-size? 
+          (messaging/mock-unknown-coll-size x)
+          (cljc-coll-size* (assoc m
+                                  :abstract-instance?
+                                  (abstract-instance?*
+                                   x))))))))
+
+(defn- cljc-datatypes [x]
+  #?(:cljs
+     [(when (object? x) :js-object)
+      (when (array? x) :js-array)]
+     :bb
+     nil
+     :clj 
+     [(when (instance? clojure.lang.IType x)
+        :datatype)]))
+
+(defn- all-tags* [{:keys [x k] :as m}]
+  (let [all-tags   #?(:cljs (cljs-all-value-types m)
+                      :clj (clj-all-value-types m))
+        map-like?  (map-like?* x k all-tags)
+        set-like?  (or (contains? #{:set :js-set} k)
+                       #?(:clj (instance? java.util.AbstractSet x)))]
+
+    ;; TODO - Add :array-like? and maybe :list-like?
+    {:classname    (classname* x)
+     :scalar-type? (scalar-type? k)
+     :all-tags     all-tags
+     :set-like?    set-like?
+     :map-like?    map-like?
+     :coll-type?   (or map-like?
+                       set-like?
+                       (contains? all-tags :coll)
+                       #?(:cljs (cljs-coll-type? x)))}))
+
+(defn- java-classes
+  [{:keys [scalar-type? classname]}]
+  (let [f (partial java-*-class? scalar-type? classname)]
+    [(when (f java-lang-class?)
+       :java-lang-class)
+     (when (f java-util-class?)
+       :java-util-class)]))
+
 (defn- all-tags
-  [{:keys [x k dom-node-type-keyword opts]}]
-  (let [all-tags    #?(:cljs (cljs-all-value-types x k dom-node-type-keyword)
-                       :clj (clj-all-value-types x k))
-        map-like?    (or (contains? #{:map :js-object :js-map :js-data-view} k)
-                         (contains? all-tags :record)
-                         (contains? all-tags :js-map-like-object)
-                         #?(:clj (instance? java.util.AbstractMap x)))
-        set-like?    (or (contains? #{:set :js-set} k)
-                         #?(:clj (instance? java.util.AbstractSet x)))
-        coll-type?   (or map-like?
-                         set-like?
-                         (contains? all-tags :coll)
-                         #?(:cljs (cljs-coll-type? x)))
-        ;; TODO - make sure this scalar-type? is accurate for all
-        ;; js and java scalars/primitives, then include it in the returned
-        ;; entries from tag-map?, and/or include :scalar (or :primitive, or
-        ;; both) in the :all-tags set.
-        scalar-type? (contains? scalar-types-set k) 
-        classname    #?(:cljs
-                        (cljs-class-name x)
-                        :bb
-                        (let [nm (java-class-name x)]
-                          (if (some-> nm (string/starts-with? "sci.impl.fns"))
-                            "sci.impl.fns"
-                            nm))
-                        :clj
-                        (java-class-name x))
-        java-lang-class? (boolean (when-not scalar-type?
-                                    #?(:clj (java-lang-class? classname)
-                                       :cljs nil)))
-        java-util-class? (boolean (when-not scalar-type?
-                                    #?(:clj (java-util-class? classname)
-                                       :cljs nil)))
-        iterable?        #?(:cljs (js-iterable? x)
-                            :clj (instance? java.lang.Iterable x))  
-        transient?       (contains? all-tags :transient)
-        number-type?     (contains? all-tags :number)
-        carries-meta?    (carries-meta? x)
-        all-tags         (apply conj
-                                all-tags
-                                (remove nil?
-                                        (concat
-                                         [(when coll-type? :coll-type)
-                                          (when carries-meta? :carries-meta)
-                                          (when map-like? :map-like)
-                                          (when set-like? :set-like)
-                                          (when transient? :transient)
-                                          (when number-type? :number-type)
-                                          (when java-lang-class? :java-lang-class)
-                                          (when java-util-class? :java-util-class)
-                                          (when iterable? :iterable)]
-                                         #?(:cljs
-                                            [(when (object? x) :js-object)
-                                             (when (array? x) :js-array)]
-                                            :bb
-                                            nil
-                                            :clj 
-                                            [(when (instance? clojure.lang.IType x) :datatype)]))))
-             
-        
-        coll-size     (when coll-type?
-                        (when-not (or (contains? all-tags :js-weak-map)
-                                      (contains? all-tags :js-weak-set))
-                          (let [debug-unknown-coll-size? #_true false] 
-                            (if debug-unknown-coll-size? 
-                              (mock-unknown-coll-size x)
-                              #?(:cljs
-                                 (try (cond
-                                        (or (= :js-object k)
-                                            (contains? all-tags :js-map-like-object))
-                                        (.-length (js/Object.keys x))
+  [{:keys [x] :as m}]
+  (let [{:keys [map-like? set-like? coll-type? all-tags classname]
+         :as all-tags-map}
+        (all-tags* m)
 
-                                        (or (contains? all-tags :js-set)
-                                            (contains? all-tags :js-map))
-                                        (.-size x)
-                                        
-                                        (or (= k :array)
-                                            (typed-array? x))
-                                        (.-length x)
+        more-tags
+        (concat  
+         (cljc-datatypes x)
+         
+         #?(:clj (java-classes all-tags-map))
+         [(when coll-type? :coll-type)
+          (when map-like? :map-like)
+          (when set-like? :set-like)
+          (when (carries-meta? x) :carries-meta)
+          (when (contains? all-tags :transient) :transient)
+          (when (contains? all-tags :number) :number-type)
+          (when (cljc-iterable? x) :iterable)])
 
-                                        :else
-                                        (count x))
+        all-tags   
+        (apply conj all-tags (remove nil? more-tags))
 
-                                      (catch js/Object e
-                                        (print-unknown-coll-size-warning e)
-                                        :lasertag.core/unknown-coll-size))
-
-                                 ;; TODO open PR to add java.util.AbstractCollection to bb,
-                                 ;; then eliminate this branch
-                                 :bb
-                                 (try (cond
-                                        (instance? java.util.AbstractMap x)
-                                        (.size x)
-
-                                        (and (= k :array)
-                                             (not (contains? all-tags :java-util-class)))
-                                        (alength x)
-
-                                        :else
-                                        (count x))
-
-                                      (catch Throwable e
-                                        (when (:suppress-coll-size-warning? opts)
-                                          (print-unknown-coll-size-warning e))
-                                        :lasertag.core/unknown-coll-size))
-                                 :clj
-                                 (try (cond
-                                        (or (instance? java.util.AbstractCollection x)
-                                            (instance? java.util.AbstractMap x))
-                                        (.size x)
-
-                                        (and (= k :array)
-                                             (not (contains? all-tags :java-util-class)))
-                                        (alength x)
-
-                                        :else
-                                        (do 
-                                          (count x)))
-
-                                      (catch Throwable e
-                                        (when (:suppress-coll-size-warning? opts)
-                                          (print-unknown-coll-size-warning e))
-                                        :lasertag.core/unknown-coll-size)))))))]
-
-    (merge 
-     {:all-tags  all-tags
-      :classname classname}
-     (when coll-size {:coll-size coll-size}))))
+        coll-size
+        (coll-size* (merge m all-tags-map {:all-tags all-tags}))]
+    (merge {:all-tags  all-tags :classname classname}
+           (when coll-size {:coll-size coll-size}))))
 
 
-(defn- dom-node 
-  "Helper fn which takes an HTML dom element and returns a 3-element vector.
+#?(:cljs
+   (defn- dom-node 
+     "Helper fn which takes an HTML dom element and returns a 3-element vector.
    Ex:
    (dom-node `<div>hi</div>`)
    =>
@@ -788,12 +774,13 @@
     \"ELEMENT_NODE\"    ; <- canonical tag name of node
     :dom-element-node]  ; <- kw representation available for consumers of
                              lasertag.core/tag-map"  
-  [x]
-  (when-let [t (when (js-object-instance? x) (some->> x .-nodeType))]
-    (let [n (dec t)]
-      [t
-       (nth dom-node-types n nil)
-       (nth dom-node-type-keywords n nil)])))
+     [x]
+     (when-let [t (when (js-object-instance? x) (some->> x .-nodeType))]
+       (let [n (dec t)]
+         [t
+          (nth dom-node-types n nil)
+          (nth dom-node-type-keywords n nil)]))))
+
 
 (defn- exclude? [opts k]
   (some-> opts
@@ -801,14 +788,42 @@
           (->> (into #{}))
           (contains? k)))
 
+#?(:cljs
+   (defn cljs-tag-map* [x k opts]
+     (let [[dom-node-type
+            dom-node-type-name
+            dom-node-type-keyword]    (dom-node x)]
+       (merge
+        ;; Get all the tags
+        (when-not (exclude? opts :all-tags)
+          (all-tags {:x                     x
+                     :k                     k 
+                     :dom-node-type-keyword dom-node-type-keyword}))
+
+        ;; Get dom node info 
+        (when dom-node-type
+          {:dom-node-type      dom-node-type
+           :dom-node-type-name dom-node-type-name})
+
+        ;; Get dom element node info 
+        (when (= 1 dom-node-type)
+          {:dom-element-tag-name x.tagName})
+        
+        ;; Enhanced reflection for built-in js objects
+        (when-not (exclude? opts :js-built-in-object-info)
+          (when (= k :object)
+            (when-let [{:keys [sym]} 
+                       (get jsi/js-built-ins-by-built-in x)]
+              {:js-built-in-object?     true
+               :js-built-in-object-name (str sym)})))))))
+
 (defn- tag-map*
   [x k k+ opts]
     (merge 
      ;; The lasertag for clj & cljs
      {:tag k+}
 
-     ;; The `type` (result of calling clojure.core.type), or cljs.core.type on
-     ;; the value 
+     ;; The `type` (calling clojure.core.type, or cljs.core.type) on the value 
      {:type #?(:cljs (if (= k :js-generator)
                        (symbol "#object[Generator]")
                        (type x))
@@ -817,53 +832,20 @@
      ;; Optionaly get reflective function info, same for clj & cljs
      (when (contains? #{:function :defmulti :class} k)
        (let [b (not (exclude? opts :function-info))]
-         #?(:cljs (fn-info x k b)
-            :clj (fn-info x k b))))
+         (fn-info x k b)))
 
-      ;; Just for ClojureScript
-     #?(:cljs 
-        (let [[dom-node-type
-               dom-node-type-name
-               dom-node-type-keyword]    (dom-node x)]
-          (merge
-           ;; Get all the tags
-           (when-not (exclude? opts :all-tags)
-             (all-tags {:x                     x
-                        :k                     k 
-                        :dom-node-type-keyword dom-node-type-keyword}))
-
-           ;; Get dom node info 
-           (when dom-node-type
-             {:dom-node-type      dom-node-type
-              :dom-node-type-name dom-node-type-name})
-
-           ;; Get dom element node info 
-           (when (= 1 dom-node-type)
-             {:dom-element-tag-name x.tagName})
-          
-           ;; Enhanced reflection for built-in js objects
-           (when-not (exclude? opts :js-built-in-object-info)
-             (when (= k :object)
-               (when-let [{:keys [sym]} 
-                          (get jsi/js-built-ins-by-built-in x)]
-                 {:js-built-in-object?     true
-                  :js-built-in-object-name (str sym)})))))
-        
-
-        ;; Just for Clojure
+     #?(:cljs (cljs-tag-map* x k opts)
         :clj (when-not (exclude? opts :all-tags)
-               ;; Get all the tags
                (all-tags {:x    x
                           :k    k 
                           :opts opts})))))
-
 
 (defn- format-result [k {:keys [format]}]
   (if format
     (case format
       :keyword k
       :symbol (symbol (subs (str k) 1))
-      :string (str (subs (str k) 1))
+      :string (subs (str k) 1)
       k)
     k))
 
@@ -881,56 +863,62 @@
       (if (contains? #{:nan :-infinity :infinity} t)
         t :number))))
 
+#?(:clj
+   (defn resolve-class-name-clj [c]
+     (or 
+      ;; Use find-classname
+      (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
+        (let [k (keyword nm)
+              k (get clj-names k k)]
+          k))
+      ;; Use find-classname
+      (when-let [nm (some-> c str)]
+        (let [k (keyword nm)
+              k (get clj-names k k)]
+          k)))))
+
+(defn- k* [x t]
+  #?(:cljs
+     (or (numberish-type x)
+         (get cljs-scalar-types t)
+         (cljc-coll-type x)
+         (when (get js-map-types t) :map)
+         (when (get js-set-types t) :set)
+         (when (contains? js-indexed-coll-types-set t) :array)
+         (cljs-iterable-type x)
+         (when (object? x) :object)
+         (when (fn? x) :function)
+         (when (inst? x) :inst)
+         (when (defmulti? x) :defmulti)
+         (when (js-promise? x) :promise)
+         (when (js-global-this? x) :js-global-this)
+         (js-intl-object-key x)
+         (when (js-data-view? x) :js-data-view)
+         (when (js-array-buffer? x) :byte-array)
+         (js-object-instance x)
+         (when (js/Number.isNaN x) :nan)
+         :lasertag/value-type-unknown)
+     :clj
+     (or (numberish-type x)
+         (get clj-scalar-types t)
+         (cljc-coll-type x)
+         (when (fn? x) :function)
+         (when (inst? x) :inst)
+         (when-let [c (type x)]
+           (or 
+            (when (instance? java.util.AbstractMap x) :map)
+            (when (instance? java.util.AbstractSet x) :set)
+            (when (clj-or-bb-array? x) :array)
+            (when (instance? java.util.ArrayList x) :array)
+            (when (instance? java.util.ArrayDeque x) :array)
+            (when (instance? java.util.AbstractList x) :seq)
+            (resolve-class-name-clj c)))))
+  )
+
 (defn- tag* [{:keys [x extras? opts]}]
-  #?(:clj
-     (let [k  (or (numberish-type x)
-                  (get clj-scalar-types (type x))
-                  (cljc-coll-type x)
-                  (when (fn? x) :function)
-                  (when (inst? x) :inst)
-                  (when-let [c (type x)]
-                    (or 
-                     (when (instance? java.util.AbstractMap x) :map)
-                     (when (instance? java.util.AbstractSet x) :set)
-                     (when (clj-or-bb-array? x) :array)
-                     (when (instance? java.util.ArrayList x) :array)
-                     (when (instance? java.util.ArrayDeque x) :array)
-                     (when (instance? java.util.AbstractList x) :seq)
-                     ;; Refactor this
-                     (when-let [[_ nm] (re-find #"^class (.*)$" (str c))]
-                       (let [k (keyword nm)
-                             k (get clj-names k k)]
-                         k))
-                     ;; And Refactor this (temp code for bb integration)
-                     (when-let [nm (some-> c str)]
-                       (let [k (keyword nm)
-                             k (get clj-names k k)]
-                         k)))))
-           k+ (format-result k opts)]
-       (if extras? (tag-map* x k k+ opts) k+))
-     :cljs
-     (let [t  (type x)
-           k  (or (numberish-type x)
-                  (get cljs-scalar-types t)
-                  (cljc-coll-type x)
-                  (when (get js-map-types t) :map)
-                  (when (get js-set-types t) :set)
-                  (when (contains? js-indexed-coll-types-set t) :array)
-                  (cljs-iterable-type x)
-                  (when (object? x) :object)
-                  (when (fn? x) :function)
-                  (when (inst? x) :inst)
-                  (when (defmulti? x) :defmulti)
-                  (when (js-promise? x) :promise)
-                  (when (js-global-this? x) :js-global-this)
-                  (js-intl-object-key x)
-                  (when (js-data-view? x) :js-data-view)
-                  (when (js-array-buffer? x) :byte-array)
-                  (js-object-instance x)
-                  (when (js/Number.isNaN x) :nan)
-                  :lasertag/value-type-unknown)
-           k+ (format-result k opts)]
-       (if extras? (tag-map* x k k+ opts) k+))))
+  (let [k  (k* x (type x))
+        k+ (format-result k opts)]
+    (if extras? (tag-map* x k k+ opts) k+)))
 
 (defn tag
   "Given a value, returns a tag representing the value's type."

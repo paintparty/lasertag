@@ -7,6 +7,18 @@
 <br>
 <br>
 
+## 0.11.6
+2025-07-12
+### Changed
+- Refactored core namespace for readability
+
+### Added
+- distinct messaging namespace
+
+<br>
+<br>
+
+
 ## 0.11.5
 2025-07-11
 ### Fixed
