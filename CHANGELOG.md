@@ -34,7 +34,7 @@
 ## 0.11.4
 2025-07-10
 ### Fixed
-- Catch Throwable when custom datatype `coll-size` cannot be determined [#38](https://github.com/paintparty/lasertag/issues/38)
+- Catch Throwable when custom datatype `coll-size` cannot be determined [Addresses downstream issue #38 in Bling](https://github.com/paintparty/bling/issues/38)
 
 <br>
 <br>
