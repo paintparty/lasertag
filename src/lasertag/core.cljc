@@ -728,13 +728,14 @@
                        (contains? all-tags :coll)
                        #?(:cljs (cljs-coll-type? x)))}))
 
-(defn- java-classes
-  [{:keys [scalar-type? classname]}]
-  (let [f (partial java-*-class? scalar-type? classname)]
-    [(when (f java-lang-class?)
-       :java-lang-class)
-     (when (f java-util-class?)
-       :java-util-class)]))
+#?(:clj
+   (defn- java-classes
+     [{:keys [scalar-type? classname]}]
+     (let [f (partial java-*-class? scalar-type? classname)]
+       [(when (f java-lang-class?)
+          :java-lang-class)
+        (when (f java-util-class?)
+          :java-util-class)])))
 
 (defn- all-tags
   [{:keys [x] :as m}]
