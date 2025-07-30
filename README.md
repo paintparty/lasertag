@@ -95,7 +95,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 
 <br>
 
-## Usage
+## Setup
 Requires Clojure `1.9.0` or higher
 
 If using with Babashka, requires Babashka `v1.12.196` or higher
@@ -106,13 +106,13 @@ Add as a dependency to your project:
 
 <br>
 
-deps:
+Deps:
 ```clojure
 io.github.paintparty/lasertag {:mvn/version "0.11.5"}
 ```
 <br>
 
-lein:
+Leiningen:
 ```clojure
 [io.github.paintparty/lasertag "0.11.5"]
 ```
@@ -131,7 +131,9 @@ Or import into your namespace:
     [lasertag.core :refer [tag tag-map]]))
 ```
 <br>
+<br>
 
+## Usage 
 By default, `lasertag.core/tag` returns a keyword:
 
 ```Clojure
