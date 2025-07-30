@@ -8,7 +8,9 @@
  
 # Lasertag
 
-Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka. This library fell out of work on the colorizing pretty-printing engine used by [Fireworks](https://github.com/paintparty/fireworks) and [Bling](https://github.com/paintparty/bling).
+Lasertag is a utility library for categorizing values in Clojure, ClojureScript, and Babashka.
+
+This library fell out of work on the colorizing pretty-printing engine used by [Fireworks](https://github.com/paintparty/fireworks) and [Bling](https://github.com/paintparty/bling).
 
 <br>
 
