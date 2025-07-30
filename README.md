@@ -8,39 +8,11 @@
  
 # Lasertag
 
-Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka. This library fell out of work on the colorizing pretty-printing engine that powers [Fireworks](https://github.com/paintparty/fireworks).
-
-For a quick summary of the functionality, check out [this table](#examples).
+Lasertag is a library for categorizing types of values in Clojure, ClojureScript, and Babashka. This library fell out of work on the colorizing pretty-printing engine used by [Fireworks](https://github.com/paintparty/fireworks) and [Bling](https://github.com/paintparty/bling).
 
 <br>
 
-## Usage
-Requires Clojure `1.9.0` or higher
-
-If using with Babashka, requires Babashka `v1.12.196` or higher
-
-<br>
-
-Add as a dependency to your project:
-
-```clojure
-[io.github.paintparty/lasertag "0.11.6"]
-```
-<br>
-
-Require it:
-```Clojure
-(require '[lasertag.core :refer [tag tag-map]])
-```
-
-
-Or import into your namespace:
-```Clojure
-(ns myns.core
-  (:require
-    [lasertag.core :refer [tag tag-map]]))
-```
-<br>
+## Examples 
 
 The function `lasertag.core/tag` will return a descriptive tag:
 
@@ -56,7 +28,118 @@ The function `lasertag.core/tag` will return a descriptive tag:
 ```
 <br>
 
-The tag is a keyword by default but you can pass an options map if you want a string or symbol:
+### Clojure Examples
+`lasertag.core/tag` vs `clojure.core/type`
+
+| Input value                     | `lasertag.core/tag`     | `clojure.core/type`               |
+| :---                            | :---                    | :---                              |
+| `"hi"`                          | `:string`               | `java.lang.String`                |
+| `:hi`                           | `:keyword`              | `clojure.lang.Keyword`            |
+| `"^hi$"`                        | `:regex`                | `java.util.regex.Pattern`         |
+| `true`                          | `:boolean`              | `java.lang.Boolean`               |
+| `mysym`                         | `:symbol`               | `clojure.lang.Symbol`             |
+| `nil`                           | `:nil`                  | `nil`                             |
+| `[1 2 3]`                       | `:vector`               | `clojure.lang.PersistentVector`   |
+| `#{1 3 2}`                      | `:set`                  | `clojure.lang.PersistentHashSet`  |
+| `{:a 2, :b 3}`                  | `:map`                  | `clojure.lang.PersistentArrayMap` |
+| `(map inc (range 3))`           | `:seq`                  | `clojure.lang.LazySeq`            |
+| `(range 3)`                     | `:seq`                  | `clojure.lang.LongRange`          |
+| `(:a :b :c)`                    | `:seq`                  | `clojure.lang.PersistentList`     |
+|                      `Infinity` |             `:infinity` |      `java.lang.Double`           |
+|                     `-Infinity` |            `:-infinity` |      `java.lang.Double`           |
+|                           `NaN` |                  `:nan` |      `java.lang.Double`           |
+|                           `1/3` |               `:number` |    `clojure.lang.Ratio`           |
+|                      `(byte 0)` |               `:number` |        `java.lang.Byte`           |
+|                     `(short 3)` |               `:number` |       `java.lang.Short`           |
+|                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
+|                            `1M` |               `:number` |  `java.math.BigDecimal`           |
+|                             `1` |               `:number` |        `java.lang.Long`           |
+|                   `(float 1.5)` |               `:number` |       `java.lang.Float`           |
+|                      `(char a)` |                 `:char` |   `java.lang.Character`           |
+| `(java.math.BigInteger. "171")` |               `:number` |  `java.math.BigInteger`           |
+|             `(java.util.Date.)` |                 `:inst` |        `java.util.Date`           |
+|                `java.util.Date` |                `:class` |       `java.lang.Class`           |
+
+
+<br>
+
+### ClojureScript Examples
+
+`lasertag.core/tag` vs `cljs.core/type`
+
+| Input value                        | `lasertag.core/tag`| `cljs.core/type`               |
+| :---                               | :---               | :---                           |
+| `"hi"`                             | `:string`          | `#object[String]`              |
+| `:hi`                              | `:keyword`         | `cljs.core/Keyword`            |
+| `"^hi$"`                           | `:regex`           | `#object[RegExp]`              |
+| `true`                             | `:boolean`         | `#object[Boolean]`             |
+| `mysym`                            | `:symbol`          | `cljs.core/Symbol`             |
+| `nil`                              | `:nil`             | `nil`                          |
+| `[1 2 3]`                          | `:vector`          | `cljs.core/PersistentVector`   |
+| `#{1 3 2}`                         | `:set`             | `cljs.core/PersistentHashSet`  |
+| `{:a 2, :b 3}`                     | `:map`             | `cljs.core/PersistentArrayMap` |
+| `(map inc (range 3))`              | `:seq`             | `cljs.core/LazySeq`            |
+| `(range 3)`                        | `:seq`             | `cljs.core/IntegerRange`       |
+| `(:a :b :c)`                       | `:seq`             | `cljs.core/List`               |
+| `Infinity`                         | `:infinity`        | `#object[Boolean]`             |
+| `-Infinity`                        | `:-infinity`       | `#object[Boolean]`             |
+| `js/parseInt`                      | `:function`        | `#object[Function]`            |
+| `(new js/Date.)`                   | `:inst`            | `#object[Date]`                |
+| `(.values #js [1 2 3])`            | `:iterable`        | `#object[Object]`              |
+| `(array "a" "b")`                  | `:array`           | `#object[Array]`               |
+| `(new js/Int8Array #js ["a" "b"])` | `:array`           | `#object[Int8Array]`           |
+| `(new js/Set #js[1 2 3])`          | `:set`             | `#object[Set]`                 |
+| `(js/Promise. (fn [x] x))`         | `:promise`         | `#object[Promise]`             |
+
+<br>
+
+<br>
+
+## Usage
+Requires Clojure `1.9.0` or higher
+
+If using with Babashka, requires Babashka `v1.12.196` or higher
+
+<br>
+
+Add as a dependency to your project:
+
+<br>
+
+deps:
+```clojure
+io.github.paintparty/lasertag {:mvn/version "0.11.5"}
+```
+<br>
+
+lein:
+```clojure
+[io.github.paintparty/lasertag "0.11.5"]
+```
+<br>
+
+Require it:
+```Clojure
+(require '[lasertag.core :refer [tag tag-map]])
+```
+<br>
+
+Or import into your namespace:
+```Clojure
+(ns myns.core
+  (:require
+    [lasertag.core :refer [tag tag-map]]))
+```
+<br>
+
+By default, `lasertag.core/tag` returns a keyword:
+
+```Clojure
+(tag 1) ;; => :number
+```
+<br>
+
+You can pass an options map if you want a string or symbol:
 ```Clojure
 (tag 1 {:format :string}) ;; => "number"
 (tag 1 {:format :symbol}) ;; => number
@@ -99,7 +182,7 @@ The function `lasertag.core/tag-map` will return a map with additional info.
 {:tag       :function
  :type      #object[Function]
  :fn-name   "xy"
- :fn-ns     "visual_testing.shared"
+ :fn-ns     "foo.core"
  :fn-args   [x y]
  :all-tags  #{:function}
  :classname "Function"}
@@ -195,73 +278,6 @@ Excluding the JS built-in-object related entries:
  :type     #object[Object]}
 ```
 <br>
-<br>
-
-## Examples 
-
-### Clojure
-`lasertag.core/tag` vs `clojure.core/type`
-
-| Input value                     | `lasertag.core/tag`     | `clojure.core/type`               |
-| :---                            | :---                    | :---                              |
-| `"hi"`                          | `:string`               | `java.lang.String`                |
-| `:hi`                           | `:keyword`              | `clojure.lang.Keyword`            |
-| `"^hi$"`                        | `:regex`                | `java.util.regex.Pattern`         |
-| `true`                          | `:boolean`              | `java.lang.Boolean`               |
-| `mysym`                         | `:symbol`               | `clojure.lang.Symbol`             |
-| `nil`                           | `:nil`                  | `nil`                             |
-| `[1 2 3]`                       | `:vector`               | `clojure.lang.PersistentVector`   |
-| `#{1 3 2}`                      | `:set`                  | `clojure.lang.PersistentHashSet`  |
-| `{:a 2, :b 3}`                  | `:map`                  | `clojure.lang.PersistentArrayMap` |
-| `(map inc (range 3))`           | `:seq`                  | `clojure.lang.LazySeq`            |
-| `(range 3)`                     | `:seq`                  | `clojure.lang.LongRange`          |
-| `(:a :b :c)`                    | `:seq`                  | `clojure.lang.PersistentList`     |
-|                      `Infinity` |             `:infinity` |      `java.lang.Double`           |
-|                     `-Infinity` |            `:-infinity` |      `java.lang.Double`           |
-|                           `NaN` |                  `:nan` |      `java.lang.Double`           |
-|                           `1/3` |               `:number` |    `clojure.lang.Ratio`           |
-|                      `(byte 0)` |               `:number` |        `java.lang.Byte`           |
-|                     `(short 3)` |               `:number` |       `java.lang.Short`           |
-|                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
-|                            `1M` |               `:number` |  `java.math.BigDecimal`           |
-|                             `1` |               `:number` |        `java.lang.Long`           |
-|                   `(float 1.5)` |               `:number` |       `java.lang.Float`           |
-|                      `(char a)` |                 `:char` |   `java.lang.Character`           |
-| `(java.math.BigInteger. "171")` |               `:number` |  `java.math.BigInteger`           |
-|             `(java.util.Date.)` |                 `:inst` |        `java.util.Date`           |
-|                `java.util.Date` |                `:class` |       `java.lang.Class`           |
-
-
-<br>
-
-### ClojureScript
-
-`lasertag.core/tag` vs `cljs.core/type`
-
-| Input value                        | `lasertag.core/tt`| `cljs.core/type`               |
-| :---                               | :---              | :---                           |
-| `"hi"`                             | `:string`         | `#object[String]`              |
-| `:hi`                              | `:keyword`        | `cljs.core/Keyword`            |
-| `"^hi$"`                           | `:regex`          | `#object[RegExp]`              |
-| `true`                             | `:boolean`        | `#object[Boolean]`             |
-| `mysym`                            | `:symbol`         | `cljs.core/Symbol`             |
-| `nil`                              | `:nil`            | `nil`                          |
-| `[1 2 3]`                          | `:vector`         | `cljs.core/PersistentVector`   |
-| `#{1 3 2}`                         | `:set`            | `cljs.core/PersistentHashSet`  |
-| `{:a 2, :b 3}`                     | `:map`            | `cljs.core/PersistentArrayMap` |
-| `(map inc (range 3))`              | `:seq`            | `cljs.core/LazySeq`            |
-| `(range 3)`                        | `:seq`            | `cljs.core/IntegerRange`       |
-| `(:a :b :c)`                       | `:seq`            | `cljs.core/List`               |
-| `Infinity`                         | `:infinity`       | `#object[Boolean]`             |
-| `-Infinity`                        | `:-infinity`      | `#object[Boolean]`             |
-| `js/parseInt`                      | `:function`       | `#object[Function]`            |
-| `(new js/Date.)`                   | `:inst`           | `#object[Date]`                |
-| `(.values #js [1 2 3])`            | `:iterable`       | `#object[Object]`              |
-| `(array "a" "b")`                  | `:array`          | `#object[Array]`               |
-| `(new js/Int8Array #js ["a" "b"])` | `:array`          | `#object[Int8Array]`           |
-| `(new js/Set #js[1 2 3])`          | `:set`            | `#object[Set]`                 |
-| `(js/Promise. (fn [x] x))`         | `:promise`        | `#object[Promise]`             |
-
 <br>
 
 ### Additional ClojureScript Examples

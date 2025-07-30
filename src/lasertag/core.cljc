@@ -1,5 +1,4 @@
 ;; TODO 
-;; - Add more tests
 ;; - Figure out way to do "%" for lambda args
 ;; - Add :array-like to all-tags
 ;; - Add :list-like to all-tags
