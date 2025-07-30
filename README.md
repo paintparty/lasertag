@@ -24,9 +24,11 @@ The function `lasertag.core/tag` will return a descriptive tag:
 (tag "hi")      ;; => :string
 (tag :hi)       ;; => :keyword
 (tag "#^hi$")   ;; => :regex
+(tag true)      ;; => :boolean
 (tag [1 2 3])   ;; => :vector
 (tag '(1 2 3))  ;; => :seq
 (tag (range 3)) ;; => :seq
+(tag ##Inf)     ;; => :infinity
 ```
 <br>
 
