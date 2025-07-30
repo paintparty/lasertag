@@ -4,10 +4,6 @@
 
 ## Unreleased
 
-<br>
-<br>
-
-## 0.11.6
 2025-07-12
 ### Changed
 - Refactored core namespace for readability
