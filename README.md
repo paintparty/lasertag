@@ -10,7 +10,7 @@
 
 Lasertag is a utility library for categorizing values in Clojure, ClojureScript, and Babashka.
 
-This library fell out of work on the colorizing pretty-printing engine used by [Fireworks](https://github.com/paintparty/fireworks) and [Bling](https://github.com/paintparty/bling).
+This library arose during development of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
 
 <br>
 
@@ -19,16 +19,18 @@ This library fell out of work on the colorizing pretty-printing engine used by [
 The function `lasertag.core/tag` will return a descriptive tag:
 
 ```Clojure
-(tag 1)         ;; => :number
-(tag 1.5)       ;; => :number
-(tag "hi")      ;; => :string
-(tag :hi)       ;; => :keyword
-(tag "#^hi$")   ;; => :regex
-(tag true)      ;; => :boolean
-(tag [1 2 3])   ;; => :vector
-(tag '(1 2 3))  ;; => :seq
-(tag (range 3)) ;; => :seq
-(tag ##Inf)     ;; => :infinity
+(require '[lasertag.core :refer [tag]])
+
+(tag 1)         ; => :number
+(tag 1.5)       ; => :number
+(tag "hi")      ; => :string
+(tag :hi)       ; => :keyword
+(tag "#^hi$")   ; => :regex
+(tag true)      ; => :boolean
+(tag [1 2 3])   ; => :vector
+(tag '(1 2 3))  ; => :seq
+(tag (range 3)) ; => :seq
+(tag ##Inf)     ; => :infinity
 ```
 <br>
 
@@ -221,7 +223,7 @@ With `tag-map`, There are 3 additional params you can pass with the optional sec
 ```
 <br>
 
-The following example excludes the `:all-tags` entry, as well as the related `:coll-type?`, `:map-like?`, `:number-type?` and `:coll-size?` entries:
+The following example excludes the `:all-tags` entry:
 
 ```clojure
 
