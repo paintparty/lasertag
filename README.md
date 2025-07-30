@@ -19,7 +19,7 @@ This library arose during development of the colorizing pretty-printing engine u
 The function `lasertag.core/tag` will return a descriptive tag:
 
 ```Clojure
-(require '[lasertag.core :refer [tag]])
+(require '[lasertag.core :refer [tag tag-map]])
 
 (tag 1)         ; => :number
 (tag 1.5)       ; => :number
@@ -32,6 +32,21 @@ The function `lasertag.core/tag` will return a descriptive tag:
 (tag (range 3)) ; => :seq
 (tag ##Inf)     ; => :infinity
 ```
+
+<br>
+
+`lasertag.core/tag-map` returns a map with more info:
+
+```Clojure
+(tag-map (range 3))
+=>
+{:tag       :seq
+ :type      clojure.lang.LongRange
+ :all-tags  #{:iterable :coll :seq :carries-meta}
+ :classname "clojure.lang.LongRange"
+ :coll-size 3}
+```
+
 <br>
 
 ### Clojure Examples
