@@ -435,7 +435,6 @@
                       ;; js class instances
                       (let [ret (keyword nm)]
                         (if (= ret :Object) :Object ret))
-
                       ;; cljs datatype and recordtype instances
                       (some-> c pwos keyword)))
                   :Object)]
@@ -782,20 +781,14 @@
           (nth dom-node-type-keywords n nil)]))))
 
 
-(defn- exclude? [opts k]
-  (some-> opts
-          :exclude
-          (->> (into #{}))
-          (contains? k)))
-
 #?(:cljs
    (defn cljs-tag-map* [x k opts]
      (let [[dom-node-type
             dom-node-type-name
-            dom-node-type-keyword]    (dom-node x)]
+            dom-node-type-keyword] (dom-node x)]
        (merge
         ;; Get all the tags
-        (when-not (exclude? opts :all-tags)
+        (when-not (-> opts :include-all-tags? false?)
           (all-tags {:x                     x
                      :k                     k 
                      :dom-node-type-keyword dom-node-type-keyword}))
@@ -810,7 +803,7 @@
           {:dom-element-tag-name x.tagName})
         
         ;; Enhanced reflection for built-in js objects
-        (when-not (exclude? opts :js-built-in-object-info)
+        (when-not (-> opts :include-js-built-in-object-info? false?)
           (when (= k :object)
             (when-let [{:keys [sym]} 
                        (get jsi/js-built-ins-by-built-in x)]
@@ -831,14 +824,14 @@
      
      ;; Optionaly get reflective function info, same for clj & cljs
      (when (contains? #{:function :defmulti :class} k)
-       (let [b (not (exclude? opts :function-info))]
+       (let [b (not (-> opts :include-function-info? false?))]
          (fn-info x k b)))
 
      #?(:cljs (cljs-tag-map* x k opts)
-        :clj (when-not (exclude? opts :all-tags)
-               (all-tags {:x    x
-                          :k    k 
-                          :opts opts})))))
+        :clj  (when-not (-> opts :include-all-tags? false?)
+                (all-tags {:x    x
+                           :k    k 
+                           :opts opts})))))
 
 (defn- format-result [k {:keys [format]}]
   (if format
@@ -912,12 +905,11 @@
             (when (instance? java.util.ArrayList x) :array)
             (when (instance? java.util.ArrayDeque x) :array)
             (when (instance? java.util.AbstractList x) :seq)
-            (resolve-class-name-clj c)))))
-  )
+            (resolve-class-name-clj c))))))
 
 (defn- tag* [{:keys [x extras? opts]}]
-  (let [k  (k* x (type x))
-        k+ (format-result k opts)]
+  (let [k   (k* x (type x))
+        k+  (format-result k opts)]
     (if extras? (tag-map* x k k+ opts) k+)))
 
 (defn tag
