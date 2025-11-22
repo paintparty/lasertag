@@ -2,9 +2,15 @@
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
 
-## Unreleased
+## UNRELEASED
 
-2025-07-12
+<br>
+<br>
+
+
+## 0.11.6
+
+2025-11-22
 ### Changed
 - Refactored core namespace for readability
 
