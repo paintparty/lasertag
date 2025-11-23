@@ -129,28 +129,22 @@
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (= 
-          (dissoc (tag-map xy {:exclude [:function-info]}) :type)
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function
            :all-tags  #{:function}
            :classname "Function"})))
    :bb
    (deftest clj-elide-function-info
-     #_(testing "clojure.core/inc, in bb"
-       (is (= 
-            (dissoc (tag-map inc {:exclude [:function-info]}) :type)
-            {:tag       :function,
-             :all-tags  #{:function :carries-meta},
-             :classname "clojure.core$inc"})))
      (testing "custom xy fn, in bb"
        (is (= 
-            (dissoc (tag-map xy {:exclude [:function-info]}) :type)
+            (dissoc (tag-map xy {:include-function-info? false}) :type)
             {:tag       :function,
              :all-tags  #{:function :carries-meta},
              :classname "sci.impl.fns"}))))
    :clj
    (deftest clj-elide-function-info
      (is (= 
-          (dissoc (tag-map xy {:exclude [:function-info]}) :type)
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function,
            :all-tags  #{:function :carries-meta},
            :classname "lasertag.core_test$xy"}))))
@@ -191,7 +185,7 @@
      (testing "Built-in js/JSON., exclude :js-built-in-object-info"
        (is (= 
             (tag-map js/JSON 
-                     {:exclude [:js-built-in-object-info]})
+                     {:include-js-built-in-object-info? false})
             {:coll-size 1,
              :classname "Object",
              :all-tags  #{:object
@@ -333,37 +327,37 @@
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes
-     (is (= (tag-map '(:a :b :c) {:exclude [:all-tags]})
+     (is (= (tag-map '(:a :b :c) {:include-all-tags? false})
             {:tag           :seq,
              :type          cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes 
-     (is (= (tag-map       '(:a :b :c) {:exclude [:all-tags]})
+     (is (= (tag-map       '(:a :b :c) {:include-all-tags? false})
             {:tag           :seq,
              :type          clojure.lang.PersistentList}))))
 
 #?(:cljs
    (deftest cljs-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:exclude [:all-tags]
-                                :format  :string})
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :string})
           {:tag  "seq",
            :type cljs.core/List}))
      (is (= 
-          (tag-map '(:a :b :c) {:exclude [:all-tags]
-                                :format  :symbol})
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :symbol})
           {:tag  'seq,
            :type cljs.core/List})))
    :clj
    (deftest clj-elide-all-tagtypes+alternate-tag-type
      (is (= 
-          (tag-map '(:a :b :c) {:exclude [:all-tags]
-                                :format  :string})
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :string})
           {:tag  "seq",
            :type clojure.lang.PersistentList}))
      (is (= 
-          (tag-map '(:a :b :c) {:exclude [:all-tags]
-                                :format  :symbol})
+          (tag-map '(:a :b :c) {:include-all-tags? false
+                                :format            :symbol})
           {:tag  'seq,
            :type clojure.lang.PersistentList}))))
 
