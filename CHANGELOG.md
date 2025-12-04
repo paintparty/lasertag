@@ -9,7 +9,6 @@
 
 
 ## 0.11.6
-
 2025-11-22
 ### Changed
 - Refactored core namespace for readability
