@@ -188,7 +188,6 @@ The function `lasertag.core/tag-map` will return a map with additional info.
  :type      clojure.lang.PersistentArrayMap
  :all-tags  #{:coll
               :array-map
-              :coll-type
               :map-like
               :map
               :carries-meta}
