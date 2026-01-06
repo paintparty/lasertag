@@ -20,6 +20,94 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
+(def ^:private coll-type-all-tags
+  #{:iterable
+    :coll
+    :coll-type
+    :carries-meta})
+
+(defn- cached-tag
+  "Short circuit resolution for most common value types."
+  [x t]
+  ;; TODO - add bb cases to classname
+  (cond 
+    (coll? x)
+    (cond 
+      (instance? clojure.lang.PersistentArrayMap x)
+      {:tag       :map
+       :type      t
+       :all-tags  (apply conj coll-type-all-tags #{:array-map :map-like :map})
+       :classname #?(:clj "clojure.lang.PersistentArrayMap" 
+                     :cljs "cljs.core.PersistentArrayMap")  
+       :coll-size 0}
+
+      (instance? clojure.lang.PersistentVector x)
+      {:tag       :vector
+       :type      t
+       :all-tags  (conj coll-type-all-tags :vector)
+       :classname #?(:clj "clojure.lang.PersistentVector" 
+                     :cljs "cljs.core.PersistentVector")  
+       :coll-size 0}
+
+      (instance? clojure.lang.PersistentHashSet x)
+      {:tag       :set
+       :type      t
+       :all-tags  (apply conj coll-type-all-tags #{:set :set-like})
+       :classname #?(:clj "clojure.lang.PersistentHashSet" 
+                     :cljs "cljs.core.PersistentHashSet")  
+       :coll-size 0}
+
+      (instance? clojure.lang.LazySeq x)
+      {:tag       :seq
+       :type      t
+       :all-tags  (conj coll-type-all-tags :seq)
+       :classname #?(:clj "clojure.lang.LazySeq" 
+                     :cljs "cljs.core.LazySeq")  
+       :coll-size 3})
+    
+    (keyword? x)
+    {:tag       :keyword
+     :type      t
+     :all-tags  #{:keyword}
+     :classname #?(:clj "clojure.lang.Keyword" 
+                   :cljs "cljs.core.Keyword")}
+
+    (int? x)
+    {:tag       :number
+     :type      t
+     :all-tags  #{:number-type :int :number :java-lang-class}
+     :classname #?(:clj "clojure.lang.Long"
+                   :cljs "cljs.core.Integer")}
+
+    (string? x)
+    {:tag       :string
+     :type      t
+     :all-tags  #{:string}
+     :classname #?(:clj "clojure.lang.String" 
+                   :cljs "js/String")}
+
+    (boolean? x)
+    {:tag       :boolean
+     :type      t
+     :all-tags  #{:boolean}
+     :classname #?(:clj "clojure.lang.Boolean" 
+                   :cljs "js/Boolean")}
+
+    (nil? x)
+    {:tag       :nil
+     :type      t
+     :all-tags  #{:nil}
+     :classname nil}
+
+    (symbol? x)
+    {:tag       :symbol
+     :type      t
+     :all-tags  #{:symbol :carries-meta}
+     :classname #?(:clj "clojure.lang.Symbol" 
+                   :cljs "cljs.core.Symbol")}))
+
+
+
 (def cljc-transients 
   {#?(:cljs cljs.core/TransientVector
       ;; :bb (resolve 'PersistentVector$TransientVector)
@@ -71,14 +159,19 @@
    ["_STAR_"        "*"]
    ["_"             "-"]])  
 
+;; TODO - change names `scalar` -> `sev`
 #?(:clj 
    (do 
      (def clj-scalar-types
-       {nil                        :nil
+       {
+        ;; TODO - remove or comment out ---
         clojure.lang.Symbol     :symbol
         clojure.lang.Keyword    :keyword
         java.lang.String        :string
         java.lang.Boolean       :boolean
+        ;; --------------------------------
+
+        nil                     :nil
         java.util.regex.Pattern :regex
         java.lang.Character     :char
         java.util.UUID          :uuid})
@@ -95,13 +188,18 @@
 #?(:cljs 
    (do
      (def cljs-scalar-types
-       {cljs.core/Symbol  :symbol
+       {
+
+        ;; TODO - remove or comment out ---
+        cljs.core/Symbol  :symbol
         cljs.core/Keyword :keyword
-        cljs.core/UUID    :uuid
         js/String         :string
         js/Boolean        :boolean
+        ;; --------------------------------
+
+        cljs.core/UUID    :uuid
         js/RegExp         :regex
-        nil                  :nil})
+        nil               :nil})
           
      (def js-number-types
        {js/Number :js-number
@@ -361,7 +459,6 @@
              #?(:cljs 
                 (cljs-fn-args x fn-args fn-info))))))
 
-
 ;; function resolution functions end--------------------------------------------
 
 
@@ -381,7 +478,9 @@
          :else         k))))
 
 
+
 ;; cljs value type helpers -----------------------------------------------------
+
 #?(:cljs 
    (do
      (defn- cljs-number-type [x]
@@ -422,8 +521,10 @@
                           (select-keys types)
                           vals
                           (some #(when (keyword? %) %))))
+         
          ;; TODO is having :js-map-like-object and :js-object redundant?
          ;; maybe we don't need either of those, just :map-like and :js are fine
+
          (when (js-object-instance? x)
            :js-map-like-object)))
 
@@ -471,6 +572,7 @@
    :dom-document-fragment-node])
 
 (defn- cljc-coll-type [x]
+  ;; TODO remove vector, map, and set as these are covered in quicktag
   (cond (vector? x) :vector
         (record? x) :record
         (map? x)    :map
@@ -504,8 +606,13 @@
              (cljc-coll-type x)
              (when (fn? x) :function)
              (when (contains? cljc-transients-set (type x)) :transient)
+
+             ;; Remove?
              (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
+
+             ;; Remove?
              (when (= clojure.lang.PersistentList (type x)) :list)
+
              (when (inst? x) :inst)
              (when (or (contains? #{:vector :map :set :seq} k)
                        (coll? x)
@@ -516,7 +623,9 @@
              (when (record? x) :datatype)
              (when (cljc-number? x number-type) :number)]
             (remove nil?)
+            ;; remove cons and just use (into #{k}), or why not put k in vector?
             (cons k)
+            ;; would (apply hash-set) be faster?
             (into #{})))))
 
 ;; TODO - consider removing `js-` prefixes and just adding an additional :js tag
@@ -907,10 +1016,15 @@
             (when (instance? java.util.AbstractList x) :seq)
             (resolve-class-name-clj c))))))
 
+
+
 (defn- tag* [{:keys [x extras? opts]}]
-  (let [k   (k* x (type x))
-        k+  (format-result k opts)]
-    (if extras? (tag-map* x k k+ opts) k+)))
+  (let [t (type x)] 
+    (or (when-let [m (cached-tag x t)]
+          (if extras? m (:tag m)))
+        (let [k  (k* x t)
+              k+ (format-result k opts)]
+          (if extras? (tag-map* x k k+ opts) k+)))))
 
 (defn tag
   "Given a value, returns a tag representing the value's type."
