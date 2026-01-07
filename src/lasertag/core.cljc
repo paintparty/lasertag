@@ -407,7 +407,7 @@
              (float? x) (cond 
                           (cljc-NaN? x)                     :nan
                           (= x js/Number.POSITIVE_INFINITY) :infinity
-                          (= x js/Number.NEGATIVE_INFINITY) :-infinity
+                          (= x js/Number.NEGATIVE_INFINITY) :negative-infinity
                           :else                             :float)
              :else      :number)
            k)))
