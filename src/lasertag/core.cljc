@@ -119,7 +119,7 @@
           
      (def js-number-types
        {js/Number :js-number
-        js/BigInt :js-big-int})
+        js/BigInt :big-int})
 
      (def js-map-types
        {js/Map     :js-map
