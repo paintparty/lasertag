@@ -994,12 +994,63 @@
 
 
 ;; TODO - Add rest of number types
-(def cached-number-types
-  {"Integer" {:tag       :number
-              :type      integer-class
-              :all-tags  #?(:clj #{:number-type :int :number :java-lang-class}
-                            :cljs #{:number-type :int :number})
-              :classname integer-classname}})
+#?(:clj
+   (def cached-java-number-types
+     {java.lang.Double     {:tag       :number
+                            :type      java.lang.Double
+                            :all-tags  #{:number-type
+                                         :double
+                                         :number
+                                         :java-lang-class}
+                            :classname "java.lang.Double"}
+
+      java.lang.Short      {:tag       :number
+                            :type      java.lang.Short
+                            :all-tags  #{:number-type
+                                         :int
+                                         :number
+                                         :short
+                                         :java-lang-class}
+                            :classname "java.lang.Short"}
+
+      java.lang.Long       {:tag       :number
+                            :type      java.lang.Long
+                            :all-tags  #{:number-type
+                                         :int
+                                         :number
+                                         :long
+                                         :java-lang-class}
+                            :classname "java.lang.Long"}
+
+      java.lang.Float      {:tag       :number
+                            :type      java.lang.Float
+                            :all-tags  #{:number-type
+                                         :number
+                                         :float
+                                         :java-lang-class}
+                            :classname "java.lang.Float"}
+
+      java.lang.Byte       {:tag       :number
+                            :type      java.lang.Byte
+                            :all-tags  #{:number-type
+                                         :int
+                                         :number
+                                         :byte
+                                         :java-lang-class}
+                            :classname "java.lang.Byte"}
+
+      java.math.BigDecimal {:tag       :number
+                            :type      java.math.BigDecimal
+                            :all-tags  #{:number-type :number :decimal :big-decimal}
+                            :classname "java.math.BigDecimal"}
+
+      clojure.lang.BigInt  {:tag      :number
+                            :type     clojure.lang.BigInt
+                            :all-tags #{:number-type
+                                        :number
+                                        :big-int}}}
+     ))
+
 
 
 
@@ -1083,9 +1134,17 @@
         m))
     
     (number? x)
-    (cond 
-      (int? x)
-      (get cached-number-types "Integer" nil))
+    #?(:cljs
+       ()
+       :clj
+       (let [t (type x)]
+         (when-let [m (get cached-java-number-types t nil)]
+           (if (or (when (= t Float) (java.lang.Float/isInfinite x))
+                   (java.lang.Double/isInfinite x))
+             (let [k (if (= x ##Inf) :infinity :negative-infinity)]
+               (update-in m [:all-tags] into [:infinite k])) 
+             m))))
+    
 
     :else
     (get cached-primitive-types (type x) nil)))
