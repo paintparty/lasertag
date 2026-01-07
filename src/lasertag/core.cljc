@@ -940,6 +940,26 @@
 ;;         (gen-cached-map 1.5) => {:tag :number :class java.lang.Double :all-tags {...} :classname "java.lang.Double"}
 
 
+;; TODO - consider adding fn to lasertag that describes the value with desc lookups from tags
+;; or a whole nice layout about it 
+
+
+;; consider adding in all-tags
+;; :ifn
+;; :fn
+;; :associative - what does this mean?
+;; :seqable
+;; :pos-int
+;; :nat-int
+;; :neg-int
+;; :stack
+;; :char-sequence
+;; :ideref
+;; :sorted-map
+
+;; consider-removing
+;; :number-type
+;; :js-map-like
 
 (def ^:private coll-type-all-tags
   #{:iterable
@@ -989,69 +1009,32 @@
                   :classname symbol-classname}})
 
 
-(def integer-class #?(:clj java.lang.Long :cljs :js/Number))
-(def integer-classname #?(:clj "java.lang.Long" :cljs "js/Number"))
+(def number-type-all-tags #{:number-type})
 
+(defn cached-tag-maps* [all-tags & colls]
+  (reduce (fn [acc [class classname k keyset]]
+            (assoc acc 
+                   class 
+                   {:tag      k
+                    :type     class
+                    :all-tags (apply conj
+                                     (conj all-tags k)
+                                     (into keyset))
+                    :classname classname}))
+          {}
+          colls))
 
-;; TODO - Add rest of number types
 #?(:clj
    (def cached-java-number-types
-     {java.lang.Double     {:tag       :number
-                            :type      java.lang.Double
-                            :all-tags  #{:number-type
-                                         :double
-                                         :number
-                                         :java-lang-class}
-                            :classname "java.lang.Double"}
-
-      java.lang.Short      {:tag       :number
-                            :type      java.lang.Short
-                            :all-tags  #{:number-type
-                                         :int
-                                         :number
-                                         :short
-                                         :java-lang-class}
-                            :classname "java.lang.Short"}
-
-      java.lang.Long       {:tag       :number
-                            :type      java.lang.Long
-                            :all-tags  #{:number-type
-                                         :int
-                                         :number
-                                         :long
-                                         :java-lang-class}
-                            :classname "java.lang.Long"}
-
-      java.lang.Float      {:tag       :number
-                            :type      java.lang.Float
-                            :all-tags  #{:number-type
-                                         :number
-                                         :float
-                                         :java-lang-class}
-                            :classname "java.lang.Float"}
-
-      java.lang.Byte       {:tag       :number
-                            :type      java.lang.Byte
-                            :all-tags  #{:number-type
-                                         :int
-                                         :number
-                                         :byte
-                                         :java-lang-class}
-                            :classname "java.lang.Byte"}
-
-      java.math.BigDecimal {:tag       :number
-                            :type      java.math.BigDecimal
-                            :all-tags  #{:number-type :number :decimal :big-decimal}
-                            :classname "java.math.BigDecimal"}
-
-      clojure.lang.BigInt  {:tag      :number
-                            :type     clojure.lang.BigInt
-                            :all-tags #{:number-type
-                                        :number
-                                        :big-int}}}
-     ))
-
-
+     (cached-tag-maps*
+      #{}
+      [java.lang.Double "java.lang.Double" :number #{:number-type :double :java-lang-class}]
+      [java.lang.Short "java.lang.Short" :number #{:number-type :short :java-lang-class}]
+      [java.lang.Long "java.lang.Long" :number #{:number-type :long :java-lang-class}]
+      [java.lang.Float "java.lang.Float" :number #{:number-type :float :java-lang-class}]
+      [java.lang.Byte "java.lang.Byte" :number #{:number-type :byte :java-lang-class}]
+      [java.math.BigDecimal "java.math.BigDecimal" :number #{:number-type :big-decimal :decimal :java-math-class}]
+      [clojure.lang.BigInt "clojure.lang.BigInt" :number #{:number-type :big-int}])))
 
 
 ;; (def array-map-class #?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap))
@@ -1072,24 +1055,10 @@
 ;; (def list-class #?(:clj clojure.lang.PersistentList :cljs cljs.core/List))
 ;; (def list-classname #?(:clj "clojure.lang.PersistentList" :cljs "cljs.core/List"))
 
-(defn cached-coll-types* [& colls]
-  (reduce (fn [acc [class classname k keyset]]
-            (assoc acc 
-                   class 
-                   {:tag      k
-                    :type     class
-                    :all-tags (apply conj
-                                     (conj coll-type-all-tags k)
-                                     (into keyset))
-                    :classname classname}))
-          {}
-          colls))
-
-
-
 
 (def cached-coll-types
-  (cached-coll-types*
+  (cached-tag-maps*
+   coll-type-all-tags
    [#?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap)
     #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap") 
     :map 
@@ -1144,7 +1113,6 @@
              (let [k (if (= x ##Inf) :infinity :negative-infinity)]
                (update-in m [:all-tags] into [:infinite k])) 
              m))))
-    
 
     :else
     (get cached-primitive-types (type x) nil)))
