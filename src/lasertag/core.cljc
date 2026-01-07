@@ -10,38 +10,6 @@
 ;; If a value is java, add a :java tag to :all-tags
 
 
-;; TODO - Figure out optimal path of execution for perf
-;;      - Use macros to generate the cached maps of map-tags?
-
-;;       (def cached-number-types
-;;         {Double {...}
-;;          Float (gen-cached-map 1.5)
-;;          Integer {...}})
-     
-;;         ;; gen-cached-map (example value of 1.5) would be a macro that uses tag-map to generate a static map which could be returned for common types
-;;         (gen-cached-map 1.5) => {:tag :number :class java.lang.Double :all-tags {...} :classname "java.lang.Double"}
-
-
-;;       (def keyword-class #?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword))
-;;       (def boolean-class #?(:clj clojure.lang.Boolean :cljs js/Boolean))
-
-;;       (cond
-;;         (keyword? x)
-;;         (get cached-primitive-types keyword-class)
-
-;;         (boolean? x)
-;;         (get cached-primitive-types boolean-class)
-
-;;         (coll? x)
-;;         (get cached-coll-types (type x))
-
-;;         (number? x)
-;;         (get cached-number-types (type x))
-
-;;         :else
-;;         (or (get cached-primitive-types (type x))
-;;             (some-other-tag x)))
-
 
 
 (ns lasertag.core
@@ -965,121 +933,170 @@
             (resolve-class-name-clj c))))))
 
 
+;; TODO - Figure out optimal path of execution for perf
+;;      - Use macros to generate the cached maps of map-tags?
+
+;;         ;; gen-cached-map (example value of 1.5) would be a macro that uses tag-map to generate a static map which could be returned for common types
+;;         (gen-cached-map 1.5) => {:tag :number :class java.lang.Double :all-tags {...} :classname "java.lang.Double"}
+
+
+
 (def ^:private coll-type-all-tags
   #{:iterable
     :coll
     :coll-type
     :carries-meta})
 
-(def cljc-array-map-class
-  #?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap))
 
-(def cljc-hash-map-class
-  #?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap))
+(def keyword-class #?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword))
+(def keyword-classname #?(:clj "clojure.lang.Keyword" :cljs "cljs.core/Keyword"))
 
-(def cljc-vector-class
-  #?(:clj clojure.lang.PersistentVector :cljs cljs.core/PersistentVector))
+(def string-class #?(:clj java.lang.String :cljs js/String))
+(def string-classname #?(:clj "java.lang.String" :cljs "js/String"))
 
-(def cljc-hashset-class
-  #?(:clj clojure.lang.PersistentHashSet :cljs cljs.core/PersistentHashSet))
-      
-(def cljc-lazyseq-class
-  #?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq))
+(def boolean-class #?(:clj java.lang.Boolean :cljs js/Boolean))
+(def boolean-classname #?(:clj "java.lang.Boolean" :cljs "js/Boolean"))
+
+(def symbol-class #?(:clj clojure.lang.Symbol :cljs cljs.core/Symbol))
+(def symbol-classname #?(:clj "clojure.lang.Symbol" :cljs "cljs.core/Symbol"))
+
+
+(def cached-primitive-types
+  {keyword-class {:tag       :keyword
+                  :type      keyword-class
+                  :all-tags  #{:keyword}
+                  :classname keyword-classname}
+
+
+   string-class  {:tag       :string
+                  :type      string-class
+                  :all-tags  #{:string}
+                  :classname string-classname}
+
+   boolean-class {:tag       :boolean
+                  :type      boolean-class
+                  :all-tags  #{:boolean}
+                  :classname boolean-classname}
+
+   nil              {:tag       :nil
+                     :type      nil
+                     :all-tags  #{:nil}
+                     :classname nil}
+
+   symbol-class  {:tag       :symbol
+                  :type      symbol-class
+                  :all-tags  #{:symbol :carries-meta}
+                  :classname symbol-classname}})
+
+
+(def integer-class #?(:clj java.lang.Long :cljs :js/Number))
+(def integer-classname #?(:clj "java.lang.Long" :cljs "js/Number"))
+
+
+;; TODO - Add rest of number types
+(def cached-number-types
+  {"Integer" {:tag       :number
+              :type      integer-class
+              :all-tags  #?(:clj #{:number-type :int :number :java-lang-class}
+                            :cljs #{:number-type :int :number})
+              :classname integer-classname}})
+
+
+
+;; (def array-map-class #?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap))
+;; (def array-map-classname #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap"))
+
+;; (def hash-map-class #?(:clj clojure.lang.PersistentHashMap :cljs cljs.core/PersistentHashMap))
+;; (def hash-map-classname #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap"))
+
+;; (def vector-class #?(:clj clojure.lang.PersistentVector :cljs cljs.core/PersistentVector))
+;; (def vector-classname #?(:clj "clojure.lang.PersistentVector" :cljs "cljs.core/PersistentVector"))
+
+;; (def hash-set-class #?(:clj clojure.lang.PersistentHashSet :cljs cljs.core/PersistentHashSet))
+;; (def hash-set-classname #?(:clj "clojure.lang.PersistentHashSet" :cljs "cljs.core/PersistentHashSet"))
+
+;; (def lazyseq-class #?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq))
+;; (def lazyseq-classname #?(:clj "clojure.lang.LazySeq" :cljs "cljs.core/LazySeq"))
+
+;; (def list-class #?(:clj clojure.lang.PersistentList :cljs cljs.core/List))
+;; (def list-classname #?(:clj "clojure.lang.PersistentList" :cljs "cljs.core/List"))
+
+(defn cached-coll-types* [& colls]
+  (reduce (fn [acc [class classname k keyset]]
+            (assoc acc 
+                   class 
+                   {:tag      k
+                    :type     class
+                    :all-tags (apply conj
+                                     (conj coll-type-all-tags k)
+                                     (into keyset))
+                    :classname classname}))
+          {}
+          colls))
+
+
+
+
+(def cached-coll-types
+  (cached-coll-types*
+   [#?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap)
+    #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap") 
+    :map 
+    #{:array-map :map-like}]
+   
+   [#?(:clj clojure.lang.PersistentHashMap :cljs cljs.core/PersistentHashMap)
+    #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap") 
+    :map 
+    #{:array-map :map-like :map}]
+   
+   [#?(:clj clojure.lang.PersistentVector :cljs cljs.core/PersistentVector)
+    #?(:clj "clojure.lang.PersistentVector" :cljs "cljs.core/PersistentVector") 
+    :vector]
+   
+   [#?(:clj clojure.lang.PersistentHashSet :cljs cljs.core/PersistentHashSet)
+    #?(:clj "clojure.lang.PersistentHashSet" :cljs "cljs.core/PersistentHashSet")
+    :set
+    #{:set-like}]
+   
+   [#?(:clj clojure.lang.PersistentList :cljs cljs.core/List)
+    #?(:clj "clojure.lang.PersistentList" :cljs "cljs.core/List") 
+    :seq 
+    #{:list}]
+   
+   [#?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq)
+    #?(:clj "clojure.lang.LazySeq" :cljs "cljs.core/LazySeq")
+    :seq
+    #{:lazy}]
+   
+   ;; TODO - add more
+   ))
 
 
 (defn- cached-tag
-  "Short circuit resolution for most common value types."
+  "Short circuit resolution for common value types. Very fast."
   [x t]
-  ;; TODO - add bb cases to classname
-  (cond 
+  (cond
     (coll? x)
-    (cond 
-      (instance?  cljc-array-map-class x)
-      {:tag       :map
-       :type      t
-       :all-tags  (apply conj coll-type-all-tags #{:array-map :map-like :map})
-       :classname #?(:clj "clojure.lang.PersistentArrayMap" 
-                     :cljs "cljs.core/PersistentArrayMap")  
-       :coll-size (count x)}
-
-      (instance?  cljc-hash-map-class x)
-      {:tag       :map
-       :type      t
-       :all-tags  (apply conj coll-type-all-tags #{:array-map :map-like :map})
-       :classname #?(:clj "clojure.lang.PersistentHashMap" 
-                     :cljs "cljs.core/PersistentArrayMap")  
-       :coll-size (count x)}
-      
-      (instance? cljc-vector-class x)
-      {:tag       :vector
-       :type      t
-       :all-tags  (conj coll-type-all-tags :vector)
-       :classname #?(:clj "clojure.lang.PersistentVector" 
-                     :cljs "cljs.core/PersistentVector")  
-       :coll-size (count x)}
-      
-      (instance? cljc-hashset-class x)
-      {:tag       :set
-       :type      t
-       :all-tags  (apply conj coll-type-all-tags #{:set :set-like})
-       :classname #?(:clj "clojure.lang.PersistentHashSet" 
-                     :cljs "cljs.core/PersistentHashSet")  
-       :coll-size (count x)}
-      
-      (instance? cljc-lazyseq-class x)
-      {:tag       :seq
-       :type      t
-       :all-tags  (conj coll-type-all-tags :seq)
-       :classname #?(:clj "clojure.lang.LazySeq" 
-                     :cljs "cljs.core/LazySeq")}) ; <- Intentionally omitting coll-size, so as not to realize collection
+    (when-let [m (get cached-coll-types (type x))]
+      (if-not (contains? (:all-tags m) :lazy)
+        (assoc m :coll-size (count x))
+        m))
     
-    (keyword? x)
-    {:tag       :keyword
-     :type      t
-     :all-tags  #{:keyword}
-     :classname #?(:clj "clojure.lang.Keyword" 
-                   :cljs "cljs.core/Keyword")}
+    (number? x)
+    (cond 
+      (int? x)
+      (get cached-number-types "Integer" nil))
 
-    (int? x)
-    {:tag       :number
-     :type      t
-     :all-tags  #?(:clj #{:number-type :int :number :java-lang-class}
-                   :cljs #{:number-type :int :number})
-     :classname #?(:clj "clojure.lang.Long"
-                   :cljs "cljs.core/Integer")}
-
-    (string? x)
-    {:tag       :string
-     :type      t
-     :all-tags  #{:string}
-     :classname #?(:clj "clojure.lang.String" 
-                   :cljs "js/String")}
-
-    (boolean? x)
-    {:tag       :boolean
-     :type      t
-     :all-tags  #{:boolean}
-     :classname #?(:clj "clojure.lang.Boolean" 
-                   :cljs "js/Boolean")}
-
-    (nil? x)
-    {:tag       :nil
-     :type      t
-     :all-tags  #{:nil}
-     :classname nil}
-
-    (symbol? x)
-    {:tag       :symbol
-     :type      t
-     :all-tags  #{:symbol :carries-meta}
-     :classname #?(:clj "clojure.lang.Symbol" 
-                   :cljs "cljs.core/Symbol")}))
+    :else
+    (get cached-primitive-types (type x) nil)))
 
 
 (defn- tag* [{:keys [x extras? opts]}]
   (let [t (type x)] 
     (or (when-let [m (cached-tag x t)]
-          (if extras? m (:tag m)))
+          (if extras?
+            m
+            (:tag m)))
         (let [k  (k* x t)
               k+ (format-result k opts)]
           (if extras? (tag-map* x k k+ opts) k+)))))
