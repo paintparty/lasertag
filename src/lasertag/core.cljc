@@ -440,6 +440,7 @@
          
          ;; TODO is having :js-map-like-object and :js-object redundant?
          ;; maybe we don't need either of those, just :map-like and :js are fine
+         ;; also nix :number-type, seems wrong (first check fw for :js-map-like-object and :number-type check in fireworks.util)
 
          (when (js-object-instance? x)
            :js-map-like-object)))
@@ -961,6 +962,7 @@
 ;; :number-type
 ;; :js-map-like
 
+
 (def ^:private coll-type-all-tags
   #{:iterable
     :coll
@@ -968,66 +970,48 @@
     :carries-meta})
 
 
-(def keyword-class #?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword))
-(def keyword-classname #?(:clj "clojure.lang.Keyword" :cljs "cljs.core/Keyword"))
-
-(def string-class #?(:clj java.lang.String :cljs js/String))
-(def string-classname #?(:clj "java.lang.String" :cljs "js/String"))
-
-(def boolean-class #?(:clj java.lang.Boolean :cljs js/Boolean))
-(def boolean-classname #?(:clj "java.lang.Boolean" :cljs "js/Boolean"))
-
-(def symbol-class #?(:clj clojure.lang.Symbol :cljs cljs.core/Symbol))
-(def symbol-classname #?(:clj "clojure.lang.Symbol" :cljs "cljs.core/Symbol"))
-
-
-(def cached-primitive-types
-  {keyword-class {:tag       :keyword
-                  :type      keyword-class
-                  :all-tags  #{:keyword}
-                  :classname keyword-classname}
-
-
-   string-class  {:tag       :string
-                  :type      string-class
-                  :all-tags  #{:string}
-                  :classname string-classname}
-
-   boolean-class {:tag       :boolean
-                  :type      boolean-class
-                  :all-tags  #{:boolean}
-                  :classname boolean-classname}
-
-   nil              {:tag       :nil
-                     :type      nil
-                     :all-tags  #{:nil}
-                     :classname nil}
-
-   symbol-class  {:tag       :symbol
-                  :type      symbol-class
-                  :all-tags  #{:symbol :carries-meta}
-                  :classname symbol-classname}})
-
-
-(def number-type-all-tags #{:number-type})
-
 (defn cached-tag-maps* [all-tags & colls]
   (reduce (fn [acc [class classname k keyset]]
             (assoc acc 
                    class 
                    {:tag      k
                     :type     class
-                    :all-tags (apply conj
-                                     (conj all-tags k)
-                                     (into keyset))
+                    :all-tags (apply conj (conj all-tags k) (into keyset))
                     :classname classname}))
           {}
           colls))
 
+
+(def cached-primitive-and-reference-types
+  (cached-tag-maps*
+   #{}
+   ;; TODO - add char
+   [#?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword)
+    #?(:clj "clojure.lang.Keyword" :cljs "cljs.core/Keyword")
+    :keyword
+    #{}]
+
+   [#?(:clj java.lang.String :cljs js/String)
+    #?(:clj "java.lang.String" :cljs "js/String")
+    :string
+    #{}]
+
+   [#?(:clj java.lang.Boolean :cljs js/Boolean)
+    #?(:clj "java.lang.Boolean" :cljs "js/Boolean")
+    :boolean
+    #{:primitive}]
+
+   [#?(:clj clojure.lang.Symbol :cljs cljs.core/Symbol)
+    #?(:clj "clojure.lang.Symbol" :cljs "cljs.core/Symbol")
+    :symbol
+    #{:carries-meta}]))
+
+
 #?(:clj
    (def cached-java-number-types
      (cached-tag-maps*
-      #{}
+      #{:primitive}
+      ;; TODO - remove :number-type
       [java.lang.Double "java.lang.Double" :number #{:number-type :double :java-lang-class}]
       [java.lang.Short "java.lang.Short" :number #{:number-type :short :java-lang-class}]
       [java.lang.Long "java.lang.Long" :number #{:number-type :long :java-lang-class}]
@@ -1035,25 +1019,6 @@
       [java.lang.Byte "java.lang.Byte" :number #{:number-type :byte :java-lang-class}]
       [java.math.BigDecimal "java.math.BigDecimal" :number #{:number-type :big-decimal :decimal :java-math-class}]
       [clojure.lang.BigInt "clojure.lang.BigInt" :number #{:number-type :big-int}])))
-
-
-;; (def array-map-class #?(:clj clojure.lang.PersistentArrayMap :cljs cljs.core/PersistentArrayMap))
-;; (def array-map-classname #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap"))
-
-;; (def hash-map-class #?(:clj clojure.lang.PersistentHashMap :cljs cljs.core/PersistentHashMap))
-;; (def hash-map-classname #?(:clj "clojure.lang.PersistentArrayMap" :cljs "cljs.core/PersistentArrayMap"))
-
-;; (def vector-class #?(:clj clojure.lang.PersistentVector :cljs cljs.core/PersistentVector))
-;; (def vector-classname #?(:clj "clojure.lang.PersistentVector" :cljs "cljs.core/PersistentVector"))
-
-;; (def hash-set-class #?(:clj clojure.lang.PersistentHashSet :cljs cljs.core/PersistentHashSet))
-;; (def hash-set-classname #?(:clj "clojure.lang.PersistentHashSet" :cljs "cljs.core/PersistentHashSet"))
-
-;; (def lazyseq-class #?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq))
-;; (def lazyseq-classname #?(:clj "clojure.lang.LazySeq" :cljs "cljs.core/LazySeq"))
-
-;; (def list-class #?(:clj clojure.lang.PersistentList :cljs cljs.core/List))
-;; (def list-classname #?(:clj "clojure.lang.PersistentList" :cljs "cljs.core/List"))
 
 
 (def cached-coll-types
@@ -1091,36 +1056,71 @@
    ;; TODO - add more
    ))
 
+(defn cljc-infinite? [x]
+  #?(:cljs
+     (or (= x js/Number.POSITIVE_INFINITY) (= x js/Number.NEGATIVE_INFINITY))
+     :clj
+     (or (when (= (type x) Float) (java.lang.Float/isInfinite x))
+         (java.lang.Double/isInfinite x))))
 
-(defn- cached-tag
+(defn number-type-tag-map [x]
+  #?(:cljs
+     (when-let [tag (cljs-number-type x)]
+       {:tag       :number
+        :type      (type x)
+        :all-tags  (let [all-tags #{:js :number tag}]
+                     (if (contains? #{:negative-infinity :infinity} tag)
+                       (conj all-tags :infinite)
+                       all-tags))
+        :classname (if (= tag :big-int)
+                     "js/BigInt"
+                     "js/Number")})
+     :clj
+     (let [t (type x)]
+       (when-let [m (get cached-java-number-types t nil)]
+         (cond 
+
+           (cljc-infinite? x)
+           (let [k (if (= x ##Inf) :infinity :negative-infinity)]
+             (update-in m [:all-tags] into [:infinite k])) 
+
+           (or (Double/isNaN x) (Float/isNaN x))
+           (update-in m [:all-tags] into [:nan])
+
+           :else
+           m)))))
+
+
+(defn- cached-tag-map
   "Short circuit resolution for common value types. Very fast."
-  [x t]
-  (cond
-    (coll? x)
-    (when-let [m (get cached-coll-types (type x))]
-      (if-not (contains? (:all-tags m) :lazy)
-        (assoc m :coll-size (count x))
-        m))
-    
-    (number? x)
-    #?(:cljs
-       ()
-       :clj
-       (let [t (type x)]
-         (when-let [m (get cached-java-number-types t nil)]
-           (if (or (when (= t Float) (java.lang.Float/isInfinite x))
-                   (java.lang.Double/isInfinite x))
-             (let [k (if (= x ##Inf) :infinity :negative-infinity)]
-               (update-in m [:all-tags] into [:infinite k])) 
-             m))))
+  [x]
+  (or 
+   ;; First we need to check if val resolves to a number type
+   ;; The internals of this are different for jvm vs js
+   (number-type-tag-map x)
 
-    :else
-    (get cached-primitive-types (type x) nil)))
+   ;; Next, check if value is clj/cljs collection
+   (when (coll? x)
+     (when-let [m (get cached-coll-types (type x))]
+       (if-not (contains? (:all-tags m) :lazy)
+         (assoc m :coll-size (count x))
+         m)))
+   
+   ;; Next, check if value is common clj/cljs type such as keyword, string, etc 
+   (get cached-primitive-and-reference-types (type x) nil)
+   
+   
+   ;; TODO quick sort for native collections in java and js
+
+
+   ;; TODO quick sort for things like futures and promises in java and js
+   ))
+
 
 
 (defn- tag* [{:keys [x extras? opts]}]
   (let [t (type x)] 
-    (or (when-let [m (cached-tag x t)]
+    (or (when-let [m (cached-tag-map x)]
           (if extras?
             m
             (:tag m)))
