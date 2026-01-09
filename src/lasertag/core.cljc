@@ -210,13 +210,14 @@
        (and (js/ArrayBuffer.isView x)
             (not (instance? js/ArrayBuffer x))
             (not (instance? js/DataView x))))
-     (defn- js-built-in-map [o]
+
+     #_(defn- js-built-in-map [o]
        (let [{:keys [sym]} (get jsi/js-built-ins-by-built-in o)]
          {:js-built-in-method-of      o
           :js-built-in-method-of-name (some-> sym name)
           :js-built-in-function?      true}))
 
-     (defn- js-built-in-method-of [x name-prop fn-nm]
+     #_(defn- js-built-in-method-of [x name-prop fn-nm]
        (when 
         (and (string? name-prop)
              (re-find #"[^\$\.-]" name-prop))
@@ -237,16 +238,18 @@
             :fn-args :lasertag/multimethod})) )
 
      (defn- cljs-fn [x s]
-       (let [bits          (string/split s #"\$")
+       (let [cljs-land?    (pos? (.indexOf s "$"))
+             bits          (string/split s #"\$")
              [fn-ns fn-nm] (partition-drop-last bits)
              fn-nm         (demunge-fn-name fn-nm)
-             built-in?     (or (contains? jsi/js-built-in-objects x)
-                               (contains? jsi/js-built-in-functions x))]
+             built-in?     (when-not cljs-land?
+                             (or (contains? jsi/js-built-in-objects x)
+                                 (contains? jsi/js-built-in-functions x)))]
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)
                   {:fn-ns (string/join "." fn-ns)}) 
-                (when-not built-in? (js-built-in-method-of x s fn-nm)))))
+                #_(when-not built-in? (js-built-in-method-of x s fn-nm)))))
 
      (defn- cljs-fn-alt [o]
        (let [out-str (pwos o)]
@@ -734,23 +737,25 @@
      [(when (instance? clojure.lang.IType x)
         :datatype)]))
 
-(defn- all-tags* [{:keys [x k] :as m}]
+(defn- all-tags* [{:keys [x k built-in?] :as m}]
   (let [all-tags   #?(:cljs (cljs-all-value-types m)
                       :clj (clj-all-value-types m))
         map-like?  (map-like?* x k all-tags)
         set-like?  (or (contains? #{:set :js-set} k)
-                       #?(:clj (instance? java.util.AbstractSet x)))]
-
+                       #?(:clj (instance? java.util.AbstractSet x)))
+        coll-like? (or map-like?
+                       set-like?
+                       (contains? all-tags :coll)
+                       #?(:cljs (cljs-coll-type? x)))]
     ;; TODO - Add :array-like? and maybe :list-like?
     {:classname    (classname* x)
      :scalar-type? (scalar-type? k)
      :all-tags     all-tags
      :set-like?    set-like?
      :map-like?    map-like?
-     :coll-type?   (or map-like?
-                       set-like?
-                       (contains? all-tags :coll)
-                       #?(:cljs (cljs-coll-type? x)))}))
+     :coll-type?   coll-like? ;<-deprecate
+     :coll-like?   coll-like?
+     }))
 
 #?(:clj
    (defn- java-classes
@@ -772,7 +777,9 @@
          (cljc-datatypes x)
          
          #?(:clj (java-classes all-tags-map))
-         [(when coll-type? :coll-type)
+         [(when (:built-in? m) :built-in)
+          ;; TODO - remove this?
+          (when coll-type? :coll-type)
           (when map-like? :map-like)
           (when set-like? :set-like)
           (when (carries-meta? x) :carries-meta)
@@ -811,13 +818,25 @@
    (defn cljs-tag-map* [x k opts]
      (let [[dom-node-type
             dom-node-type-name
-            dom-node-type-keyword] (dom-node x)]
+            dom-node-type-keyword] (dom-node x)
+
+           {:keys [js-built-in-object? object-name]}
+           (when (= k :object)
+             (when-let [{:keys [sym]} 
+                        (get jsi/js-built-ins-by-built-in x)]
+               {:js-built-in-object? true
+                :object-name         (str sym)}))]
        (merge
+        (when js-built-in-object? {:object-name object-name})
         ;; Get all the tags
         (when-not (-> opts :include-all-tags? false?)
           (all-tags {:x                     x
                      :k                     k 
-                     :dom-node-type-keyword dom-node-type-keyword}))
+                     :dom-node-type-keyword dom-node-type-keyword
+                     :built-in?             (or (-> opts
+                                                    :fn-info
+                                                    :js-built-in-function?)
+                                                js-built-in-object?)}))
 
         ;; Get dom node info 
         (when dom-node-type
@@ -826,38 +845,31 @@
 
         ;; Get dom element node info 
         (when (= 1 dom-node-type)
-          {:dom-element-tag-name x.tagName})
-        
-        ;; Enhanced reflection for built-in js objects
-        (when-not (-> opts :include-js-built-in-object-info? false?)
-          (when (= k :object)
-            (when-let [{:keys [sym]} 
-                       (get jsi/js-built-ins-by-built-in x)]
-              {:js-built-in-object?     true
-               :js-built-in-object-name (str sym)})))))))
+          {:dom-element-tag-name x.tagName})))))
 
 (defn- tag-map*
   [x k k+ opts]
+  (let [fn-info 
+        ;; Optionaly get reflective function info, same for clj & cljs
+        (when (contains? #{:function :defmulti :class} k)
+          (let [b (not (-> opts :include-function-info? false?))]
+            (fn-info x k b)))]
     (merge 
-     ;; The lasertag for clj & cljs
+        ;; The lasertag for clj & cljs
      {:tag k+}
 
-     ;; The `type` (calling clojure.core.type, or cljs.core.type) on the value 
+        ;; The `type` (calling clojure.core.type, or cljs.core.type) on the value 
      {:type #?(:cljs (if (= k :js-generator)
                        (symbol "#object[Generator]")
                        (type x))
                :clj (type x))}
-     
-     ;; Optionaly get reflective function info, same for clj & cljs
-     (when (contains? #{:function :defmulti :class} k)
-       (let [b (not (-> opts :include-function-info? false?))]
-         (fn-info x k b)))
+     fn-info
 
-     #?(:cljs (cljs-tag-map* x k opts)
+     #?(:cljs (cljs-tag-map* x k (assoc opts :fn-info fn-info))
         :clj  (when-not (-> opts :include-all-tags? false?)
                 (all-tags {:x    x
                            :k    k 
-                           :opts opts})))))
+                           :opts opts}))))))
 
 (defn- format-result [k {:keys [format]}]
   (if format
@@ -1056,12 +1068,14 @@
    ;; TODO - add more
    ))
 
+
 (defn cljc-infinite? [x]
   #?(:cljs
      (or (= x js/Number.POSITIVE_INFINITY) (= x js/Number.NEGATIVE_INFINITY))
      :clj
      (or (when (= (type x) Float) (java.lang.Float/isInfinite x))
          (java.lang.Double/isInfinite x))))
+
 
 (defn number-type-tag-map [x]
   #?(:cljs
@@ -1092,7 +1106,8 @@
 
 
 (defn- cached-tag-map
-  "Short circuit resolution for common value types. Very fast."
+  "Quickly resolves most common value types first, then checks for more exotic
+   native value types. Returns a map."
   [x]
   (or 
    ;; First we need to check if val resolves to a number type
@@ -1109,9 +1124,18 @@
    ;; Next, check if value is common clj/cljs type such as keyword, string, etc 
    (get cached-primitive-and-reference-types (type x) nil)
    
+   ;; TODO cljc fn or js/java custom/lib fn 
    
    ;; TODO quick sort for native collections in java and js
-
+   
+   ;; TODO - maybe check for object or fn first?
+   
+   ;; TODO Built-ins
+   #?(:cljs (do 
+              (? (some->> x type (= js/Intl.Locale) #_(get jsi/built-ins*)))
+              (? (some->> x type (get jsi/built-ins*) :tag-map)))
+      :clj nil)
+   
 
    ;; TODO quick sort for things like futures and promises in java and js
    ))

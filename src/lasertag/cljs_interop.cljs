@@ -19,93 +19,953 @@
 ;; AsyncFunction 
 ;; Errors
 
+;; For getting instance properties dynamically
+#_(defn categorize-properties [obj]
+  (loop [current obj
+         props (hash-set)
+         meths (hash-set)]
+    (if (or (nil? current) (identical? current (.-prototype js/Object)))
+      {:instance-properties (vec props) :instance-methods (vec meths)}
+      (let [prop-names (js/Object.getOwnPropertyNames current)
+            [new-props new-meths]
+            (reduce
+             (fn [[ps ms] prop]
+               (if (= prop "constructor")
+                 [ps ms]
+                 (let [descriptor (js/Object.getOwnPropertyDescriptor current prop)
+                       value (.-value descriptor)
+                       getter (.-get descriptor)
+                       is-method? (or (= "function" (type value))
+                                      (some? getter))]
+                   (if is-method?
+                     [ps (conj ms prop)]
+                     [(conj ps prop) ms]))))
+             [props meths]
+             prop-names)]
+        (recur (js/Object.getPrototypeOf current) new-props new-meths)))))
+
 (defonce Atomics
   (try js/Atomics
        (catch js/Object e nil)))
 
+(def built-ins* 
+  {js/Intl.Segmenter {:sym      'Intl.Segmenter
+                      :demo     "(new js/Intl.Segmenter \"fr\" #js{:granularity \"word\"})"
+                      :args     ['...]
+                      :category "Structured data"
+                      :tag-map  {:tag       :object
+                                 :type      js/Intl.Segmenter
+                                 :all-tags  #{:object :js :instance-of-built-in :map-like :coll-like} ; <- probably shouldn't be coll-like
+                                 :classname "Intl.Segmenter"
+                                 :resolver  #(.resolvedOptions %) ;<- maybe represent as data i.e. "resolvedOptions"
+                                 }}
+
+   js/ArrayBuffer    {:sym      'ArrayBuffer
+                      :args     '[n]
+                      :category "Structured data"
+                      :tag-map  {:tag                 :object
+                                 :type                js/ArrayBuffer
+                                 :all-tags            #{:object :js :instance-of-built-in :map-like :coll-like} ; <- probably shouldn't be coll-like
+                                 :classname           "ArrayBuffer"
+                                 :instance-properties ["byteLength" "maxByteLength" "resizable" "detached"]}}
+
+   js/Intl.Locale    {:sym                 'Intl.Locale
+                      :args                ['...]
+                      :instance-properties ["baseName"
+                                            "calendar"
+                                            "calendars"
+                                            "caseFirst"
+                                            "collation"
+                                            "collations"
+                                            "hourCycle"
+                                            "hourCycles"
+                                            "language"
+                                            "numberingSystem"
+                                            "numberingSystems"
+                                            "numeric"
+                                            "region"
+                                            "script"
+                                            "textInfo"
+                                            "timeZones"
+                                            "weekInfo"]
+                      :category            "Structured data"
+                      :tag-map             {:tag                 :object
+                                            :type                js/Intl.Local
+                                            :all-tags            #{:object :js :instance-of-built-in :map-like :coll-like}
+                                            :classname           "Intl.Locale"
+                                            :instance-properties ["baseName"
+                                                                  "calendar"
+                                                                  "calendars"
+                                                                  "caseFirst"
+                                                                  "collation"
+                                                                  "collations"
+                                                                  "hourCycle"
+                                                                  "hourCycles"
+                                                                  "language"
+                                                                  "numberingSystem"
+                                                                  "numberingSystems"
+                                                                  "numeric"
+                                                                  "region"
+                                                                  "script"
+                                                                  "textInfo"
+                                                                  "timeZones"
+                                                                  "weekInfo"]}
+                      }})
+
+(defonce built-ins
+  (cond->
+   {
+
+    ;; FUNDAMENTAL OBJECTS -----------------------------------------------------
+    
+    js/Object                  {:sym      'Object
+                                :args     ['...]
+                                :category "Fundamental objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Object"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Function                {:sym      'Function
+                                :args     ['...]
+                                :category "Fundamental objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Function"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Boolean                 {:sym      'Boolean
+                                :args     ['...]
+                                :category "Fundamental objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Boolean"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Symbol                  {:sym                'Symbol
+                                :demo               "(js/Symbol \"my-sym\")"
+                                :not-a-constructor? true
+                                :args               ['s]
+                                :category           "Fundamental objects"
+                                :tag-map            {:tag       :function
+                                                     :type      js/Function
+                                                     :all-tags  #{:function
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "Symbol"
+                                                     :fn-args   ['s]
+                                                     :classname "Function"}}
+    
+
+    ;; NUMBERS AND DATES -------------------------------------------------------
+    
+    js/Math                    {:sym                'Math
+                                :not-a-constructor? true
+                                :category           "Numbers and dates"
+                                :tag-map            {:tag       :object
+                                                     :type      js/Object
+                                                     :all-tags  #{:object
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "Math"
+                                                     :fn-args   nil
+                                                     :classname "Object"}}
+    
+    js/Number                  {:sym      'Number
+                                :demo     "(new js/Number \"3\")"
+                                :args     ['v]
+                                :category "Numbers and dates"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Number"
+                                           :fn-args   ['v]
+                                           :classname "Function"}}
+    
+    js/BigInt                  {:sym                'BigInt
+                                :demo               "(js/BigInt \"999999999999\")"
+                                :not-a-constructor? true
+                                :args               ['v]
+                                :category           "Numbers and dates"
+                                :tag-map            {:tag       :function
+                                                     :type      js/Function
+                                                     :all-tags  #{:function
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "BigInt"
+                                                     :fn-args   ['v]
+                                                     :classname "Function"}}
+    
+    js/Date                    {:sym      'Date
+                                :demo     "(new js/Date)"
+                                :args     ['...]
+                                :category "Numbers and dates"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Date"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    ;; VALUE PROPERTIES --------------------------------------------------------
+    
+    js/NaN                     {:sym      'NaN
+                                :category "Value properties"
+                                :tag-map  {:tag       :number 
+                                           :type      js/Number 
+                                           :all-tags  #{:nan :js :number :built-in} 
+                                           :classname "js/Number"}}
+    
+    js/Infinity                {:sym      'Infinity
+                                :category "Value properties"
+                                :tag-map  {:tag       :number 
+                                           :type      js/Number 
+                                           :all-tags  #{:infinity :infinite :js :built-in :number} 
+                                           :classname "js/Number"}}
+    
+    js/globalThis              {:sym      'globalThis
+                                :category "Value properties"
+                                :tag-map  {:tag       :object
+                                           :type      js/Object ;; really a proxy
+                                           :all-tags  #{:object :js :built-in}
+                                           :fn-name   "globalThis"
+                                           :classname "Object"}}
+    
+
+    ;; CONTROL ABSTRACTION OBJECTS ---------------------------------------------
+    
+    js/Promise                 {:sym      'Promise
+                                :args     ['f]
+                                :category "Control abstraction objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Promise"
+                                           :fn-args   ['f]
+                                           :classname "Function"}}
+    
+
+    ;; ERROR OBJECTS -----------------------------------------------------------
+    
+    js/AggregateError          {:sym      'AggregateError
+                                :demo     "(new js/AggregateError #js[(new js/Error \"some error\")] \"Hello\")"
+                                :args     ['array]
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "AggregateError"
+                                           :fn-args   ['array]
+                                           :classname "Function"}}
+    
+    js/EvalError               {:sym      'EvalError
+                                :demo     "(new js/EvalError)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "EvalError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/RangeError              {:sym      'RangeError
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "RangeError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/ReferenceError          {:sym      'ReferenceError
+                                :demo     "(new js/ReferenceError)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "ReferenceError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/SyntaxError             {:sym      'SyntaxError
+                                :demo     "(new js/SyntaxError)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "SyntaxError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/TypeError               {:sym      'TypeError
+                                :demo     "(new js/TypeError)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "TypeError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/URIError                {:sym      'URIError
+                                :demo     "(new js/URIError)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "URIError"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Error                   {:sym      'Error
+                                :demo     "(new js/Error)"
+                                :args     []
+                                :category "Error objects"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Error"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+
+    ;; TEXT PROCESSING ---------------------------------------------------------
+    
+    js/String                  {:sym      'String
+                                :demo     "(new js/String \"hi\")"
+                                :args     ['s]
+                                :category "Text processing"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "String"
+                                           :fn-args   ['s]
+                                           :classname "Function"}}
+    
+    js/RegExp                  {:sym      'RegExp
+                                :demo     "(new js/RegExp \"^hi$\")"
+                                :args     ['s]
+                                :category "Text processing"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "RegExp"
+                                           :fn-args   ['s]
+                                           :classname "Function"}}
+    
+
+    ;; FUNCTION PROPERTIES -----------------------------------------------------
+    
+    js/eval                    {:sym      'eval
+                                :args     ['script]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "eval"
+                                           :fn-args   ['script]
+                                           :classname "Function"}}
+    
+    js/isFinite                {:sym      'isFinite
+                                :args     ['v]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "isFinite"
+                                           :fn-args   ['v]
+                                           :classname "Function"}}
+    
+    js/isNaN                   {:sym      'isNaN
+                                :args     ['v]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "isNaN"
+                                           :fn-args   ['v]
+                                           :classname "Function"}}
+    
+    js/parseFloat              {:sym      'parseFloat
+                                :args     ['s]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "parseFloat"
+                                           :fn-args   ['s]
+                                           :classname "Function"}}
+    
+    js/parseInt                {:sym      'parseInt
+                                :args     ['...]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "parseInt"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/decodeURI               {:sym      'decodeURI
+                                :args     ['uri]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "decodeURI"
+                                           :fn-args   ['uri]
+                                           :classname "Function"}}
+    
+    js/decodeURIComponent      {:sym      'decodeURIComponent
+                                :args     ['encodedUri]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "decodeURIComponent"
+                                           :fn-args   ['encodedUri]
+                                           :classname "Function"}}
+    
+    js/encodeURI               {:sym      'encodeURI
+                                :args     ['uri]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "encodeURI"
+                                           :fn-args   ['uri]
+                                           :classname "Function"}}
+    
+    js/encodeURIComponent      {:sym      'encodeURIComponent
+                                :args     ['uriComponent]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "encodeURIComponent"
+                                           :fn-args   ['uriComponent]
+                                           :classname "Function"}}
+
+    js/escape                  {:sym      'escape
+                                :args     ['str]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "escape"
+                                           :fn-args   ['str]
+                                           :classname "Function"}}
+
+    js/unescape                {:sym      'unescape
+                                :args     ['str]
+                                :category "Function properties"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "unescape"
+                                           :fn-args   ['str]
+                                           :classname "Function"}}
+    
+    ;; KEYED COLLECTIONS -------------------------------------------------------
+    
+    js/Map                     {:sym      'Map
+                                :demo     "(new js/Map #js[#js[\" a \", 1], #js[\" b \", 2]])"
+                                :args     ['...]
+                                :category "Keyed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Map"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Set                     {:sym      'Set
+                                :demo     "(new js/Set #js[1 2])"
+                                :args     ['...]
+                                :category "Keyed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Set"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/WeakMap                 {:sym      'WeakMap
+                                :args     ['...]
+                                :category "Keyed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "WeakMap"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/WeakSet                 {:sym      'WeakSet
+                                :demo     "(new js/Set #js[1 2])"
+                                :args     ['...]
+                                :category "Keyed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "WeakSet"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    ;; INDEXED COLLECTIONS -----------------------------------------------------
+
+    js/Array                   {:sym      'Array
+                                :demo     "(new js/Array 1 2 3)"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Int8Array               {:sym      'Int8Array
+                                :demo     "(new js/Int8Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Int8Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Uint8Array              {:sym      'Uint8Array
+                                :demo     "(new js/Uint8Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Uint8Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Uint8ClampedArray       {:sym      'Uint8ClampedArray
+                                :demo     "(new js/Uint8ClampedArray #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Uint8ClampedArray"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Int16Array              {:sym      'Int16Array
+                                :demo     "(new js/Int16Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Int16Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Uint16Array             {:sym      'Uint16Array
+                                :demo     "(new js/Uint16Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Uint16Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Int32Array              {:sym      'Int32Array
+                                :demo     "(new js/Int32Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Int32Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Uint32Array             {:sym      'Uint32Array
+                                :demo     "(new js/Uint32Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Uint32Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/BigInt64Array           {:sym      'BigInt64Array
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "BigInt64Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/BigUint64Array          {:sym      'BigUint64Array
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "BigUint64Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Float32Array            {:sym      'Float32Array
+                                :demo     "(new js/Float32Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Float32Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Float64Array            {:sym      'Float64Array
+                                :demo     "(new js/Float64Array #js[1 2 3])"
+                                :args     ['...]
+                                :category "Indexed collections"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Float64Array"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    ;; STRUCTURED DATA ---------------------------------------------------------
+
+    js/ArrayBuffer             {:sym                 'ArrayBuffer
+                                :args                ['...]
+                                :instance-properties ["byteLength"
+                                                      "detached"
+                                                      "maxByteLength"
+                                                      "resizable"]
+                                :category            "Structured data"
+                                :tag-map             {:tag       :function
+                                                      :type      js/Function
+                                                      :all-tags  #{:function :js :built-in}
+                                                      :fn-name   "ArrayBuffer"
+                                                      :fn-args   []
+                                                      :classname "Function"}}
+    
+    js/JSON                    {:sym                'JSON
+                                :not-a-constructor? true
+                                :category           "Structured data"
+                                :tag-map            {:tag       :object
+                                                     :type      js/Object
+                                                     :all-tags  #{:object
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "JSON"
+                                                     :fn-args   nil
+                                                     :classname "Object"}}
+    
+    js/DataView                {:sym                 'DataView
+                                :args                ['ArrayBuffer]
+                                :instance-properties ["buffer" "byteLength" "byteOffset"]
+                                :category            "Structured data"
+                                :tag-map             {:tag       :function
+                                                      :type      js/Function
+                                                      :all-tags  #{:function :js :built-in}
+                                                      :fn-name   "DataView"
+                                                      :fn-args   ['ArrayBuffer]
+                                                      :classname "Function"}}
+    
+    
+    js/Intl                    {:sym                'Intl
+                                :not-a-constructor? true
+                                :category           "Structured data"
+                                :tag-map            {:tag       :object
+                                                     :type      js/Object
+                                                     :all-tags  #{:object
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "Intl"
+                                                     :fn-args   nil
+                                                     :classname "Object"}}
+    
+    js/Intl.Collator           {:sym      'Intl.Collator
+                                :demo     "(new js/Intl.Collator \"sv\")"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.Collator"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.DateTimeFormat     {:sym      'Intl.DateTimeFormat
+                                :demo     "(new js/Intl.DateTimeFormat \"en-US\")"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.DateTimeFormat"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.DisplayNames       {:sym      'Intl.DisplayNames
+                                :demo     "(new js/Intl.DisplayNames #js[\"en\"] #js {:type \"region\"})"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.DisplayNames"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.ListFormat         {:sym      'Intl.ListFormat
+                                :demo     "(new js/Intl.ListFormat \"en-GB\" #js {:style \"long\", :type \"conjunction\"})"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.ListFormat"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.Locale             {:sym                 'Intl.Locale
+                                :args                ['...]
+                                :instance-properties ["baseName"
+                                                      "calendar"
+                                                      "calendars"
+                                                      "caseFirst"
+                                                      "collation"
+                                                      "collations"
+                                                      "hourCycle"
+                                                      "hourCycles"
+                                                      "language"
+                                                      "numberingSystem"
+                                                      "numberingSystems"
+                                                      "numeric"
+                                                      "region"
+                                                      "script"
+                                                      "textInfo"
+                                                      "timeZones"
+                                                      "weekInfo"]
+                                :category            "Structured data"
+                                :tag-map             {:tag       :function
+                                                      :type      js/Function
+                                                      :all-tags  #{:function :js :built-in}
+                                                      :fn-name   "Intl.Locale"
+                                                      :fn-args   []
+                                                      :classname "Function"}}
+    
+    js/Intl.NumberFormat       {:sym      'Intl.NumberFormat
+                                :demo     "(new js/Intl.NumberFormat \"de-DE\" #js{:style \"currency\", :currency \"EUR\" })"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.NumberFormat"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.PluralRules        {:sym      'Intl.PluralRules
+                                :demo     "(new js/Intl.PluralRules \"en-US\")"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.PluralRules"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.RelativeTimeFormat {:sym      'Intl.RelativeTimeFormat
+                                :demo     "(new js/Intl.RelativeTimeFormat \"en\" #js{:style \"short\"})"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.RelativeTimeFormat"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    js/Intl.Segmenter          {:sym      'Intl.Segmenter
+                                :demo     "(new js/Intl.Segmenter \"fr\" #js{:granularity \"word\"})"
+                                :args     ['...]
+                                :category "Structured data"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Intl.Segmenter"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    
+    ;; MANAGING MEMORY ---------------------------------------------------------
+
+    js/WeakRef                 {:sym      'WeakRef
+                                :args     ['f]
+                                :category "Managing memory"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "WeakRef"
+                                           :fn-args   ['f]
+                                           :classname "Function"}}
+    
+    js/FinalizationRegistry    {:sym      'FinalizationRegistry
+                                :args     ['f]
+                                :category "Managing memory"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "FinalizationRegistry"
+                                           :fn-args   ['f]
+                                           :classname "Function"}}
+    
+    js/Reflect                 {:sym                'Reflect
+                                :not-a-constructor? true
+                                :tag-map            {:tag       :object
+                                                     :type      js/Object
+                                                     :all-tags  #{:object
+                                                                  :js
+                                                                  :built-in
+                                                                  :non-constructor}
+                                                     :fn-name   "Reflect"
+                                                     :fn-args   nil
+                                                     :classname "Object"}}
+    
+    js/Proxy                   {:sym      'Proxy
+                                :args     ['...]
+                                :category "Reflection"
+                                :tag-map  {:tag       :function
+                                           :type      js/Function
+                                           :all-tags  #{:function :js :built-in}
+                                           :fn-name   "Proxy"
+                                           :fn-args   []
+                                           :classname "Function"}}
+    }
+    
+    ;; js/Atomic is in the STRUCTURED DATA category, but we are associng it in
+    ;; conditionally to avoid errors from browsers that do not support it.
+    Atomics (assoc Atomics
+                   {:sym                'Atomics
+                    :not-a-constructor? true
+                    :category           "Structured data"
+                    :tag-map            {:tag       :object
+                                         :type      js/Object
+                                         :all-tags  #{:object
+                                                      :js
+                                                      :built-in
+                                                      :non-constructor}
+                                         :fn-name   "Atomics"
+                                         :fn-args   nil
+                                         :classname "Object"}}
+                   )))
+
+
+
+
+
 (defonce js-built-ins-by-category
   (array-map 
    "Fundamental objects"
-   [[js/Object {:sym 'Object :args '[...]}]
-    [js/Function {:sym 'Function :args '[...]}]
-    [js/Boolean {:sym 'Boolean :args '[...]}]
+   [[js/Object {:sym 'Object :args '[...] :category "Fundamental objects"}]
+    [js/Function {:sym 'Function :args '[...] :category "Fundamental objects"}]
+    [js/Boolean {:sym 'Boolean :args '[...] :category "Fundamental objects"}]
     [js/Symbol {:sym 'Symbol
                 :demo "(js/Symbol \"my-sym\")"
                 :not-a-constructor? true
-                :args '[s]}]]
+                :args '[s] :category "Fundamental objects"}]]
 
    "Numbers and dates"
-   [[js/Math {:sym 'Math :not-a-constructor? true}]
-    [js/Number {:sym 'Number :demo "(new js/Number \"3\")" :args '[v]}]
-    [js/BigInt {:sym 'BigInt
-                :demo "(js/BigInt \"999999999999\")"
-                :not-a-constructor? true
-                :args '[v]}]
-    [js/Date {:sym 'Date :demo "(new js/Date)" :args '[...]}]]
+   [[js/Math {:sym 'Math :not-a-constructor? true :category "Numbers and dates"}]
+    [js/Number {:sym 'Number :demo "(new js/Number \"3\")" :args '[v] :category "Numbers and dates"}]
+    [js/BigInt {:sym 'BigInt :demo "(js/BigInt \"999999999999\")" :not-a-constructor? true :args '[v] :category "Numbers and dates"}]
+    [js/Date {:sym 'Date :demo "(new js/Date)" :args '[...] :category "Numbers and dates"}]]
 
    "Value properties" 
-   [[js/NaN {:sym 'NaN}] 
-    [js/Infinity {:sym 'Infinity}] 
-    [js/globalThis {:sym 'globalThis}]]
+   [[js/NaN {:sym 'NaN :category "Value properties"}] 
+    [js/Infinity {:sym 'Infinity :category "Value properties"}] 
+    [js/globalThis {:sym 'globalThis :category "Value properties"}]]
 
    "Control abstraction objects"
-   [[js/Promise {:sym 'Promise #_#_:demo "(new js/Promise (fn [x] x))" :args '[f]}]]
+   [[js/Promise {:sym 'Promise #_#_:demo "(new js/Promise (fn [x] x))" :args '[f] :category "Control abstraction objects"}]]
 
    "Error objects"
-   [[js/AggregateError {:sym 'AggregateError
-                        :demo "(new js/AggregateError
-                                   #js[(new js/Error \"some error\")] \"Hello\")"
-                        :args '[array]}]
-    [js/EvalError {:sym 'EvalError :demo "(new js/EvalError)" :args '[]}]
-    [js/RangeError {:sym 'RangeError #_#_:demo "(new js/RangeError)" :args '[]}]
-    [js/ReferenceError {:sym 'ReferenceError :demo "(new js/ReferenceError)" :args '[]}]
-    [js/SyntaxError {:sym 'SyntaxError :demo "(new js/SyntaxError)" :args '[]}]
-    [js/TypeError {:sym 'TypeError :demo "(new js/TypeError)" :args '[]}]
-    [js/URIError {:sym 'URIError :demo "(new js/URIError)" :args '[]}]
-    [js/Error {:sym 'Error :demo "(new js/Error)" :args '[]}]]
+   [[js/AggregateError {:sym 'AggregateError :demo "(new js/AggregateError #js[(new js/Error \"some error\")] \"Hello\")" :args '[array] :category "Error objects"}]
+    [js/EvalError {:sym 'EvalError :demo "(new js/EvalError)" :args '[] :category "Error objects"}]
+    [js/RangeError {:sym 'RangeError #_#_:demo "(new js/RangeError)" :args '[] :category "Error objects"}]
+    [js/ReferenceError {:sym 'ReferenceError :demo "(new js/ReferenceError)" :args '[] :category "Error objects"}]
+    [js/SyntaxError {:sym 'SyntaxError :demo "(new js/SyntaxError)" :args '[] :category "Error objects"}]
+    [js/TypeError {:sym 'TypeError :demo "(new js/TypeError)" :args '[] :category "Error objects"}]
+    [js/URIError {:sym 'URIError :demo "(new js/URIError)" :args '[] :category "Error objects"}]
+    [js/Error {:sym 'Error :demo "(new js/Error)" :args '[] :category "Error objects"}]]
 
    "Text processing"
-   [[js/String {:sym 'String :demo "(new js/String \"hi\")" :args '[s]}]
-    [js/RegExp {:sym 'RegExp :demo "(new js/RegExp \"^hi$\")" :args '[s]}]]
+   [[js/String {:sym 'String :demo "(new js/String \"hi\")" :args '[s] :category "Text processing"}]
+    [js/RegExp {:sym 'RegExp :demo "(new js/RegExp \"^hi$\")" :args '[s] :category "Text processing"}]]
 
    "Function properties"
-   [[js/eval {:sym 'eval :args '[script]}] 
-    [js/isFinite {:sym 'isFinite :args '[v]}] 
-    [js/isNaN {:sym 'isNaN :args '[v]}] 
-    [js/parseFloat {:sym 'parseFloat :args '[s] }] 
-    [js/parseInt {:sym 'parseInt :args '[...] }] 
-    [js/decodeURI {:sym 'decodeURI :args '[uri]}] 
-    [js/decodeURIComponent {:sym 'decodeURIComponent :args '[encodedUri]}] 
-    [js/encodeURI {:sym 'encodeURI :args '[uri]}] 
-    [js/encodeURIComponent {:sym 'encodeURIComponent :args '[uriComponent]}] 
-    [js/escape {:sym 'escape :args '[str]}] 
-    [js/unescape {:sym 'unescape :args '[str]}]]
+   [[js/eval {:sym 'eval :args '[script] :category "Function properties"}] 
+    [js/isFinite {:sym 'isFinite :args '[v] :category "Function properties"}] 
+    [js/isNaN {:sym 'isNaN :args '[v] :category "Function properties"}] 
+    [js/parseFloat {:sym 'parseFloat :args '[s]  :category "Function properties"}] 
+    [js/parseInt {:sym 'parseInt :args '[...]  :category "Function properties"}] 
+    [js/decodeURI {:sym 'decodeURI :args '[uri] :category "Function properties"}] 
+    [js/decodeURIComponent {:sym 'decodeURIComponent :args '[encodedUri] :category "Function properties"}] 
+    [js/encodeURI {:sym 'encodeURI :args '[uri] :category "Function properties"}] 
+    [js/encodeURIComponent {:sym 'encodeURIComponent :args '[uriComponent] :category "Function properties"}] 
+    [js/escape {:sym 'escape :args '[str] :category "Function properties"}] 
+    [js/unescape {:sym 'unescape :args '[str] :category "Function properties"}]]
 
    "Keyed collections"
-   [[js/Map {:sym 'Map :demo "(new js/Map #js[#js[\"a\", 1], #js[\"b\", 2]])" :args '[...]}]
-    [js/Set {:sym 'Set :demo "(new js/Set #js[1 2])" :args '[...]}]
-    [js/WeakMap {:sym  'WeakMap
-                 #_#_:demo "(let [wm (js/WeakMap.)
-                              o  #js{:a 1}]
-                         (.set wm o 100))"
-                 :args '[...]}]
+   [[js/Map {:sym 'Map :demo "(new js/Map #js[#js[\"a\", 1], #js[\"b\", 2]])" :args '[...] :category "Keyed collections"}]
+    [js/Set {:sym 'Set :demo "(new js/Set #js[1 2])" :args '[...] :category "Keyed collections"}]
+    [js/WeakMap {:sym  'WeakMap #_#_:demo "(let [wm (js/WeakMap.) o  #js{:a 1}] (.set wm o 100))" :args '[...] :category "Keyed collections"}]
     ;; TODO - fix this WeakSet demo
-    [js/WeakSet {:sym 'WeakSet :demo "(new js/Set #js[1 2])" :args '[...]}]
+    [js/WeakSet {:sym 'WeakSet :demo "(new js/Set #js[1 2])" :args '[...] :category "Keyed collections"}]
     ]
 
    "Indexed collections"
-   [[js/Array {:sym 'Array :demo "(new js/Array 1 2 3)" :args '[...]}]
-    [js/Int8Array {:sym 'Int8Array :demo "(new js/Int8Array #js[1 2 3])" :args '[...]}]
-    [js/Uint8Array {:sym 'Uint8Array :demo "(new js/Uint8Array #js[1 2 3])" :args '[...]}]
-    [js/Uint8ClampedArray {:sym  'Uint8ClampedArray :demo "(new js/Uint8ClampedArray #js[1 2 3])" :args '[...]}]
-    [js/Int16Array {:sym 'Int16Array :demo "(new js/Int16Array #js[1 2 3])" :args '[...]}]
-    [js/Uint16Array {:sym 'Uint16Array :demo "(new js/Uint16Array #js[1 2 3])" :args '[...]}]
-    [js/Int32Array {:sym 'Int32Array :demo "(new js/Int32Array #js[1 2 3])" :args '[...]}]
-    [js/Uint32Array {:sym 'Uint32Array :demo "(new js/Uint32Array #js[1 2 3])" :args '[...]}]
-    [js/BigInt64Array {:sym 'BigInt64Array #_#_:demo "(new js/BigInt64Array 3)" :args '[...]}]
-    [js/BigUint64Array {:sym 'BigUint64Array #_#_:demo "(new js/BigUint64Array 3)" :args '[...]}]
-    [js/Float32Array {:sym 'Float32Array :demo "(new js/Float32Array #js[1 2 3])" :args '[...]}]
-    [js/Float64Array {:sym 'Float64Array :demo "(new js/Float64Array #js[1 2 3])" :args '[...]}]]
+   [[js/Array {:sym 'Array :demo "(new js/Array 1 2 3)" :args '[...] :category "Indexed collections"}]
+    [js/Int8Array {:sym 'Int8Array :demo "(new js/Int8Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Uint8Array {:sym 'Uint8Array :demo "(new js/Uint8Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Uint8ClampedArray {:sym  'Uint8ClampedArray :demo "(new js/Uint8ClampedArray #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Int16Array {:sym 'Int16Array :demo "(new js/Int16Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Uint16Array {:sym 'Uint16Array :demo "(new js/Uint16Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Int32Array {:sym 'Int32Array :demo "(new js/Int32Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Uint32Array {:sym 'Uint32Array :demo "(new js/Uint32Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/BigInt64Array {:sym 'BigInt64Array #_#_:demo "(new js/BigInt64Array 3)" :args '[...] :category "Indexed collections"}]
+    [js/BigUint64Array {:sym 'BigUint64Array #_#_:demo "(new js/BigUint64Array 3)" :args '[...] :category "Indexed collections"}]
+    [js/Float32Array {:sym 'Float32Array :demo "(new js/Float32Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]
+    [js/Float64Array {:sym 'Float64Array :demo "(new js/Float64Array #js[1 2 3])" :args '[...] :category "Indexed collections"}]]
 
    "Structured data"
    (into []
@@ -116,38 +976,40 @@
                             :instance-properties ["byteLength"
                                                   "detached"
                                                   "maxByteLength"
-                                                  "resizable"]}]
+                                                  "resizable"]
+                            :category "Structured data"}]
            [js/JSON {:sym                'JSON
-                     :not-a-constructor? true}]
+                     :not-a-constructor? true
+                     :category "Structured data"}]
            [js/DataView {:sym                 'DataView
                          #_#_:demo                "(new js/DataView (new js/ArrayBuffer 8))"
                          :args                '[ArrayBuffer]
                          :instance-properties ["buffer"
                                                "byteLength"
-                                               "byteOffset"]}]]
+                                               "byteOffset"]
+                         :category "Structured data"}]]
           (when Atomics [[Atomics {:sym                'Atomics
-                                   :not-a-constructor? true}]])))
+                                   :not-a-constructor? true
+                                   :category "Structured data"}]])))
 
    "Internationalization"
-   [[js/Intl {:sym 'Intl :not-a-constructor? true}]
+   [[js/Intl {:sym 'Intl :not-a-constructor? true :category "Structured data"}]
     [js/Intl.Collator {:sym 'Intl.Collator
                        :demo "(new js/Intl.Collator \"sv\")"
-                       :args '[...]}]
+                       :args '[...]
+                       :category "Structured data"}]
     [js/Intl.DateTimeFormat {:sym 'Intl.DateTimeFormat
-                             :demo "(new js/Intl.DateTimeFormat
-                                         \"en-US\")"
-                             :args '[...]}]
+                             :demo "(new js/Intl.DateTimeFormat \"en-US\")"
+                             :args '[...]
+                             :category "Structured data"}]
     [js/Intl.DisplayNames {:sym 'Intl.DisplayNames
-                           :demo "(new js/Intl.DisplayNames
-                                       #js[\"en\"]
-                                       #js {:type \"region\"})"
-                           :args '[...]}]
+                           :demo "(new js/Intl.DisplayNames #js[\"en\"] #js {:type \"region\"})"
+                           :args '[...]
+                           :category "Structured data"}]
     [js/Intl.ListFormat {:sym 'Intl.ListFormat
-                         :demo "(new js/Intl.ListFormat 
-                                     \"en-GB\"
-                                     #js {:style \"long\",
-                                          :type \"conjunction\"})"
-                         :args '[...]}]
+                         :demo "(new js/Intl.ListFormat \"en-GB\" #js {:style \"long\", :type \"conjunction\"})"
+                         :args '[...]
+                         :category "Structured data"}]
     [js/Intl.Locale {:sym 'Intl.Locale
                      #_#_:demo "(new js/Intl.Locale
                                  \"ko\"
@@ -172,26 +1034,24 @@
                                            "script"
                                            "textInfo"
                                            "timeZones"
-                                           "weekInfo"]}]
+                                           "weekInfo"]
+                     :category "Structured data"}]
     [js/Intl.NumberFormat {:sym 'Intl.NumberFormat 
-                           :demo "(new js/Intl.NumberFormat
-                                       \"de-DE\"
-                                       #js{:style \"currency\",
-                                          :currency \"EUR\" })"
-                           :args '[...]}]
+                           :demo "(new js/Intl.NumberFormat \"de-DE\" #js{:style \"currency\", :currency \"EUR\" })"
+                           :args '[...]
+                           :category "Structured data"}]
     [js/Intl.PluralRules {:sym 'Intl.PluralRules
                           :demo "(new js/Intl.PluralRules \"en-US\")" 
-                          :args '[...]}]
+                          :args '[...]
+                          :category "Structured data"}]
     [js/Intl.RelativeTimeFormat {:sym 'Intl.RelativeTimeFormat
-                                 :demo "(new js/Intl.RelativeTimeFormat
-                                             \"en\"
-                                             #js{:style \"short\"})" 
-                                 :args '[...]}]
+                                 :demo "(new js/Intl.RelativeTimeFormat \"en\" #js{:style \"short\"})" 
+                                 :args '[...]
+                                 :category "Structured data"}]
     [js/Intl.Segmenter {:sym 'Intl.Segmenter
-                        :demo "(new js/Intl.Segmenter
-                                    \"fr\"
-                                    #js{:granularity \"word\"})"
-                        :args '[...]}]
+                        :demo "(new js/Intl.Segmenter \"fr\" #js{:granularity \"word\"})"
+                        :args '[...]
+                        :category "Structured data"}]
 
     ;; experimental, Safari-only
     ;; [js/Intl.DurationFormat {:sym 'DurationFormat :args '[...]}]
@@ -199,16 +1059,18 @@
 
    "Managing memory"
    [[js/WeakRef {:sym 'WeakRef
-                 #_#_:demo "(new js/WeakRef (fn [x]))" :args '[f]}]
+                 #_#_:demo "(new js/WeakRef (fn [x]))" :args '[f] :category "Managing memory"}]
     [js/FinalizationRegistry {:sym 'FinalizationRegistry
                               #_#_:demo "(new js/FinalizationRegistry (fn [x]))"
-                              :args '[f]}]]    
+                              :args '[f]
+                              :category "Managing memory"}]]    
 
    "Reflection"
    [[js/Reflect {:sym 'Reflect :not-a-constructor? true}]
     [js/Proxy {:sym 'Proxy
                #_#_:demo "(new js/Proxy #js {:a 1} (fn [x]))"
-               :args '[...]}]]
+               :args '[...]
+               :category "Reflection"}]]
    ))
 
 (defonce js-built-ins-by-built-in*
@@ -229,6 +1091,29 @@
 
 (defonce js-built-ins-by-built-in
   (into {} js-built-ins-by-built-in*))
+
+(def js-built-ins-cached-tag-maps
+  (apply array-map
+         (reduce 
+          (fn [vc [built-in v]]
+            (println built-in)
+            (println v)
+            (conj vc 
+                  built-in 
+                  (assoc v
+                         :tag-map 
+                         (let [tag        (if (object? built-in) :object :function)
+                               extra-tags (when (:not-a-constructor? v)
+                                            [:non-constructor])]
+                           {:tag       tag
+                            :type      (type built-in)
+                            :all-tags  (into #{tag :js :built-in} extra-tags)
+                            :fn-name   (str (:sym v))
+                            :fn-args   (if (= (:args v) '[...]) [] (:args v))
+                            :classname (if (= tag :object) "Object" "Function")}))))
+          [] 
+          js-built-ins-by-built-in*)))
+
 
 (defonce js-built-ins-which-are-not-functions-or-constructors
   (if Atomics 
@@ -254,6 +1139,7 @@
   (disj (into #{} (keys (into {} js-built-ins-which-are-iterables-by-built-in*)))
         js/WeakMap
         js/WeakSet))
+
 
 
 ;;;; define built-in values -------------------
@@ -1052,5 +1938,4 @@
 
 ;; ;; (print-objects-by-method-name-aot (:objects-by-method-name js-built-in-methods))
 ;; ;; (print-objects-by-unique-method-name-aot (:objects-by-unique-method-name js-built-in-methods))
-  
   
