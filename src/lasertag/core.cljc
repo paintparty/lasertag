@@ -1131,9 +1131,7 @@
    ;; TODO - maybe check for object or fn first?
    
    ;; TODO Built-ins
-   #?(:cljs (do 
-              (? (some->> x type (= js/Intl.Locale) #_(get jsi/built-ins*)))
-              (? (some->> x type (get jsi/built-ins*) :tag-map)))
+   #?(:cljs (some->> x type (get jsi/built-ins*) :tag-map)
       :clj nil)
    
 
