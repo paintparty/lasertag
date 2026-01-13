@@ -1,20 +1,210 @@
 ;; TODO 
+
+
+
+;; What about secondary-tag? => {:tag :seq :secondary-tag :list} or {:tag :number :secondary-tag :int} or {:tag :map :secondary-tag :map}
+
+;; No coll size
+
+;; Decide about strategy for tagging something :cljs :clj :bb :clr :js :java
+
+;; :undefined tag for js ?
+
+;; Add support for :atom
+;; Add support for :volatile
+;; Add support for :future
+;; Add support for :list (as distinct from :seq)
+;; Add support for :delay (as distinct from :seq)
+
+;; - Consider adding has-tag? fn which would be sugar for (->> x tag-map :all-tags (contains? :ifn))
+
+;; TODO - consider adding fn to lasertag that describes the value with desc lookups from tags
+;; or a whole nice layout about it 
+
+;; consider changing names
+;; function -> fn
+;; iterable -> iterator
+
+;; consider adding in all-tags
+;; :zipper <- maybe not, but add zipper-like? utility?
+;; :macro <- maybe not
+;; :special-form <- maybe not
+;; :atom
+;; :var
+;; :comment <- maybe not
+;; :uneval <- maybe not
+
+
+;; :ifn
+;; :fn
+;; :associative - what does this mean?
+;; :seqable
+;; :pos-int
+;; :nat-int
+;; :neg-int
+;; :stack
+;; :char-sequence
+;; :ideref
+;; :sorted-map
+;; :transducer
+;; :byte
+;; :throwable
+
+
+;; :array-like
+;; :list-like
+
+;; consider removing
+;; :number-type
+;; :js-map-like
+
+
 ;; - Figure out way to do "%" for lambda args
-;; - Add :array-like to all-tags
-;; - Add :list-like to all-tags
-;; - Add scalar-type? (or scalar?)
+;; - Add char
 ;; - Figure out if you need more granular tags for time contructs
+
 ;; If a value is cljs, add a :cljs tag to :all-tags
 ;; If a value is js, add a :js tag to :all-tags
 ;; If a value is clj, add a :clj tag to :all-tags
 ;; If a value is java, add a :java tag to :all-tags
 
+;; from kondo:
+;; (def known-types
+;;   #{:string
+;;     :char-sequence
+;;     :seqable
+;;     :int
+;;     :number
+;;     :pos-int
+;;     :nat-int
+;;     :neg-int
+;;     :double
+;;     :byte
+;;     :vector
+;;     :sequential
+;;     :associative
+;;     :coll
+;;     :ideref
+;;     :ifn
+;;     :stack
+;;     :map
+;;     :nil
+;;     :set
+;;     :fn
+;;     :keyword
+;;     :symbol
+;;     :transducer
+;;     :list
+;;     :seq
+;;     :sorted-map
+;;     :boolean
+;;     :atom
+;;     :regex
+;;     :char
+;;     :seqable-or-transducer
+;;     :throwable
+;;     :any
+;;     :float
+;;     :var})
+
+;; (def lasertag-known-types-primary-cljc
+;;   #{:string
+;;     :int
+;;     :number
+;;     :infinity ; <- should this be :number?
+;;     :-infinity ; <- should this be :number
+;;     :nan
+;;     :vector
+;;     :coll
+;;     :map
+;;     :nil
+;;     :set
+;;     :fn
+;;     :keyword
+;;     :symbol
+;;     :list
+;;     :seq
+;;     :boolean
+;;     :atom
+;;     :regex
+;;     :throwable
+;;     :float
+;;     :var
+;;     :atom
+;;     :volatile
+;;     :ref
+;;     :agent
+;;})
+
+;; (def lasertag-known-types-primary-cljs
+;;     :promise
+;;     :iterator
+;;     
+;; )
+
+
+;; (def lasertag-known-types-primary-clj
+;;     :char
+;;     :future
+;; )
+
+;; (def lasertag-known-types-secondary-cljc
+;;     :sorted-set
+;;     :sorted-map
+;;     :list       ; <- promote?
+;;     :pos-int
+;;     :nat-int
+;;     :neg-int
+;;     :big-int
+;;     :double
+;;     :float
+;;     :transducer
+;; )
+
+;; (def lasertag-known-types-secondary-clj
+;;     :char-sequence
+;;)
+
+;; Check on supports for transients in Babashka
+
+;; Consider adding zipper-like? util fn
+;; (defn zipper-like? 
+;;   "Checks the value for the structural pattern of a zipper that was created
+;;    with the clojure.zip API"
+;;   [x]
+;;   (and (vector? x)
+;;      (= 2 (count x))
+;;      (let [m (second x)]
+;;        (and (map? m)
+;;             (every? #(contains? m %) [:l :pnodes :ppath :r])))))
+
+
+;; Consider adding transducer? or transducer-like? util fn
+
+;; (defn transducer? [x]
+;;   (and (fn? x)
+;;        (try
+;;          (fn? (x conj)) ; A transducer applied to a reducing fn returns a fn
+;;          (catch Exception e false))))
+
+
+;; cljs
+;; IFn ICounted IEmptyableCollection ICollection IIndexed ASeq ISeq INext
+;; ILookup IAssociative IMap IMapEntry ISet IStack IVector IDeref
+;; IDerefWithTimeout IMeta IWithMeta IReduce IKVReduce IEquiv IHash
+;; ISeqable ISequential IList IRecord IReversible ISorted IPrintWithWriter IWriter
+;; IPrintWithWriter IPending IWatchable IEditableCollection ITransientCollection
+;; ITransientAssociative ITransientMap ITransientVector ITransientSet
+;; IMultiFn IChunkedSeq IChunkedNext IComparable INamed ICloneable IAtom
+;; IReset ISwap IIterable IDrop
+;;
 
 
 
 (ns lasertag.core
   (:require 
    [clojure.string :as string]
+   [clojure.set :as set]
    [lasertag.messaging :as messaging]
    #?(:cljs [lasertag.cljs-interop :as jsi]))
   #?(:clj
@@ -22,6 +212,140 @@
                             PersistentHashSet$TransientHashSet
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
+
+
+#_(def protocols
+  #?(:cljs
+     [[#?(:cljs IFn :clj clojure.lang.IFn)                   ['IFn                    :fn]]
+      [#?(:cljs ICounted :clj clojure.lang.ICounted)              ['ICounted               :counted ]]
+      [#?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection)  ['IEmptyableCollection   :emptyable]]
+      [#?(:cljs ICollection :clj clojure.lang.ICollection)           ['ICollection            :coll]]
+      [#?(:cljs IIndexed :clj clojure.lang.IIndexed)              ['IIndexed               :indexed]]
+      [#?(:cljs ASeq :clj clojure.lang.ASeq)                  ['ASeq                   :abstract-seq]]
+      [#?(:cljs ISeq :clj clojure.lang.ISeq)                  ['ISeq                   :seq]]
+      [#?(:cljs INext :clj clojure.lang.INext)                 ['INext                  :next]]
+      [#?(:cljs ILookup :clj clojure.lang.ILookup)               ['ILookup                :lookup]]
+      [#?(:cljs IAssociative :clj clojure.lang.IAssociative)          ['IAssociative           :associated-value]]
+      [#?(:cljs IMap :clj clojure.lang.IMap)                  ['IMap                   :map]]
+      [#?(:cljs IMapEntry :clj clojure.lang.IMapEntry)             ['IMapEntry              :mapentry]]
+      [#?(:cljs ISet :clj clojure.lang.ISet)                  ['ISet                   :set]]
+      [#?(:cljs IStack :clj clojure.lang.IStack)                ['IStack                 :stack]]
+      [#?(:cljs IVector :clj clojure.lang.IVector)               ['IVector                :vector]]
+      [#?(:cljs IDeref :clj clojure.lang.IDeref)                ['IDeref                 :deref]]
+      [#?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout)     ['IDerefWithTimeout      :deref-with-timeout]]
+      [#?(:cljs IMeta :clj clojure.lang.IMeta)                 ['IMeta                  :meta]]
+      [#?(:cljs IWithMeta :clj clojure.lang.IWithMeta)             ['IWithMeta              :with-meta]]
+      [#?(:cljs IReduce :clj clojure.lang.IReduce)               ['IReduce                :reduce]]
+      [#?(:cljs IKVReduce :clj clojure.lang.IKVReduce)             ['IKVReduce              :kv-reduce]]
+      [#?(:cljs IEquiv :clj clojure.lang.IEquiv)                ['IEquiv                 :equiv]]
+      [#?(:cljs IHash :clj clojure.lang.IHash)                 ['IHash                  :hash]]
+      [#?(:cljs ISeqable :clj clojure.lang.ISeqable)              ['ISeqable               :seqable]]
+      [#?(:cljs ISequential :clj clojure.lang.ISequential)           ['ISequential            :sequential]]
+      [#?(:cljs IList :clj clojure.lang.IList)                 ['IList                  :list]]
+      [#?(:cljs IRecord :clj clojure.lang.IRecord)               ['IRecord                :record]]
+      [#?(:cljs IReversible :clj clojure.lang.IReversible)           ['IReversible            :reversible]]
+      [#?(:cljs ISorted :clj clojure.lang.ISorted)               ['ISorted                :sorted]]
+      [#?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter)      ['IPrintWithWriter       :print-with-writer]]
+      [#?(:cljs IWriter :clj clojure.lang.IWriter)               ['IWriter                :writer]]
+      [#?(:cljs IPending :clj clojure.lang.IPending)              ['IPending               :pending ]]
+      [#?(:cljs IWatchable :clj clojure.lang.IWatchable)            ['IWatchable             :watchable]]
+      [#?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection)   ['IEditableCollection    :editable-coll]]
+      [#?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection)  ['ITransientCollection   :transient-coll]]
+      [#?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative)  ['ITransientAssociative  :transient-associative]]
+      [#?(:cljs ITransientMap :clj clojure.lang.ITransientMap)         ['ITransientMap          :transient-map ]]
+      [#?(:cljs ITransientVector :clj clojure.lang.ITransientVector)      ['ITransientVector       :transient-vector]]
+      [#?(:cljs ITransientSet :clj clojure.lang.ITransientSet)         ['ITransientSet          :transient-set]]
+      [#?(:cljs IMultiFn :clj clojure.lang.IMultiFn)              ['IMultiFn               :multi-fn]]
+      [#?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq)           ['IChunkedSeq            :chunked-seq]]
+      [#?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext)          ['IChunkedNext           :chunked-next]]
+      [#?(:cljs IComparable :clj clojure.lang.IComparable)           ['IComparable            :comparable ]]
+      [#?(:cljs INamed :clj clojure.lang.INamed)                ['INamed                 :named ]]
+      [#?(:cljs ICloneable :clj clojure.lang.ICloneable)            ['ICloneable             :cloneable ]]
+      [#?(:cljs IAtom :clj clojure.lang.IAtom)                 ['IAtom                  :atom]]
+      [#?(:cljs IReset :clj clojure.lang.IReset)                ['IReset                 :reset]]
+      [#?(:cljs ISwap :clj clojure.lang.ISwap)                 ['ISwap                  :swap]]
+      [#?(:cljs IIterable :clj clojure.lang.IIterable)             ['IIterable              :iterable ]]
+      [#?(:cljs IDrop :clj clojure.lang.IDrop)                 ['IDrop                  :drop]]
+      ]
+     ))
+
+(defn interfaces-implemented [x]
+  ;; #_(reduce (fn [acc [p [sym kw]]]
+  ;;             (if (satisfies? p x)
+  ;;               (-> acc
+  ;;                   (update-in [:kws] conj kw)
+  ;;                   (update-in [:protocols] conj p)
+  ;;                   (update-in [:sym] conj sym))
+  ;;               acc))
+  ;;           {:protocols []
+  ;;            :kws       []
+  ;;            :syms      []}
+  ;;           protocols)
+
+  (reduce
+   (fn [acc [p syms kw :as yes]]
+     (if yes
+       (-> acc
+           (update-in [:kws] conj kw)
+           (update-in [:protocols] conj p)
+           (update-in [:syms] conj syms))
+       acc))
+   {:protocols []
+    :kws       []
+    :syms      []}
+   [(when (satisfies? #?(:cljs IFn :clj clojure.lang.IFn) x)                   [#?(:cljs IFn :clj clojure.lang.IFn) 'IFn :fn])
+    (when (satisfies? #?(:cljs ICounted :clj clojure.lang.ICounted) x)              [#?(:cljs ICounted :clj clojure.lang.ICounted) 'ICounted :counted ])
+    (when (satisfies? #?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection) x)  [#?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection) 'IEmptyableCollection :emptyable])
+    (when (satisfies? #?(:cljs ICollection :clj clojure.lang.ICollection) x)           [#?(:cljs ICollection :clj clojure.lang.ICollection) 'ICollection :coll])
+    (when (satisfies? #?(:cljs IIndexed :clj clojure.lang.IIndexed) x)              [#?(:cljs IIndexed :clj clojure.lang.IIndexed) 'IIndexed :indexed])
+    (when (satisfies? #?(:cljs ASeq :clj clojure.lang.ASeq) x)                  [#?(:cljs ASeq :clj clojure.lang.ASeq) 'ASeq :abstract-seq])
+    (when (satisfies? #?(:cljs ISeq :clj clojure.lang.ISeq) x)                  [#?(:cljs ISeq :clj clojure.lang.ISeq) 'ISeq :seq])
+    (when (satisfies? #?(:cljs INext :clj clojure.lang.INext) x)                 [#?(:cljs INext :clj clojure.lang.INext) 'INext :next])
+    (when (satisfies? #?(:cljs ILookup :clj clojure.lang.ILookup) x)               [#?(:cljs ILookup :clj clojure.lang.ILookup) 'ILookup :lookup])
+    (when (satisfies? #?(:cljs IAssociative :clj clojure.lang.IAssociative) x)          [#?(:cljs IAssociative :clj clojure.lang.IAssociative) 'IAssociative :associated-value])
+    (when (satisfies? #?(:cljs IMap :clj clojure.lang.IMap) x)                  [#?(:cljs IMap :clj clojure.lang.IMap) 'IMap :map])
+    (when (satisfies? #?(:cljs IMapEntry :clj clojure.lang.IMapEntry) x)             [#?(:cljs IMapEntry :clj clojure.lang.IMapEntry) 'IMapEntry :mapentry])
+    (when (satisfies? #?(:cljs ISet :clj clojure.lang.ISet) x)                  [#?(:cljs ISet :clj clojure.lang.ISet) 'ISet :set])
+    (when (satisfies? #?(:cljs IStack :clj clojure.lang.IStack) x)                [#?(:cljs IStack :clj clojure.lang.IStack) 'IStack :stack])
+    (when (satisfies? #?(:cljs IVector :clj clojure.lang.IVector) x)               [#?(:cljs IVector :clj clojure.lang.IVector) 'IVector :vector])
+    (when (satisfies? #?(:cljs IDeref :clj clojure.lang.IDeref) x)                [#?(:cljs IDeref :clj clojure.lang.IDeref) 'IDeref :deref])
+    (when (satisfies? #?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout) x)     [#?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout) 'IDerefWithTimeout :deref-with-timeout])
+    (when (satisfies? #?(:cljs IMeta :clj clojure.lang.IMeta) x)                 [#?(:cljs IMeta :clj clojure.lang.IMeta) 'IMeta :meta])
+    (when (satisfies? #?(:cljs IWithMeta :clj clojure.lang.IWithMeta) x)             [#?(:cljs IWithMeta :clj clojure.lang.IWithMeta) 'IWithMeta :with-meta])
+    (when (satisfies? #?(:cljs IReduce :clj clojure.lang.IReduce) x)               [#?(:cljs IReduce :clj clojure.lang.IReduce) 'IReduce :reduce])
+    (when (satisfies? #?(:cljs IKVReduce :clj clojure.lang.IKVReduce) x)             [#?(:cljs IKVReduce :clj clojure.lang.IKVReduce) 'IKVReduce :kv-reduce])
+    (when (satisfies? #?(:cljs IEquiv :clj clojure.lang.IEquiv) x)                [#?(:cljs IEquiv :clj clojure.lang.IEquiv) 'IEquiv :equiv])
+    (when (satisfies? #?(:cljs IHash :clj clojure.lang.IHash) x)                 [#?(:cljs IHash :clj clojure.lang.IHash) 'IHash :hash])
+    (when (satisfies? #?(:cljs ISeqable :clj clojure.lang.ISeqable) x)              [#?(:cljs ISeqable :clj clojure.lang.ISeqable) 'ISeqable :seqable])
+    (when (satisfies? #?(:cljs ISequential :clj clojure.lang.ISequential) x)           [#?(:cljs ISequential :clj clojure.lang.ISequential) 'ISequential :sequential])
+    (when (satisfies? #?(:cljs IList :clj clojure.lang.IList) x)                 [#?(:cljs IList :clj clojure.lang.IList) 'IList :list])
+    (when (satisfies? #?(:cljs IRecord :clj clojure.lang.IRecord) x)               [#?(:cljs IRecord :clj clojure.lang.IRecord) 'IRecord :record])
+    (when (satisfies? #?(:cljs IReversible :clj clojure.lang.IReversible) x)           [#?(:cljs IReversible :clj clojure.lang.IReversible) 'IReversible :reversible])
+    (when (satisfies? #?(:cljs ISorted :clj clojure.lang.ISorted) x)               [#?(:cljs ISorted :clj clojure.lang.ISorted) 'ISorted :sorted])
+    (when (satisfies? #?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter) x)      [#?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter) 'IPrintWithWriter :print-with-writer])
+    (when (satisfies? #?(:cljs IWriter :clj clojure.lang.IWriter) x)               [#?(:cljs IWriter :clj clojure.lang.IWriter) 'IWriter :writer])
+    (when (satisfies? #?(:cljs IPending :clj clojure.lang.IPending) x)              [#?(:cljs IPending :clj clojure.lang.IPending) 'IPending :pending ])
+    (when (satisfies? #?(:cljs IWatchable :clj clojure.lang.IWatchable) x)            [#?(:cljs IWatchable :clj clojure.lang.IWatchable) 'IWatchable :watchable])
+    (when (satisfies? #?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection) x)   [#?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection) 'IEditableCollection :editable-coll])
+    (when (satisfies? #?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection) x)  [#?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection) 'ITransientCollection :transient-coll])
+    (when (satisfies? #?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative) x) [#?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative) 'ITransientAssociative :transient-associative])
+    (when (satisfies? #?(:cljs ITransientMap :clj clojure.lang.ITransientMap) x)         [#?(:cljs ITransientMap :clj clojure.lang.ITransientMap) 'ITransientMap :transient-map ])
+    (when (satisfies? #?(:cljs ITransientVector :clj clojure.lang.ITransientVector) x)      [#?(:cljs ITransientVector :clj clojure.lang.ITransientVector) 'ITransientVector :transient-vector])
+    (when (satisfies? #?(:cljs ITransientSet :clj clojure.lang.ITransientSet) x)         [#?(:cljs ITransientSet :clj clojure.lang.ITransientSet) 'ITransientSet :transient-set])
+    (when (satisfies? #?(:cljs IMultiFn :clj clojure.lang.IMultiFn) x)              [#?(:cljs IMultiFn :clj clojure.lang.IMultiFn) 'IMultiFn :multi-fn])
+    (when (satisfies? #?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq) x)           [#?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq) 'IChunkedSeq :chunked-seq])
+    (when (satisfies? #?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext) x)          [#?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext) 'IChunkedNext :chunked-next])
+    (when (satisfies? #?(:cljs IComparable :clj clojure.lang.IComparable) x)           [#?(:cljs IComparable :clj clojure.lang.IComparable) 'IComparable :comparable ])
+    (when (satisfies? #?(:cljs INamed :clj clojure.lang.INamed) x)                [#?(:cljs INamed :clj clojure.lang.INamed) 'INamed :named ])
+    (when (satisfies? #?(:cljs ICloneable :clj clojure.lang.ICloneable) x)            [#?(:cljs ICloneable :clj clojure.lang.ICloneable) 'ICloneable :cloneable ])
+    (when (satisfies? #?(:cljs IAtom :clj clojure.lang.IAtom) x)                 [#?(:cljs IAtom :clj clojure.lang.IAtom) 'IAtom :atom])
+    (when (satisfies? #?(:cljs IReset :clj clojure.lang.IReset) x)                [#?(:cljs IReset :clj clojure.lang.IReset) 'IReset :reset])
+    (when (satisfies? #?(:cljs ISwap :clj clojure.lang.ISwap) x)                 [#?(:cljs ISwap :clj clojure.lang.ISwap) 'ISwap :swap])
+    (when (satisfies? #?(:cljs IIterable :clj clojure.lang.IIterable) x)             [#?(:cljs IIterable :clj clojure.lang.IIterable) 'IIterable :iterable ])
+    (when (satisfies? #?(:cljs IDrop :clj clojure.lang.IDrop) x)                 [#?(:cljs IDrop :clj clojure.lang.IDrop) 'IDrop :drop])
+    ]))
+
+
 
 
 (def cljc-transients 
@@ -493,13 +817,14 @@
 
 (defn- cljc-coll-type [x]
   ;; TODO remove vector, map, and set as these are covered in quicktag
-  (cond (vector? x) :vector
-        (record? x) :record
-        (map? x)    :map
-        (set? x)    :set
-        (seq? x)    :seq
-        :else
-        (get cljc-transients (type x) nil)))
+  (cond 
+    ;; (vector? x) :vector ;; covered in new
+    (record? x) :record
+    ;; (map? x)    :map    ;; covered in new
+    ;; (set? x)    :set    ;; covered in new
+    (seq? x)    :seq
+    :else
+    (get cljc-transients (type x) nil)))
 
 #?(:clj
    (defn clj-or-bb-array? [x]
@@ -647,7 +972,7 @@
   #?(:cljs (js-iterable? x)
      :clj (instance? java.lang.Iterable x)))
 
-(defn- scalar-type? [k]
+#_(defn- scalar-type? [k]
   ;; TODO - make sure this scalar-type? is accurate for all
   ;; js and java scalars/primitives, then include it in the returned
   ;; entries from tag-map?, and/or include :scalar (or :primitive, or
@@ -749,7 +1074,7 @@
                        #?(:cljs (cljs-coll-type? x)))]
     ;; TODO - Add :array-like? and maybe :list-like?
     {:classname    (classname* x)
-     :scalar-type? (scalar-type? k)
+    ;;  :scalar-type? (scalar-type? k)
      :all-tags     all-tags
      :set-like?    set-like?
      :map-like?    map-like?
@@ -782,7 +1107,8 @@
           (when coll-type? :coll-type)
           (when map-like? :map-like)
           (when set-like? :set-like)
-          (when (carries-meta? x) :carries-meta)
+          (when (carries-meta? x) :carries-meta) ; <- remove
+          (when (carries-meta? x) :supports-meta)
           (when (contains? all-tags :transient) :transient)
           (when (contains? all-tags :number) :number-type)
           (when (cljc-iterable? x) :iterable)])
@@ -790,9 +1116,11 @@
         all-tags   
         (apply conj all-tags (remove nil? more-tags))
 
-        coll-size
-        (coll-size* (merge m all-tags-map {:all-tags all-tags}))]
-    (merge {:all-tags  all-tags :classname classname}
+        ;; coll-size
+        ;; (coll-size* (merge m all-tags-map {:all-tags all-tags}))
+        ]
+    {:all-tags  all-tags :classname classname}
+    #_(merge {:all-tags  all-tags :classname classname}
            (when coll-size {:coll-size coll-size}))))
 
 
@@ -910,8 +1238,9 @@
 
 (defn- k* [x t]
   #?(:cljs
-     (or (numberish-type x)
-         (get cljs-scalar-types t)
+     (or 
+         ;; (numberish-type x)        ;; covered in new
+        ;;  (get cljs-scalar-types t) ;; covered in new
          (cljc-coll-type x)
          (when (get js-map-types t) :map)
          (when (get js-set-types t) :set)
@@ -930,8 +1259,9 @@
          (when (js/Number.isNaN x) :nan)
          :lasertag/value-type-unknown)
      :clj
-     (or (numberish-type x)
-         (get clj-scalar-types t)
+     (or 
+         ;; (numberish-type x)      ;; covered in new
+        ;;  (get clj-scalar-types t) ;; covered in new
          (cljc-coll-type x)
          (when (fn? x) :function)
          (when (inst? x) :inst)
@@ -945,6 +1275,31 @@
             (when (instance? java.util.AbstractList x) :seq)
             (resolve-class-name-clj c))))))
 
+;; TODO - change names `scalar` -> `primitive`
+#?(:clj 
+   (do 
+     (def clj-scalar-types
+       {
+        ;; TODO - remove or comment out ---
+        clojure.lang.Symbol     :symbol
+        clojure.lang.Keyword    :keyword
+        java.lang.String        :string
+        java.lang.Boolean       :boolean
+        ;; --------------------------------
+
+        nil                     :nil
+        java.util.regex.Pattern :regex
+        java.lang.Character     :char
+        java.util.UUID          :uuid})
+     (def java-number-types
+       {java.lang.Double     :double
+        java.lang.Short      :short
+        java.lang.Long       :long
+        java.lang.Float      :float
+        java.lang.Byte       :byte
+        java.math.BigDecimal :decimal
+        java.math.BigInteger :big-int})))
+
 
 ;; TODO - Figure out optimal path of execution for perf
 ;;      - Use macros to generate the cached maps of map-tags?
@@ -953,33 +1308,14 @@
 ;;         (gen-cached-map 1.5) => {:tag :number :class java.lang.Double :all-tags {...} :classname "java.lang.Double"}
 
 
-;; TODO - consider adding fn to lasertag that describes the value with desc lookups from tags
-;; or a whole nice layout about it 
-
-
-;; consider adding in all-tags
-;; :ifn
-;; :fn
-;; :associative - what does this mean?
-;; :seqable
-;; :pos-int
-;; :nat-int
-;; :neg-int
-;; :stack
-;; :char-sequence
-;; :ideref
-;; :sorted-map
-
-;; consider-removing
-;; :number-type
-;; :js-map-like
 
 
 (def ^:private coll-type-all-tags
   #{:iterable
     :coll
     :coll-type
-    :carries-meta})
+    :carries-meta ; <-remove
+    :supports-meta})
 
 
 (defn cached-tag-maps* [all-tags & colls]
@@ -995,28 +1331,74 @@
 
 
 (def cached-primitive-and-reference-types
-  (cached-tag-maps*
-   #{}
-   ;; TODO - add char
-   [#?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword)
-    #?(:clj "clojure.lang.Keyword" :cljs "cljs.core/Keyword")
-    :keyword
-    #{}]
+  (apply
+   cached-tag-maps*
+   (remove
+    nil?
+    [#{}
+     [#?(:clj clojure.lang.Keyword :cljs cljs.core/Keyword)
+      #?(:clj "clojure.lang.Keyword" :cljs "cljs.core/Keyword")
+      :keyword
+      #{}]
 
-   [#?(:clj java.lang.String :cljs js/String)
-    #?(:clj "java.lang.String" :cljs "js/String")
-    :string
-    #{}]
+     [#?(:clj java.lang.String :cljs js/String)
+      #?(:clj "java.lang.String" :cljs "js/String")
+      :string
+      #{}]
 
-   [#?(:clj java.lang.Boolean :cljs js/Boolean)
-    #?(:clj "java.lang.Boolean" :cljs "js/Boolean")
-    :boolean
-    #{:primitive}]
+     [#?(:clj java.lang.Boolean :cljs js/Boolean)
+      #?(:clj "java.lang.Boolean" :cljs "js/Boolean")
+      :boolean
+      #{:primitive}]
 
-   [#?(:clj clojure.lang.Symbol :cljs cljs.core/Symbol)
-    #?(:clj "clojure.lang.Symbol" :cljs "cljs.core/Symbol")
-    :symbol
-    #{:carries-meta}]))
+     [#?(:clj nil :cljs nil)
+      #?(:clj "nil" :cljs "nil")
+      :nil
+      #{:primitive}]
+
+     [#?(:clj clojure.lang.Symbol :cljs cljs.core/Symbol)
+      #?(:clj "clojure.lang.Symbol" :cljs "cljs.core/Symbol")
+      :symbol
+      #{:carries-meta :supports-meta}]
+
+     [#?(:clj java.util.regex.Pattern :cljs js/RegExp)
+      #?(:clj "java.util.regex.Pattern" :cljs "js/RegExp")
+      :regex
+      #{:carries-meta :supports-meta}]
+
+     [#?(:clj clojure.lang.Atom :cljs cljs.core/Atom)
+      #?(:clj "clojure.lang.Atom" :cljs "cljs.core/Atom")
+      :atom
+      #{:carries-meta :supports-meta :deref :map-like}]
+
+     [#?(:clj clojure.lang.Delay :cljs cljs.core/Delay)
+      #?(:clj "clojure.lang.Delay" :cljs "cljs.core/Delay")
+      :delay
+      #{:carries-meta :supports-meta :deref :map-like}]
+
+     [#?(:clj clojure.lang.Volatile :cljs cljs.core/Volatile)
+      #?(:clj "clojure.lang.Volatile" :cljs "cljs.core/Volatile")
+      :volatile
+      #{:carries-meta :supports-meta :deref :map-like}]
+     
+     #?(:clj
+        [java.lang.Character
+         "java.lang.Character"
+         :char
+         #{:primitive}])
+
+     #?(:clj
+        [clojure.lang.Ref
+         "clojure.lang.Ref"
+         :ref
+         #{:carries-meta :supports-meta :deref :map-like}])
+
+     #?(:clj
+        [clojure.lang.Agent
+         "clojure.lang.Agent"
+         :agent
+         #{:carries-meta :supports-meta :deref :map-like}])])))
+
 
 
 #?(:clj
@@ -1030,8 +1412,8 @@
       [java.lang.Float "java.lang.Float" :number #{:number-type :float :java-lang-class}]
       [java.lang.Byte "java.lang.Byte" :number #{:number-type :byte :java-lang-class}]
       [java.math.BigDecimal "java.math.BigDecimal" :number #{:number-type :big-decimal :decimal :java-math-class}]
+      [java.math.BigInteger "java.math.BigInteger" :number #{:number-type :big-integer :int :java-math-class}]
       [clojure.lang.BigInt "clojure.lang.BigInt" :number #{:number-type :big-int}])))
-
 
 (def cached-coll-types
   (cached-tag-maps*
@@ -1057,8 +1439,8 @@
    
    [#?(:clj clojure.lang.PersistentList :cljs cljs.core/List)
     #?(:clj "clojure.lang.PersistentList" :cljs "cljs.core/List") 
-    :seq 
-    #{:list}]
+    :list 
+    #{:seq}]
    
    [#?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq)
     #?(:clj "clojure.lang.LazySeq" :cljs "cljs.core/LazySeq")
@@ -1077,33 +1459,101 @@
          (java.lang.Double/isInfinite x))))
 
 
+
 (defn number-type-tag-map [x]
   #?(:cljs
-     (when-let [tag (cljs-number-type x)]
-       {:tag       :number
-        :type      (type x)
-        :all-tags  (let [all-tags #{:js :number tag}]
-                     (if (contains? #{:negative-infinity :infinity} tag)
-                       (conj all-tags :infinite)
-                       all-tags))
-        :classname (if (= tag :big-int)
-                     "js/BigInt"
-                     "js/Number")})
+     (let [t (type x)]
+       (cond
+         ;; First check if BigInt, as cljs would return false for (number? x)
+         (= t js/BigInt)
+         {:tag       :int
+          :type      t
+          :all-tags  #{:js :number :primitive :int :big-int}
+          :classname "js/BigInt"}
+
+         (number? x)
+         (cond 
+           (int? x)   
+           {:tag       :int
+            :type      t
+            :all-tags  #{:js :number :primitive :int}
+            :classname "js/Number"}
+
+           (cljc-NaN? x)                     
+           {:tag       :nan
+            :type      (type x)
+            :all-tags  #{:js :number :primitive :nan}
+            :classname "js/NaN"}
+
+           (infinite? x)                     
+           (if (= x js/Number.POSITIVE_INFINITY)
+             {:tag       :infinity
+              :type      (type x)
+              :all-tags  #{:js :number :primitive :infinite :infinity :float}
+              :classname "js/Number"}
+
+             {:tag       :negative-infinity
+              :type      (type x)
+              :all-tags  #{:js :number :primitive :infinite :negative-infinity :float}
+              :classname "js/Number"})
+
+           (float? x) 
+           {:tag       :float
+            :type      (type x)
+            :all-tags  #{:js :number :primitive :float}
+            :classname "js/Number"}
+
+           (double? x) 
+           {:tag       :double
+            :type      (type x)
+            :all-tags  #{:js :number :primitive :double}
+            :classname "js/Number"})))
+
      :clj
+     ;; TODO - Consider turning this into cond-based logic like :cljs branch 
      (let [t (type x)]
        (when-let [m (get cached-java-number-types t nil)]
          (cond 
-
            (cljc-infinite? x)
            (let [k (if (= x ##Inf) :infinity :negative-infinity)]
              (update-in m [:all-tags] into [:infinite k])) 
-
+           
            (or (Double/isNaN x) (Float/isNaN x))
-           (update-in m [:all-tags] into [:nan])
-
+           (-> m
+               (update-in [:all-tags] into [:nan])
+               (dissoc :number-type :number))
+           
            :else
-           m)))))
+           m))))
+  )
 
+;; #_(def cached-cljc-types
+;;   #?(:clj
+;;      ;; TODO CHECK THIS
+;;      {clojure.core/ref {:tag       :ref,
+;;                         :type      clojure.core/ref,
+;;                         :all-tags  (do (? ())
+;;                                        #{:ref :cljs :map-like :deref}),
+;;                         :classname clojure.core/ref}
+;;       }
+;;      :cljs
+;;      {cljs.core/Delay    {:tag       :delay,
+;;                           :type      cljs.core/Delay,
+;;                           :all-tags  (do (? ())
+;;                                          #{:delay :cljs :map-like :deref}),
+;;                           :classname "cljs.core/Delay"}
+;;       cljs.core/Atom     {:tag       :atom,
+;;                           :type      cljs.core/Atom,
+;;                           :all-tags  (do (? ())
+;;                                          #{:atom :cljs :map-like :deref}),
+;;                           :classname "cljs.core/Atom"}
+
+;;       cljs.core/Volatile {:tag       :voloatile,
+;;                           :type      cljs.core/Volatile,
+;;                           :all-tags  (do (? ())
+;;                                          #{:volatile :cljs :map-like :deref}),
+;;                           :classname "cljs.core/Volatile"}
+;;       }))
 
 (defn- cached-tag-map
   "Quickly resolves most common value types first, then checks for more exotic
@@ -1115,8 +1565,9 @@
    (number-type-tag-map x)
 
    ;; Next, check if value is clj/cljs collection
-   (when (coll? x)
-     (when-let [m (get cached-coll-types (type x))]
+   (when (coll? x) (get cached-coll-types (type x))
+
+     #_(when-let [m (get cached-coll-types (type x))]
        (if-not (contains? (:all-tags m) :lazy)
          (assoc m :coll-size (count x))
          m)))
@@ -1131,27 +1582,33 @@
    ;; TODO - maybe check for object or fn first?
    
    ;; TODO Built-ins
-   #?(:cljs (some->> x type (get jsi/built-ins*) :tag-map)
-      :clj nil)
+   ;; #?(:cljs (some->> x type (get jsi/built-ins*) :tag-map)
+   ;;    :clj  nil)
    
 
    ;; TODO quick sort for things like futures and promises in java and js
    ))
 
 
-
 (defn- tag* [{:keys [x extras? opts]}]
   (let [t (type x)] 
     (or (when-let [m (cached-tag-map x)]
+          #_(println x "...found cached")
           (if extras?
             m
+            #_(let [ii (interfaces-implemented x)]
+              (-> m
+                  (assoc :protocol-tags (:kws ii))
+                  (assoc :protocol-syms (:syms ii))))
             (:tag m)))
+        #_(println x "...didn't find in cached")
         (let [k  (k* x t)
               k+ (format-result k opts)]
           (if extras? (tag-map* x k k+ opts) k+)))))
 
+
 (defn tag
-  "Given a value, returns a tag representing the value's type."
+  "Given a value, returns a keyword tag representing the value's type."
   ([x]
    (tag x nil))
   ([x opts] 
@@ -1163,3 +1620,96 @@
    (tag-map x nil))
   ([x opts]
    (tag* {:x x :extras? true :opts opts})))
+
+
+;; TODO - Make a list of everything in javascript
+
+;; You are an expert  clojurescript programmer
+;; Given this vector of clojurscript values:
+
+;; [42
+;;  (long 42)
+;;  (short 42)
+;;  (float 42)
+;;  (double 42)
+;;  0
+;;  -42
+;;  42.00
+;;  -42.00
+;;  9007199254740991
+;;  ##Inf
+;;  ##-Inf
+;;  ##NaN
+
+;;  "hello"
+;;  :hello
+;;  'hello
+;;  #"hello"
+;;  (char "h")
+;;  true
+;;  false
+;;  nil
+;;  (atom 1)
+;;  (delay (+ 1 1) 100)
+;;  (volatile! 1)
+;;  (uuid "00000000-0000-0000-0000-000000000000")
+
+;;  {:a 1}
+;;  (hash-map :a 1)
+;;  (sorted-map :d 2 :a 1)
+
+;;  #{:b :c}
+;;  (hash-set :b :c)
+;;  (sorted-set :z :b)
+
+;;  [1 2 3]
+ 
+;;  '(1 2 3)
+;;  (range 5)
+;;  (reverse (range 5))
+
+;;  (cons 1 '(2 3))
+;;  (cons 1 '(2 3))
+
+;;  (assert false "thrown error")
+;;  ]
+
+;;  Please create a vector of maps using the following examples as templates.
+
+;; Example map for the value `(long 42)`
+;;  {:name "Long"
+;;   :desc "Coerces a number into a long"
+;;   :example '(long 42)
+;;   :example (long 42)}
+ 
+
+;; Example map for the value `9007199254740991`
+;;  {:name "BigInt"
+;;   :desc "Javascript Big Integer"
+;; :quoted '9007199254740991
+;;   :example 9007199254740991}
+
+;; Example map for the value `{:a 1}`
+;;  {:name "Hash map"
+;;   :desc "ClojureScript hash map, literal notation"
+;;   :quoted {:a 1}
+;;   :example {:a 1}}
+ 
+;; Example map for the value `(hash-map :a 1)`
+;;  {:name "Hash map"
+;;   :desc "ClojureScript hash map, created with function call"
+;;   :quoted '(hash-map :a 1)
+;;   :example (hash-map :a 1)}
+
+;; Example map for the value `:hello`
+;;  {:name "Keyword"
+;;   :desc "ClojureScript keyword"
+;;   :example :hello}
+
+ 
+
+
+;;  [
+;;  #js{:a 1}
+;;  #array[:a 1]
+;;  ]
