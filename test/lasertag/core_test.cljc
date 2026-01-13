@@ -9,12 +9,25 @@
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
+(defn ? 
+  "Debugging macro internal to lib"
+  ([x]
+   (? nil x))
+  ([l x]
+   (if l
+     (println (str " " l "\n") x)
+     (do (println) (pprint x)))
+   x))
 
 #?(:bb
    nil
    :clj
    (do
-     
+
+
+     (? (lasertag.core/tag-map [1 2 3 4]))
+
+
      (deftype CustomMap [m]
        clojure.lang.IPersistentMap
       ;;  (count [_] (count m))

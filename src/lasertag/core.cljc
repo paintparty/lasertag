@@ -222,141 +222,12 @@
                             PersistentHashMap$TransientHashMap))))
 
 
-#_(def protocols
-  #?(:cljs
-     [[#?(:cljs IFn :clj clojure.lang.IFn)                   ['IFn                    :fn]]
-      [#?(:cljs ICounted :clj clojure.lang.ICounted)              ['ICounted               :counted ]]
-      [#?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection)  ['IEmptyableCollection   :emptyable]]
-      [#?(:cljs ICollection :clj clojure.lang.ICollection)           ['ICollection            :coll]]
-      [#?(:cljs IIndexed :clj clojure.lang.IIndexed)              ['IIndexed               :indexed]]
-      [#?(:cljs ASeq :clj clojure.lang.ASeq)                  ['ASeq                   :abstract-seq]]
-      [#?(:cljs ISeq :clj clojure.lang.ISeq)                  ['ISeq                   :seq]]
-      [#?(:cljs INext :clj clojure.lang.INext)                 ['INext                  :next]]
-      [#?(:cljs ILookup :clj clojure.lang.ILookup)               ['ILookup                :lookup]]
-      [#?(:cljs IAssociative :clj clojure.lang.IAssociative)          ['IAssociative           :associated-value]]
-      [#?(:cljs IMap :clj clojure.lang.IMap)                  ['IMap                   :map]]
-      [#?(:cljs IMapEntry :clj clojure.lang.IMapEntry)             ['IMapEntry              :mapentry]]
-      [#?(:cljs ISet :clj clojure.lang.ISet)                  ['ISet                   :set]]
-      [#?(:cljs IStack :clj clojure.lang.IStack)                ['IStack                 :stack]]
-      [#?(:cljs IVector :clj clojure.lang.IVector)               ['IVector                :vector]]
-      [#?(:cljs IDeref :clj clojure.lang.IDeref)                ['IDeref                 :deref]]
-      [#?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout)     ['IDerefWithTimeout      :deref-with-timeout]]
-      [#?(:cljs IMeta :clj clojure.lang.IMeta)                 ['IMeta                  :meta]]
-      [#?(:cljs IWithMeta :clj clojure.lang.IWithMeta)             ['IWithMeta              :with-meta]]
-      [#?(:cljs IReduce :clj clojure.lang.IReduce)               ['IReduce                :reduce]]
-      [#?(:cljs IKVReduce :clj clojure.lang.IKVReduce)             ['IKVReduce              :kv-reduce]]
-      [#?(:cljs IEquiv :clj clojure.lang.IEquiv)                ['IEquiv                 :equiv]]
-      [#?(:cljs IHash :clj clojure.lang.IHash)                 ['IHash                  :hash]]
-      [#?(:cljs ISeqable :clj clojure.lang.ISeqable)              ['ISeqable               :seqable]]
-      [#?(:cljs ISequential :clj clojure.lang.ISequential)           ['ISequential            :sequential]]
-      [#?(:cljs IList :clj clojure.lang.IList)                 ['IList                  :list]]
-      [#?(:cljs IRecord :clj clojure.lang.IRecord)               ['IRecord                :record]]
-      [#?(:cljs IReversible :clj clojure.lang.IReversible)           ['IReversible            :reversible]]
-      [#?(:cljs ISorted :clj clojure.lang.ISorted)               ['ISorted                :sorted]]
-      [#?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter)      ['IPrintWithWriter       :print-with-writer]]
-      [#?(:cljs IWriter :clj clojure.lang.IWriter)               ['IWriter                :writer]]
-      [#?(:cljs IPending :clj clojure.lang.IPending)              ['IPending               :pending ]]
-      [#?(:cljs IWatchable :clj clojure.lang.IWatchable)            ['IWatchable             :watchable]]
-      [#?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection)   ['IEditableCollection    :editable-coll]]
-      [#?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection)  ['ITransientCollection   :transient-coll]]
-      [#?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative)  ['ITransientAssociative  :transient-associative]]
-      [#?(:cljs ITransientMap :clj clojure.lang.ITransientMap)         ['ITransientMap          :transient-map ]]
-      [#?(:cljs ITransientVector :clj clojure.lang.ITransientVector)      ['ITransientVector       :transient-vector]]
-      [#?(:cljs ITransientSet :clj clojure.lang.ITransientSet)         ['ITransientSet          :transient-set]]
-      [#?(:cljs IMultiFn :clj clojure.lang.IMultiFn)              ['IMultiFn               :multi-fn]]
-      [#?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq)           ['IChunkedSeq            :chunked-seq]]
-      [#?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext)          ['IChunkedNext           :chunked-next]]
-      [#?(:cljs IComparable :clj clojure.lang.IComparable)           ['IComparable            :comparable ]]
-      [#?(:cljs INamed :clj clojure.lang.INamed)                ['INamed                 :named ]]
-      [#?(:cljs ICloneable :clj clojure.lang.ICloneable)            ['ICloneable             :cloneable ]]
-      [#?(:cljs IAtom :clj clojure.lang.IAtom)                 ['IAtom                  :atom]]
-      [#?(:cljs IReset :clj clojure.lang.IReset)                ['IReset                 :reset]]
-      [#?(:cljs ISwap :clj clojure.lang.ISwap)                 ['ISwap                  :swap]]
-      [#?(:cljs IIterable :clj clojure.lang.IIterable)             ['IIterable              :iterable ]]
-      [#?(:cljs IDrop :clj clojure.lang.IDrop)                 ['IDrop                  :drop]]
-      ]
-     ))
-
-(defn interfaces-implemented [x]
-  ;; #_(reduce (fn [acc [p [sym kw]]]
-  ;;             (if (satisfies? p x)
-  ;;               (-> acc
-  ;;                   (update-in [:kws] conj kw)
-  ;;                   (update-in [:protocols] conj p)
-  ;;                   (update-in [:sym] conj sym))
-  ;;               acc))
-  ;;           {:protocols []
-  ;;            :kws       []
-  ;;            :syms      []}
-  ;;           protocols)
-
-  (reduce
-   (fn [acc [p syms kw :as yes]]
-     (if yes
-       (-> acc
-           (update-in [:kws] conj kw)
-           (update-in [:protocols] conj p)
-           (update-in [:syms] conj syms))
-       acc))
-   {:protocols []
-    :kws       []
-    :syms      []}
-   [(when (satisfies? #?(:cljs IFn :clj clojure.lang.IFn) x)                   [#?(:cljs IFn :clj clojure.lang.IFn) 'IFn :fn])
-    (when (satisfies? #?(:cljs ICounted :clj clojure.lang.ICounted) x)              [#?(:cljs ICounted :clj clojure.lang.ICounted) 'ICounted :counted ])
-    (when (satisfies? #?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection) x)  [#?(:cljs IEmptyableCollection :clj clojure.lang.IEmptyableCollection) 'IEmptyableCollection :emptyable])
-    (when (satisfies? #?(:cljs ICollection :clj clojure.lang.ICollection) x)           [#?(:cljs ICollection :clj clojure.lang.ICollection) 'ICollection :coll])
-    (when (satisfies? #?(:cljs IIndexed :clj clojure.lang.IIndexed) x)              [#?(:cljs IIndexed :clj clojure.lang.IIndexed) 'IIndexed :indexed])
-    (when (satisfies? #?(:cljs ASeq :clj clojure.lang.ASeq) x)                  [#?(:cljs ASeq :clj clojure.lang.ASeq) 'ASeq :abstract-seq])
-    (when (satisfies? #?(:cljs ISeq :clj clojure.lang.ISeq) x)                  [#?(:cljs ISeq :clj clojure.lang.ISeq) 'ISeq :seq])
-    (when (satisfies? #?(:cljs INext :clj clojure.lang.INext) x)                 [#?(:cljs INext :clj clojure.lang.INext) 'INext :next])
-    (when (satisfies? #?(:cljs ILookup :clj clojure.lang.ILookup) x)               [#?(:cljs ILookup :clj clojure.lang.ILookup) 'ILookup :lookup])
-    (when (satisfies? #?(:cljs IAssociative :clj clojure.lang.IAssociative) x)          [#?(:cljs IAssociative :clj clojure.lang.IAssociative) 'IAssociative :associated-value])
-    (when (satisfies? #?(:cljs IMap :clj clojure.lang.IMap) x)                  [#?(:cljs IMap :clj clojure.lang.IMap) 'IMap :map])
-    (when (satisfies? #?(:cljs IMapEntry :clj clojure.lang.IMapEntry) x)             [#?(:cljs IMapEntry :clj clojure.lang.IMapEntry) 'IMapEntry :mapentry])
-    (when (satisfies? #?(:cljs ISet :clj clojure.lang.ISet) x)                  [#?(:cljs ISet :clj clojure.lang.ISet) 'ISet :set])
-    (when (satisfies? #?(:cljs IStack :clj clojure.lang.IStack) x)                [#?(:cljs IStack :clj clojure.lang.IStack) 'IStack :stack])
-    (when (satisfies? #?(:cljs IVector :clj clojure.lang.IVector) x)               [#?(:cljs IVector :clj clojure.lang.IVector) 'IVector :vector])
-    (when (satisfies? #?(:cljs IDeref :clj clojure.lang.IDeref) x)                [#?(:cljs IDeref :clj clojure.lang.IDeref) 'IDeref :deref])
-    (when (satisfies? #?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout) x)     [#?(:cljs IDerefWithTimeout :clj clojure.lang.IDerefWithTimeout) 'IDerefWithTimeout :deref-with-timeout])
-    (when (satisfies? #?(:cljs IMeta :clj clojure.lang.IMeta) x)                 [#?(:cljs IMeta :clj clojure.lang.IMeta) 'IMeta :meta])
-    (when (satisfies? #?(:cljs IWithMeta :clj clojure.lang.IWithMeta) x)             [#?(:cljs IWithMeta :clj clojure.lang.IWithMeta) 'IWithMeta :with-meta])
-    (when (satisfies? #?(:cljs IReduce :clj clojure.lang.IReduce) x)               [#?(:cljs IReduce :clj clojure.lang.IReduce) 'IReduce :reduce])
-    (when (satisfies? #?(:cljs IKVReduce :clj clojure.lang.IKVReduce) x)             [#?(:cljs IKVReduce :clj clojure.lang.IKVReduce) 'IKVReduce :kv-reduce])
-    (when (satisfies? #?(:cljs IEquiv :clj clojure.lang.IEquiv) x)                [#?(:cljs IEquiv :clj clojure.lang.IEquiv) 'IEquiv :equiv])
-    (when (satisfies? #?(:cljs IHash :clj clojure.lang.IHash) x)                 [#?(:cljs IHash :clj clojure.lang.IHash) 'IHash :hash])
-    (when (satisfies? #?(:cljs ISeqable :clj clojure.lang.ISeqable) x)              [#?(:cljs ISeqable :clj clojure.lang.ISeqable) 'ISeqable :seqable])
-    (when (satisfies? #?(:cljs ISequential :clj clojure.lang.ISequential) x)           [#?(:cljs ISequential :clj clojure.lang.ISequential) 'ISequential :sequential])
-    (when (satisfies? #?(:cljs IList :clj clojure.lang.IList) x)                 [#?(:cljs IList :clj clojure.lang.IList) 'IList :list])
-    (when (satisfies? #?(:cljs IRecord :clj clojure.lang.IRecord) x)               [#?(:cljs IRecord :clj clojure.lang.IRecord) 'IRecord :record])
-    (when (satisfies? #?(:cljs IReversible :clj clojure.lang.IReversible) x)           [#?(:cljs IReversible :clj clojure.lang.IReversible) 'IReversible :reversible])
-    (when (satisfies? #?(:cljs ISorted :clj clojure.lang.ISorted) x)               [#?(:cljs ISorted :clj clojure.lang.ISorted) 'ISorted :sorted])
-    (when (satisfies? #?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter) x)      [#?(:cljs IPrintWithWriter :clj clojure.lang.IPrintWithWriter) 'IPrintWithWriter :print-with-writer])
-    (when (satisfies? #?(:cljs IWriter :clj clojure.lang.IWriter) x)               [#?(:cljs IWriter :clj clojure.lang.IWriter) 'IWriter :writer])
-    (when (satisfies? #?(:cljs IPending :clj clojure.lang.IPending) x)              [#?(:cljs IPending :clj clojure.lang.IPending) 'IPending :pending ])
-    (when (satisfies? #?(:cljs IWatchable :clj clojure.lang.IWatchable) x)            [#?(:cljs IWatchable :clj clojure.lang.IWatchable) 'IWatchable :watchable])
-    (when (satisfies? #?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection) x)   [#?(:cljs IEditableCollection :clj clojure.lang.IEditableCollection) 'IEditableCollection :editable-coll])
-    (when (satisfies? #?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection) x)  [#?(:cljs ITransientCollection :clj clojure.lang.ITransientCollection) 'ITransientCollection :transient-coll])
-    (when (satisfies? #?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative) x) [#?(:cljs ITransientAssociative :clj clojure.lang.ITransientAssociative) 'ITransientAssociative :transient-associative])
-    (when (satisfies? #?(:cljs ITransientMap :clj clojure.lang.ITransientMap) x)         [#?(:cljs ITransientMap :clj clojure.lang.ITransientMap) 'ITransientMap :transient-map ])
-    (when (satisfies? #?(:cljs ITransientVector :clj clojure.lang.ITransientVector) x)      [#?(:cljs ITransientVector :clj clojure.lang.ITransientVector) 'ITransientVector :transient-vector])
-    (when (satisfies? #?(:cljs ITransientSet :clj clojure.lang.ITransientSet) x)         [#?(:cljs ITransientSet :clj clojure.lang.ITransientSet) 'ITransientSet :transient-set])
-    (when (satisfies? #?(:cljs IMultiFn :clj clojure.lang.IMultiFn) x)              [#?(:cljs IMultiFn :clj clojure.lang.IMultiFn) 'IMultiFn :multi-fn])
-    (when (satisfies? #?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq) x)           [#?(:cljs IChunkedSeq :clj clojure.lang.IChunkedSeq) 'IChunkedSeq :chunked-seq])
-    (when (satisfies? #?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext) x)          [#?(:cljs IChunkedNext :clj clojure.lang.IChunkedNext) 'IChunkedNext :chunked-next])
-    (when (satisfies? #?(:cljs IComparable :clj clojure.lang.IComparable) x)           [#?(:cljs IComparable :clj clojure.lang.IComparable) 'IComparable :comparable ])
-    (when (satisfies? #?(:cljs INamed :clj clojure.lang.INamed) x)                [#?(:cljs INamed :clj clojure.lang.INamed) 'INamed :named ])
-    (when (satisfies? #?(:cljs ICloneable :clj clojure.lang.ICloneable) x)            [#?(:cljs ICloneable :clj clojure.lang.ICloneable) 'ICloneable :cloneable ])
-    (when (satisfies? #?(:cljs IAtom :clj clojure.lang.IAtom) x)                 [#?(:cljs IAtom :clj clojure.lang.IAtom) 'IAtom :atom])
-    (when (satisfies? #?(:cljs IReset :clj clojure.lang.IReset) x)                [#?(:cljs IReset :clj clojure.lang.IReset) 'IReset :reset])
-    (when (satisfies? #?(:cljs ISwap :clj clojure.lang.ISwap) x)                 [#?(:cljs ISwap :clj clojure.lang.ISwap) 'ISwap :swap])
-    (when (satisfies? #?(:cljs IIterable :clj clojure.lang.IIterable) x)             [#?(:cljs IIterable :clj clojure.lang.IIterable) 'IIterable :iterable ])
-    (when (satisfies? #?(:cljs IDrop :clj clojure.lang.IDrop) x)                 [#?(:cljs IDrop :clj clojure.lang.IDrop) 'IDrop :drop])
-    ]))
 
 
 
 
-(def cljc-transients 
+
+(def cljc-transients
   {#?(:cljs cljs.core/TransientVector
       ;; :bb (resolve 'PersistentVector$TransientVector)
       :clj PersistentVector$TransientVector)
@@ -390,6 +261,113 @@
      (println (str " " l "\n") x)
      (println x))
    x))
+
+(defn interfaces-implemented [x]
+  (reduce
+   (fn [acc [p syms kw :as thruple]]
+     (if thruple
+       (-> acc
+           (update-in [:kws] conj kw)
+           (update-in [:classes] conj p)
+           (update-in [:syms] conj syms))
+       acc))
+   {:classes []
+    :kws     []
+    :syms    []}
+   #?(:cljs
+      [(when (satisfies? IFn x) [IFn 'IFn :fn])
+       (when (satisfies? ICounted x) [ICounted 'Counted :counted ])
+       (when (satisfies? IEmptyableCollection x) [IEmptyableCollection 'IEmptyableCollection :emptyable])
+       (when (satisfies? ICollection x) [ICollection 'ICollection :coll])
+       (when (satisfies? IIndexed x) [IIndexed 'IIndexed :indexed])
+       (when (satisfies? ASeq x) [ASeq 'ASeq :abstract-seq])
+       (when (satisfies? ISeq x) [ISeq 'ISeq :seq])
+       (when (satisfies? INext x) [INext 'INext :next])
+       (when (satisfies? ILookup x) [ILookup 'ILookup :lookup])
+       (when (satisfies? IAssociative x) [IAssociative 'IAssociative :associated-value])
+       (when (satisfies? IMap x) [IMap 'IMap :map])
+       (when (satisfies? IMapEntry x) [IMapEntry 'IMapEntry :mapentry])
+       (when (satisfies? ISet x) [ISet 'ISet :set])
+       (when (satisfies? IStack x) [IStack 'IStack :stack])
+       (when (satisfies? IVector x) [IVector 'IVector :vector])
+       (when (satisfies? IDeref x) [IDeref 'IDeref :deref])
+       (when (satisfies? IDerefWithTimeout x) [IDerefWithTimeout 'IDerefWithTimeout :deref-with-timeout])
+       (when (satisfies? IMeta x) [IMeta 'IMeta :meta])
+       (when (satisfies? IWithMeta x) [IWithMeta 'IWithMeta :with-meta])
+       (when (satisfies? IReduce x) [IReduce 'IReduce :reduce])
+       (when (satisfies? IKVReduce x) [IKVReduce 'IKVReduce :kv-reduce])
+       (when (satisfies? IEquiv x) [IEquiv 'IEquiv :equiv])
+       (when (satisfies? IHash x) [IHash 'IHash :hash])
+       (when (satisfies? ISeqable x) [ISeqable 'ISeqable :seqable])
+       (when (satisfies? ISequential x) [ISequential 'ISequential :sequential])
+       (when (satisfies? IList x) [IList 'IList :list])
+       (when (satisfies? IRecord x) [IRecord 'IRecord :record])
+       (when (satisfies? IReversible x) [IReversible 'IReversible :reversible])
+       (when (satisfies? ISorted x) [ISorted 'ISorted :sorted])
+       (when (satisfies? IPrintWithWriter x) [IPrintWithWriter 'IPrintWithWriter :print-with-writer])
+       (when (satisfies? IWriter x) [IWriter 'IWriter :writer])
+       (when (satisfies? IPending x) [IPending 'IPending :pending ])
+       (when (satisfies? IWatchable x) [IWatchable 'IWatchable :watchable])
+       (when (satisfies? IEditableCollection x) [IEditableCollection 'IEditableCollection :editable-coll])
+       (when (satisfies? ITransientCollection x) [ITransientCollection 'ITransientCollection :transient-coll])
+       (when (satisfies? ITransientAssociative x) [ITransientAssociative 'ITransientAssociative :transient-associative])
+       (when (satisfies? ITransientMap x) [ITransientMap 'ITransientMap :transient-map ])
+       (when (satisfies? ITransientVector x) [ITransientVector 'ITransientVector :transient-vector])
+       (when (satisfies? ITransientSet x) [ITransientSet 'ITransientSet :transient-set])
+       (when (satisfies? IMultiFn x) [IMultiFn 'IMultiFn :multi-fn])
+       (when (satisfies? IChunkedSeq x) [IChunkedSeq 'IChunkedSeq :chunked-seq])
+       (when (satisfies? IChunkedNext x) [IChunkedNext 'IChunkedNext :chunked-next])
+       (when (satisfies? IComparable x) [IComparable 'IComparable :comparable ])
+       (when (satisfies? INamed x) [INamed 'INamed :named ])
+       (when (satisfies? ICloneable x) [ICloneable 'ICloneable :cloneable ])
+       (when (satisfies? IAtom x) [IAtom 'IAtom :atom])
+       (when (satisfies? IReset x) [IReset 'IReset :reset])
+       (when (satisfies? ISwap x) [ISwap 'ISwap :swap])
+       (when (satisfies? IIterable x) [IIterable 'IIterable :iterable ])
+       (when (satisfies? IDrop x) [IDrop 'IDrop :drop])
+       ]
+      :clj
+      [(when (instance? clojure.lang.IFn x) [clojure.lang.IFn 'clojure.lang.IFn :fn])
+       (when (instance? clojure.lang.Counted x) [clojure.lang.Counted 'clojure.lang.Counted :counted])
+       (when (instance? clojure.lang.Indexed x) [clojure.lang.Indexed 'clojure.lang.Indexed :indexed])
+       (when (instance? clojure.lang.ISeq x) [clojure.lang.ISeq 'clojure.lang.ISeq :seq])
+       (when (instance? clojure.lang.ILookup x) [clojure.lang.ILookup 'clojure.lang.ILookup :lookup])
+       (when (instance? clojure.lang.Associative x) [clojure.lang.Associative 'clojure.lang.Associative :associative])
+       (when (instance? clojure.lang.IPersistentMap x) [clojure.lang.IPersistentMap 'clojure.lang.IPersistentMap :persistent-map])
+       (when (instance? clojure.lang.IMapEntry x) [clojure.lang.IMapEntry 'clojure.lang.IMapEntry :map-entry])
+       (when (instance? clojure.lang.IPersistentSet x) [clojure.lang.IPersistentSet 'clojure.lang.IPersistentSet :persistent-set])
+       (when (instance? clojure.lang.IPersistentStack x) [clojure.lang.IPersistentStack 'clojure.lang.IPersistentStack :persistent-stack])
+       (when (instance? clojure.lang.IPersistentVector x) [clojure.lang.IPersistentVector 'clojure.lang.IPersistentVector :persistent-vector])
+       (when (instance? clojure.lang.IDeref x) [clojure.lang.IDeref 'clojure.lang.IDeref :deref])
+       (when (instance? clojure.lang.IBlockingDeref x) [clojure.lang.IBlockingDeref 'clojure.lang.IBlockingDeref :blocking-deref])
+       (when (instance? clojure.lang.IMeta x) [clojure.lang.IMeta 'clojure.lang.IMeta :meta])
+       (when (instance? clojure.lang.IObj x) [clojure.lang.IObj 'clojure.lang.IObj :obj])
+       (when (instance? clojure.lang.IHashEq x) [clojure.lang.IHashEq 'clojure.lang.IHashEq :hash-eq])
+       (when (instance? clojure.lang.IReduce x) [clojure.lang.IReduce 'clojure.lang.IReduce :reduce])
+       (when (instance? clojure.lang.IKVReduce x) [clojure.lang.IKVReduce 'clojure.lang.IKVReduce :kv-reduce])
+       (when (instance? clojure.lang.Seqable x) [clojure.lang.Seqable 'clojure.lang.Seqable :seqable])
+       (when (instance? clojure.lang.Sequential x) [clojure.lang.Sequential 'clojure.lang.Sequential :sequential])
+       (when (instance? clojure.lang.IPersistentList x) [clojure.lang.IPersistentList 'clojure.lang.IPersistentList :persistent-list])
+       (when (instance? clojure.lang.IRecord x) [clojure.lang.IRecord 'clojure.lang.IRecord :record])
+       (when (instance? clojure.lang.Reversible x) [clojure.lang.Reversible 'clojure.lang.Reversible :reversible])
+       (when (instance? clojure.lang.Sorted x) [clojure.lang.Sorted 'clojure.lang.Sorted :sorted])
+       (when (instance? java.io.Writer x) [java.io.Writer 'java.io.Writer :writer])
+       (when (instance? clojure.lang.IPending x) [clojure.lang.IPending 'clojure.lang.IPending :pending])
+       (when (instance? clojure.lang.IRef x) [clojure.lang.IRef 'clojure.lang.IRef :ref])
+       (when (instance? clojure.lang.IEditableCollection x) [clojure.lang.IEditableCollection 'clojure.lang.IEditableCollection :editable-collection])
+       (when (instance? clojure.lang.ITransientCollection x) [clojure.lang.ITransientCollection 'clojure.lang.ITransientCollection :transient-collection])
+       (when (instance? clojure.lang.ITransientAssociative x) [clojure.lang.ITransientAssociative 'clojure.lang.ITransientAssociative :transient-associative])
+       (when (instance? clojure.lang.ITransientMap x) [clojure.lang.ITransientMap 'clojure.lang.ITransientMap :transient-map])
+       (when (instance? clojure.lang.ITransientVector x) [clojure.lang.ITransientVector 'clojure.lang.ITransientVector :transient-vector])
+       (when (instance? clojure.lang.ITransientSet x) [clojure.lang.ITransientSet 'clojure.lang.ITransientSet :transient-set])
+       (when (instance? clojure.lang.MultiFn x) [clojure.lang.MultiFn 'clojure.lang.MultiFn :multi-fn])
+       (when (instance? clojure.lang.IChunkedSeq x) [clojure.lang.IChunkedSeq 'clojure.lang.IChunkedSeq :chunked-seq])
+       (when (instance? java.lang.Comparable x) [java.lang.Comparable 'java.lang.Comparable :comparable])
+       (when (instance? clojure.lang.Named x) [clojure.lang.Named 'clojure.lang.Named :named])
+       (when (instance? java.lang.Cloneable x) [java.lang.Cloneable 'java.lang.Cloneable :cloneable])
+       (when (instance? clojure.lang.IAtom x) [clojure.lang.IAtom 'clojure.lang.IAtom :atom])
+       (when (instance? java.lang.Iterable x) [java.lang.Iterable 'java.lang.Iterable :iterable])])))
+
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
 
@@ -1603,11 +1581,16 @@
     (or (when-let [m (cached-tag-map x)]
           #_(println x "...found cached")
           (if extras?
-            m
-            #_(let [ii (interfaces-implemented x)]
-              (-> m
+            (if (empty? opts)
+              m
+              (let [ii (interfaces-implemented x)]
+                (cond-> m
+                  (:include-protocol-tags? opts)
                   (assoc :protocol-tags (:kws ii))
-                  (assoc :protocol-syms (:syms ii))))
+                  (:include-protocol-symbols? opts)
+                  (assoc :protocol-syms (:syms ii))
+                  (:include-protocol-classes? opts)
+                  (assoc :protocol-classes (:classes ii)))))
             (:tag m)))
         #_(println x "...didn't find in cached")
         (let [k  (k* x t)
