@@ -8,6 +8,14 @@
 
 ;; Decide about strategy for tagging something :cljs :clj :bb :clr :js :java
 
+;; tag levels taxonomy ? [:scalar [:number [:int :float ...]
+;;                                 :boolean 
+;;                                 :string
+;;                                 ...]]
+;;                        :coll   []
+;;                        :ref    []]
+
+
 ;; :undefined tag for js ?
 
 ;; Add support for :atom
