@@ -24,10 +24,6 @@
    :clj
    (do
 
-
-     (? (lasertag.core/tag-map [1 2 3 4]))
-
-
      (deftype CustomMap [m]
        clojure.lang.IPersistentMap
       ;;  (count [_] (count m))
