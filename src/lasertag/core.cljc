@@ -13,6 +13,7 @@
   (:require 
    [clojure.string :as string]
    [lasertag.messaging :as messaging]
+   [lasertag.cached :as cached]
    #?(:cljs [lasertag.cljs-interop :as jsi]))
   #?(:clj
      (:import (clojure.lang PersistentVector$TransientVector
@@ -919,9 +920,28 @@
   ([x opts] 
    (tag* {:x x :extras? false :opts opts})))
 
+(defn cached-tag-map [x]
+  (let [x-type (type x)
+        cached (or (when (number? x)
+                     (or (get cached/infs x)
+                         (when (cljc-NaN? x) cached/NaN)
+                         (get cached/numbers x-type)))
+                   (get cached/by-type-common x-type)
+                   (get cached/by-type x-type))]
+    (if (and cached (contains? (:all-tags cached) :coll-type))
+      (assoc cached 
+             :coll-size 
+             (coll-size* {:x          x
+                          :coll-type? true
+                          :all-tags   (:all-tags cached)}))
+      cached)))
+
 (defn tag-map
   "Given a value, returns a map with information about the value's type."
   ([x]
    (tag-map x nil))
   ([x opts]
-   (tag* {:x x :extras? true :opts opts})))
+   (or (cached-tag-map x)
+       (tag* {:x       x
+              :extras? true
+              :opts    opts}))))
