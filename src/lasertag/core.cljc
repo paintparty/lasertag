@@ -245,12 +245,15 @@
 
 #?(:clj
    (do
-     (defn- java-util-class? [s]
+     (defn java-util-class? [s]
        (boolean (some-> s (string/starts-with? "java.util"))))
 
-     (defn- java-lang-class? [s]
+     (defn java-lang-class? [s]
        (boolean (some->> s (re-find #"java\.lang"))))
      
+     (defn java-class? [s]
+       (boolean (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" s)))
+
      (defn java-class-name [x]
        ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
        ;; (some-> x type .getName Compiler/demunge)
@@ -408,7 +411,7 @@
        [x types]
        (when-not (or (-> types :coll)
                      (-> types :scalar-type)
-                     (-> types :number-type)
+                     (-> types :number)
                      (->> [:record         
                            :number         
                            :js-set-types
@@ -499,14 +502,16 @@
 
 #?(:clj 
    (defn- clj-all-value-types [{:keys [x k]}]
-     (let [number-type (clj-number-type x)]
+     (let [number-type (clj-number-type x)
+           t           (type x)]
        (->> [number-type
-             (get clj-scalar-types (type x))
+             (get java-number-types t)
+             (get clj-scalar-types t)
              (cljc-coll-type x)
              (when (fn? x) :function)
-             (when (contains? cljc-transients-set (type x)) :transient)
-             (when (= clojure.lang.PersistentArrayMap (type x)) :array-map)
-             (when (= clojure.lang.PersistentList (type x)) :list)
+             (when (contains? cljc-transients-set t) :transient)
+             (when (= clojure.lang.PersistentArrayMap t) :array-map)
+             (when (= clojure.lang.PersistentList t) :list)
              (when (inst? x) :inst)
              (when (or (contains? #{:vector :map :set :seq} k)
                        (coll? x)
@@ -530,8 +535,7 @@
            (type x)
 
            types 
-           {:number-type    number-type
-            :scalar-type    (get cljs-scalar-types t)
+           {:scalar-type    (get cljs-scalar-types t)
             :cljc-coll-type (cljc-coll-type x)
             :js-map-types   (get js-map-types t)
             :js-set-types   (get js-set-types t)
@@ -662,13 +666,13 @@
 
 #?(:clj
    (defn- clj-coll-size-try 
-     [{:keys [x k all-tags abstract-instance?]}]
+     [{:keys [x k abstract-instance? classname]}]
      (cond
        abstract-instance?
        (.size x)
 
        (and (= k :array)
-            (not (contains? all-tags :java-util-class)))
+            (not (java-util-class? classname)))
        (alength x)
 
        :else
@@ -746,13 +750,11 @@
         (concat  
          (cljc-datatypes x)
          
-         #?(:clj (java-classes all-tags-map))
          [(when coll-type? :coll-type)
           (when map-like? :map-like)
           (when set-like? :set-like)
           (when (carries-meta? x) :carries-meta)
           (when (contains? all-tags :transient) :transient)
-          (when (contains? all-tags :number) :number-type)
           (when (cljc-iterable? x) :iterable)])
 
         all-tags   
@@ -945,3 +947,22 @@
        (tag* {:x       x
               :extras? true
               :opts    opts}))))
+
+
+;; Get fw options sorted out
+;; Get fw tests working
+
+;; Remove :set-like?, :abstract-instance?, :scalar-type?, :coll-type?
+
+;; Change :java-lang-class -> :java.lang
+;; Change :scalar-type -> :scalar
+
+;; Fix type printing in fw
+;; Look at regex themes in fw
+
+;; Remove :coll-size
+;; Remove :fn-args
+
+;; Add utility functions for java-class?
+;; Something like:
+;; (defn java-class? [x] (some->> x classname (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" )))

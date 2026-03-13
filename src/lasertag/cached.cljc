@@ -13,11 +13,11 @@
      :clj
      {##Inf  {:tag       :infinity
               :type      java.lang.Double
-              :all-tags  #{:infinity :java-lang-class}
+              :all-tags  #{:infinity}
               :classname "java.lang.Double"}
       ##-Inf {:tag       :-infinity
               :type      java.lang.Double
-              :all-tags  #{:-infinity :java-lang-class}
+              :all-tags  #{:-infinity}
               :classname "java.lang.Double"}}))
 
 (def NaN
@@ -29,7 +29,7 @@
      :clj
      {:tag       :nan
       :type      java.lang.Double
-      :all-tags  #{:nan :java-lang-class :number-typess}
+      :all-tags  #{:nan  :number-typess}
       :classname "java.lang.Double"}))
 
 (def numbers
@@ -44,29 +44,25 @@
                         :type      java.lang.Long
                         :all-tags  #{:number-type
                                      :int
-                                     :number
-                                     :java-lang-class}
+                                     :number}
                         :classname "java.lang.Long"}
       java.lang.Short  {:tag       :number
                         :type      java.lang.Short
                         :all-tags  #{:number-type
                                      :int
-                                     :number
-                                     :java-lang-class}
+                                     :number}
                         :classname "java.lang.Short"}
       java.lang.Float  {:tag       :number
                         :type      java.lang.Float
                         :all-tags  #{:number-type
                                      :number
-                                     :float
-                                     :java-lang-class}
+                                     :float}
                         :classname "java.lang.Float"}
       java.lang.Double {:tag       :number
                         :type      java.lang.Double
                         :all-tags  #{:number-type
                                      :double
-                                     :number
-                                     :java-lang-class}
+                                     :number}
                         :classname "java.lang.Double"}}))
 
 
@@ -340,13 +336,12 @@
 
       java.util.Date                 {:tag       :inst
                                       :type      java.util.Date
-                                      :all-tags  #{:inst :java-util-class}
+                                      :all-tags  #{:inst}
                                       :classname "java.util.Date"}
 
       java.util.HashMap              {:tag       :map
                                       :type      java.util.HashMap
                                       :all-tags  #{:coll
-                                                   :java-util-class
                                                    :coll-type
                                                    :map-like
                                                    :map}
@@ -358,7 +353,6 @@
                                       :all-tags  #{:iterable
                                                    :coll
                                                    :array
-                                                   :java-util-class
                                                    :coll-type}
                                       :classname "java.util.ArrayList" }
 
@@ -367,7 +361,6 @@
                                       :type      java.util.HashSet
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :java-util-class
                                                    :coll-type
                                                    :set
                                                    :set-like}
