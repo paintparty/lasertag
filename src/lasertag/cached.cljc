@@ -1,3 +1,4 @@
+
 (ns lasertag.cached)
 
 (def infs
@@ -376,4 +377,23 @@
 
 
  
+
+;; Maybe these should be syntaxed like below, then use macro to create
+;; maps like above
+#?(:clj
+   [[java.lang.Long
+     :number
+     #{:int :long}]
+
+    [java.lang.Short
+     :number
+     #{:int :short}]
+
+    [java.lang.Float
+     :number
+     #{:number :float}]
+
+    [java.lang.Double
+     :number
+     #{:double}]])
 
