@@ -187,6 +187,13 @@
   #?(:clj  (instance? clojure.lang.IObj x)
      :cljs (satisfies? IWithMeta x)))
 
+(defn throwable? [x]
+  (when (instance? #?(:cljs
+                      js/Error
+                      :clj
+                      java.lang.Throwable) x)
+    :throwable))
+
 (defn- pwos [x] (with-out-str (print x)))
 
 (defn- lambda-args [args]
@@ -779,25 +786,49 @@
         (when (f java-util-class?)
           :java-util-class)])))
 
+(def eager-seq-classes
+  (->> ['(:a)
+        (cons :a '(:b))
+        (seq [1 2 3])
+        (seq "foo")
+        (seq {:a 1})]
+       (map type)
+       set))
+
+(defn eager-seq? [x]
+  (contains? eager-seq-classes (type x)))
+
 (defn- all-tags
-  [{:keys [x] :as m}]
-  (let [{:keys [map-like? set-like? coll-like? scalar-type? literal-type? all-tags classname]
+  [{:keys [x k] :as m}]
+  (let [{:keys [all-tags classname]
          :as all-tags-map}
         (all-tags* m)
+
+        lazyish-seq?
+        (and (= k :seq) (not (eager-seq? x)))
 
         more-tags
         (concat  
          (cljc-datatypes x)
          
-         [(when coll-like? :coll-like)
-          (when map-like? :map-like)
-          (when set-like? :set-like)
+         [(when (:coll-like? all-tags-map) :coll-like)
+          (when (:map-like? all-tags-map) :map-like)
+          (when (:set-like? all-tags-map) :set-like)
+          (when (:scalar-type? all-tags-map) :scalar)
+          (when (:literal-type? all-tags-map) :literal)
+          (when (:reference-type? all-tags-map) :reference)
           (when (carries-meta? x) :carries-meta)
           (when (contains? all-tags :transient) :transient)
-          (when scalar-type? :scalar)
-          (when literal-type? :literal)
-          (when reference-type? :reference)
-          ])
+          (when (contains? #{:delay :promise :future} k) :deferred)
+          ;; TODO - should lazy seqs also be considered `:deferred`, or is `:lazy` enough?
+          (when lazyish-seq? :deferred)
+          (when lazyish-seq? :lazy)
+          #?(:clj (when (instance? java.lang.Error x) :error))
+          #?(:clj (when (instance? java.lang.Exception x) :exception))
+          #?(:cljs (when (= k :throwable)
+                     (if (instance? cljs.core/ExceptionInfo x)
+                       :exception
+                       :error)))])
 
         all-tags   
         (apply conj all-tags (remove nil? more-tags))
@@ -936,6 +967,7 @@
          (when (js-array-buffer? x) :byte-array)
          (js-object-instance x)
          (when (js/Number.isNaN x) :nan)
+         (when (throwable? x) :throwable)
          :lasertag/value-type-unknown)
      :clj
      (or (numberish-type x)
@@ -944,7 +976,10 @@
          (cljc-coll-type x)
          (when (fn? x) :function)
          (get clj-reference-types t)
-        ;;  (when (inst? x) :inst)
+         (when (throwable? x) :throwable)
+         (when (future? x) :future)
+         (when (delay? x) :delay)
+         (when (instance? clojure.lang.IPending x) :promise)
          (when-let [c (type x)]
            (or 
             (when (instance? java.util.AbstractMap x) :map)
@@ -993,13 +1028,7 @@
               :extras? true
               :opts    opts}))))
 
-;; fix short and double
 
-;; add scalar and literal
-;; fix atom and volatile 
-
-;; Fix type printing in fw
-;; Look at regex themes in fw
 
 ;; Remove :coll-size
 ;; Remove :fn-args

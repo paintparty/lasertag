@@ -74,6 +74,8 @@
                                                  :coll
                                                  :coll-like
                                                  :seq
+                                                 :lazy
+                                                 :deferred
                                                  :carries-meta}
                                     :classname "cljs.core/LazySeq"}
       cljs.core/List               {:tag       :seq
@@ -182,16 +184,18 @@
                                                     :coll
                                                     :coll-like
                                                     :seq
+                                                    :lazy
+                                                    :deferred
                                                     :carries-meta}
                                        :classname "clojure.lang.LazySeq"}}))
      
 
 (def by-type
   #?(:cljs
-     {cljs.core/Atom               {:tag       :cljs.core/Atom
+     {cljs.core/Atom               {:tag       :atom
                                     :type      cljs.core/Atom
                                     :all-tags  #{:js-map-like-object
-                                                 :cljs.core/Atom
+                                                 :atom
                                                  :coll-like
                                                  :map-like}
                                     :classname "cljs.core/Atom"}
@@ -209,6 +213,8 @@
                                                  :coll
                                                  :coll-like
                                                  :seq
+                                                 :lazy
+                                                 :deferred
                                                  :carries-meta}
                                     :classname "cljs.core/IntegerRange"}
       cljs.core/PersistentQueue    {:tag       :seq
@@ -224,6 +230,8 @@
                                     :all-tags  #{:coll
                                                  :coll-like
                                                  :seq
+                                                 :lazy
+                                                 :deferred
                                                  :carries-meta}
                                     :classname "cljs.core/Repeat"}
       cljs.core/Subvec             {:tag       :vector
@@ -243,7 +251,7 @@
                                     :classname "cljs.core/TransientVector"}
       }
      :clj
-     {clojure.lang.Atom              {:tag       :clojure.lang.Atom
+     {clojure.lang.Atom              {:tag       :atom
                                       :type      clojure.lang.Atom
                                       :all-tags  #{:atom :reference}
                                       :classname "clojure.lang.Atom"}
@@ -265,6 +273,8 @@
                                                    :coll
                                                    :coll-like
                                                    :seq
+                                                   :lazy
+                                                   :deferred
                                                    :carries-meta}
                                       :classname "clojure.lang.LongRange" }
 
@@ -316,10 +326,12 @@
                                                    :coll
                                                    :coll-like
                                                    :seq
+                                                   :lazy
+                                                   :deferred
                                                    :carries-meta}
                                       :classname "clojure.lang.Repeat" }
 
-      clojure.lang.Volatile          {:tag       :clojure.lang.Volatile
+      clojure.lang.Volatile          {:tag       :volatile
                                       :type      clojure.lang.Volatile
                                       :all-tags  #{:volatile :reference}
                                       :classname "clojure.lang.Volatile"}
