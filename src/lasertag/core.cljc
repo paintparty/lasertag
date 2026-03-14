@@ -51,9 +51,12 @@
   ([x]
    (? nil x))
   ([l x]
-   (if l
-     (println (str " " l "\n") x)
-     (println x))
+   (try (if l
+          (println (str " " l "\n") x)
+          (println x))
+        (catch #?(:cljs js/Object :clj Throwable)
+               e
+          (println "WARNING [lasertag.core/?] Unable to print value")))
    x))
 
 (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
@@ -74,35 +77,38 @@
 
 #?(:clj 
    (do 
+     (def clj-literal-types
+       {java.util.UUID          :uuid
+        java.util.regex.Pattern :regex})
      (def clj-scalar-types
-       {nil                        :nil
-        clojure.lang.Symbol     :symbol
-        clojure.lang.Keyword    :keyword
-        java.lang.String        :string
-        java.lang.Boolean       :boolean
-        java.util.regex.Pattern :regex
-        java.lang.Character     :char
-        java.util.UUID          :uuid})
+       {nil                     :nil
+        clojure.lang.Symbol  :symbol
+        clojure.lang.Keyword :keyword
+        java.lang.String     :string
+        java.lang.Boolean    :boolean
+        java.lang.Character  :char})
      (def java-number-types
        {java.lang.Double     :double
         java.lang.Short      :short
         java.lang.Long       :long
         java.lang.Float      :float
         java.lang.Byte       :byte
-        java.math.BigDecimal :decimal
-        java.math.BigInteger :big-int})))
+        java.math.BigDecimal :big-decimal
+        java.math.BigInteger :big-integer})))
 
 
 #?(:cljs 
    (do
+     (def cljs-literal-types
+       {cljs.core/UUID    :uuid
+        js/RegExp         :regex})
+
      (def cljs-scalar-types
        {cljs.core/Symbol  :symbol
         cljs.core/Keyword :keyword
-        cljs.core/UUID    :uuid
         js/String         :string
         js/Boolean        :boolean
-        js/RegExp         :regex
-        nil                  :nil})
+        nil               :nil})
           
      (def js-number-types
        {js/Number :js-number
@@ -150,6 +156,12 @@
      (as-> #{} $
        (apply conj $ (vals clj-scalar-types))
        (apply conj $ (vals java-number-types)))))
+
+(def literal-types-set
+  #?(:cljs
+     (apply conj #{:inst :var} (vals cljs-literal-types))
+     :clj
+     (apply conj #{:inst :var} (vals clj-literal-types))))
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
@@ -507,6 +519,7 @@
        (->> [number-type
              (get java-number-types t)
              (get clj-scalar-types t)
+             (get clj-literal-types t)
              (cljc-coll-type x)
              (when (fn? x) :function)
              (when (contains? cljc-transients-set t) :transient)
@@ -536,6 +549,7 @@
 
            types 
            {:scalar-type    (get cljs-scalar-types t)
+            :literal-type   (get cljs-literal-types t)
             :cljc-coll-type (cljc-coll-type x)
             :js-map-types   (get js-map-types t)
             :js-set-types   (get js-set-types t)
@@ -576,7 +590,7 @@
 
 #?(:cljs 
    (do
-     (defn- cljs-coll-type? [x]
+     (defn- cljs-coll-like? [x]
        (or (array? x)
            (object? x)
            (contains? jsi/js-built-ins-which-are-iterables
@@ -624,12 +638,10 @@
      :clj (instance? java.lang.Iterable x)))
 
 (defn- scalar-type? [k]
-  ;; TODO - make sure this scalar-type? is accurate for all
-  ;; js and java scalars/primitives, then include it in the returned
-  ;; entries from tag-map?, and/or include :scalar (or :primitive, or
-  ;; both) in the :all-tags set.
   (contains? scalar-types-set k))
 
+(defn- literal-type? [k]
+  (contains? scalar-types-set k))
 
 ;; TODO open PR to add java.util.AbstractCollection to bb,
 ;; then eliminate this branch
@@ -756,7 +768,7 @@
           (when set-like? :set-like)
           (when (carries-meta? x) :carries-meta)
           (when (contains? all-tags :transient) :transient)
-          (when (cljc-iterable? x) :iterable)])
+          #_(when (scalar? m) :scalar)])
 
         all-tags   
         (apply conj all-tags (remove nil? more-tags))
@@ -878,6 +890,7 @@
   #?(:cljs
      (or (numberish-type x)
          (get cljs-scalar-types t)
+         (get cljs-literal-types t)
          (cljc-coll-type x)
          (when (get js-map-types t) :map)
          (when (get js-set-types t) :set)
@@ -885,7 +898,7 @@
          (cljs-iterable-type x)
          (when (object? x) :object)
          (when (fn? x) :function)
-         (when (inst? x) :inst)
+        ;;  (when (inst? x) :inst)
          (when (defmulti? x) :defmulti)
          (when (js-promise? x) :promise)
          (when (js-global-this? x) :js-global-this)
@@ -898,9 +911,10 @@
      :clj
      (or (numberish-type x)
          (get clj-scalar-types t)
+         (get clj-literal-types t)
          (cljc-coll-type x)
          (when (fn? x) :function)
-         (when (inst? x) :inst)
+        ;;  (when (inst? x) :inst)
          (when-let [c (type x)]
            (or 
             (when (instance? java.util.AbstractMap x) :map)
@@ -949,14 +963,10 @@
               :extras? true
               :opts    opts}))))
 
+;; fix short and double
 
-;; Get fw options sorted out
-;; Get fw tests working
-
-;; Remove :set-like?, :abstract-instance?, :scalar-type?, :coll-type?
-
-;; Change :java-lang-class -> :java.lang
-;; Change :scalar-type -> :scalar
+;; add scalar and literal
+;; fix atom and volatile 
 
 ;; Fix type printing in fw
 ;; Look at regex themes in fw
@@ -964,6 +974,6 @@
 ;; Remove :coll-size
 ;; Remove :fn-args
 
-;; Add utility functions for java-class?
+;; Add utility functions for java-class? and also java-lang-class? and java-util-class?
 ;; Something like:
 ;; (defn java-class? [x] (some->> x classname (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" )))
