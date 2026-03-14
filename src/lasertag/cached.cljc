@@ -245,7 +245,7 @@
      :clj
      {clojure.lang.Atom              {:tag       :clojure.lang.Atom
                                       :type      clojure.lang.Atom
-                                      :all-tags  #{:clojure.lang.Atom}
+                                      :all-tags  #{:atom :reference}
                                       :classname "clojure.lang.Atom"}
 
       clojure.lang.Cons              {:tag       :seq
@@ -321,7 +321,7 @@
 
       clojure.lang.Volatile          {:tag       :clojure.lang.Volatile
                                       :type      clojure.lang.Volatile
-                                      :all-tags  #{:clojure.lang.Volatile}
+                                      :all-tags  #{:volatile :reference}
                                       :classname "clojure.lang.Volatile"}
 
       java.lang.Character            {:tag       :char

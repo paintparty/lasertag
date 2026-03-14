@@ -77,9 +77,17 @@
 
 #?(:clj 
    (do 
+     (def clj-reference-types
+       {clojure.lang.Atom     :atom
+        clojure.lang.Volatile :volatile
+        clojure.lang.Agent    :agent
+        clojure.lang.Ref      :ref
+        clojure.lang.Var      :var})
+
      (def clj-literal-types
        {java.util.UUID          :uuid
         java.util.regex.Pattern :regex})
+
      (def clj-scalar-types
        {nil                     :nil
         clojure.lang.Symbol  :symbol
@@ -87,6 +95,7 @@
         java.lang.String     :string
         java.lang.Boolean    :boolean
         java.lang.Character  :char})
+
      (def java-number-types
        {java.lang.Double     :double
         java.lang.Short      :short
@@ -99,6 +108,11 @@
 
 #?(:cljs 
    (do
+     (def cljs-reference-types
+       {cljs.core.Atom     :atom
+        cljs.core.Volatile :volatile
+        cljs.core.Var      :var})
+
      (def cljs-literal-types
        {cljs.core/UUID    :uuid
         js/RegExp         :regex})
@@ -159,9 +173,15 @@
 
 (def literal-types-set
   #?(:cljs
-     (apply conj #{:inst :var} (vals cljs-literal-types))
+     (apply conj #{:inst} (vals cljs-literal-types))
      :clj
-     (apply conj #{:inst :var} (vals clj-literal-types))))
+     (apply conj #{:inst} (vals clj-literal-types))))
+
+(def reference-types-set
+  #?(:cljs
+     (apply conj #{} (vals cljs-reference-types))
+     :clj
+     (apply conj #{} (vals clj-reference-types))))
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
@@ -520,6 +540,7 @@
              (get java-number-types t)
              (get clj-scalar-types t)
              (get clj-literal-types t)
+             (get clj-reference-types t)
              (cljc-coll-type x)
              (when (fn? x) :function)
              (when (contains? cljc-transients-set t) :transient)
@@ -550,6 +571,7 @@
            types 
            {:scalar-type    (get cljs-scalar-types t)
             :literal-type   (get cljs-literal-types t)
+            :reference-type (get cljs-reference-types t)
             :cljc-coll-type (cljc-coll-type x)
             :js-map-types   (get js-map-types t)
             :js-set-types   (get js-set-types t)
@@ -641,7 +663,10 @@
   (contains? scalar-types-set k))
 
 (defn- literal-type? [k]
-  (contains? scalar-types-set k))
+  (contains? literal-types-set k))
+
+(defn- reference-type? [k]
+  (contains? reference-types-set k))
 
 ;; TODO open PR to add java.util.AbstractCollection to bb,
 ;; then eliminate this branch
@@ -726,22 +751,24 @@
         :datatype)]))
 
 (defn- all-tags* [{:keys [x k] :as m}]
-  (let [all-tags   #?(:cljs (cljs-all-value-types m)
-                      :clj (clj-all-value-types m))
-        map-like?  (map-like?* x k all-tags)
-        set-like?  (or (contains? #{:set :js-set} k)
-                       #?(:clj (instance? java.util.AbstractSet x)))]
+  (let [all-tags  #?(:cljs (cljs-all-value-types m)
+                     :clj (clj-all-value-types m))
+        map-like? (map-like?* x k all-tags)
+        set-like? (or (contains? #{:set :js-set} k)
+                      #?(:clj (instance? java.util.AbstractSet x)))]
 
     ;; TODO - Add :array-like? and maybe :list-like?
-    {:classname    (classname* x)
-     :scalar-type? (scalar-type? k)
-     :all-tags     all-tags
-     :set-like?    set-like?
-     :map-like?    map-like?
-     :coll-like?   (or map-like?
-                       set-like?
-                       (contains? all-tags :coll)
-                       #?(:cljs (cljs-coll-like? x)))}))
+    {:classname       (classname* x)
+     :scalar-type?    (scalar-type? k)
+     :literal-type?   (literal-type? k)
+     :reference-type? (reference-type? k)
+     :all-tags        all-tags
+     :set-like?       set-like?
+     :map-like?       map-like?
+     :coll-like?      (or map-like?
+                          set-like?
+                          (contains? all-tags :coll)
+                          #?(:cljs (cljs-coll-like? x)))}))
 
 #?(:clj
    (defn- java-classes
@@ -754,7 +781,7 @@
 
 (defn- all-tags
   [{:keys [x] :as m}]
-  (let [{:keys [map-like? set-like? coll-like? all-tags classname]
+  (let [{:keys [map-like? set-like? coll-like? scalar-type? literal-type? all-tags classname]
          :as all-tags-map}
         (all-tags* m)
 
@@ -763,12 +790,14 @@
          (cljc-datatypes x)
          
          [(when coll-like? :coll-like)
-          (when-not coll-like? :scalar)
           (when map-like? :map-like)
           (when set-like? :set-like)
           (when (carries-meta? x) :carries-meta)
           (when (contains? all-tags :transient) :transient)
-          #_(when (scalar? m) :scalar)])
+          (when scalar-type? :scalar)
+          (when literal-type? :literal)
+          (when reference-type? :reference)
+          ])
 
         all-tags   
         (apply conj all-tags (remove nil? more-tags))
@@ -914,6 +943,7 @@
          (get clj-literal-types t)
          (cljc-coll-type x)
          (when (fn? x) :function)
+         (get clj-reference-types t)
         ;;  (when (inst? x) :inst)
          (when-let [c (type x)]
            (or 
@@ -977,3 +1007,5 @@
 ;; Add utility functions for java-class? and also java-lang-class? and java-util-class?
 ;; Something like:
 ;; (defn java-class? [x] (some->> x classname (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" )))
+
+;; Should ##Inf and #Nan get :scalar, or :literal?   Or both?
