@@ -4,64 +4,60 @@
   #?(:cljs
      {##Inf {:tag       :number
              :type      js/Number
-             :all-tags  #{:number-type :int :number}
+             :all-tags  #{:infinite :infinity :int :number}
              :classname "js/Number"}
       ##-Inf {:tag       :number
               :type      js/Number
-              :all-tags  #{:number-type :int :number}
+              :all-tags  #{:infinite :-infinity :int :number}
               :classname "js/Number"}}
      :clj
-     {##Inf  {:tag       :infinity
+     {##Inf  {:tag       :number
               :type      java.lang.Double
-              :all-tags  #{:infinity}
+              :all-tags  #{:infinity :infinite :number :double}
               :classname "java.lang.Double"}
-      ##-Inf {:tag       :-infinity
+      ##-Inf {:tag       :number
               :type      java.lang.Double
-              :all-tags  #{:-infinity}
+              :all-tags  #{:-infinity :infinite :number :double}
               :classname "java.lang.Double"}}))
 
 (def NaN
   #?(:cljs
      {:tag       :nan
       :type      js/Number
-      :all-tags  #{:nan :number :number-type}
+      :all-tags  #{:nan :number }
       :classname "js/Number"}
      :clj
      {:tag       :nan
       :type      java.lang.Double
-      :all-tags  #{:nan  :number-typess}
+      :all-tags  #{:nan :number :double}
       :classname "java.lang.Double"}))
 
 (def numbers
   #?(:cljs
      {js/Number {:tag       :number
-                  :type      js/Number
-                  :all-tags  #{:number-type :int :number}
-                  :classname "js/Number"}}
+                 :type      js/Number
+                 :all-tags  #{:int :number}
+                 :classname "js/Number"}}
 
      :clj
      {java.lang.Long   {:tag       :number
                         :type      java.lang.Long
-                        :all-tags  #{:number-type
-                                     :int
-                                     :number}
+                        :all-tags  #{:int :long :number}
                         :classname "java.lang.Long"}
       java.lang.Short  {:tag       :number
                         :type      java.lang.Short
-                        :all-tags  #{:number-type
-                                     :int
+                        :all-tags  #{:int
+                                     :short
                                      :number}
                         :classname "java.lang.Short"}
       java.lang.Float  {:tag       :number
                         :type      java.lang.Float
-                        :all-tags  #{:number-type
-                                     :number
+                        :all-tags  #{:number
                                      :float}
                         :classname "java.lang.Float"}
       java.lang.Double {:tag       :number
                         :type      java.lang.Double
-                        :all-tags  #{:number-type
-                                     :double
+                        :all-tags  #{:double
                                      :number}
                         :classname "java.lang.Double"}}))
 
@@ -118,7 +114,7 @@
                                     :classname "js/Boolean"}
       js/Date                      {:tag       :inst
                                     :type      js/Date
-                                    :all-tags  #{:inst}
+                                    :all-tags  #{:inst :literal}
                                     :classname "Date"}
       js/String                    {:tag       :string
                                     :type      js/String
