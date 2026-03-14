@@ -76,7 +76,7 @@
                                     :type      cljs.core/LazySeq
                                     :all-tags  #{:iterable
                                                  :coll
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/LazySeq"}
@@ -85,7 +85,7 @@
                                     :all-tags  #{:iterable
                                                  :coll
                                                  :list
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/List"}
@@ -94,7 +94,7 @@
                                     :all-tags  #{:iterable
                                                  :coll
                                                  :array-map
-                                                 :coll-type
+                                                 :coll-like
                                                  :map-like
                                                  :map
                                                  :carries-meta}
@@ -105,7 +105,7 @@
                                     :all-tags  #{:iterable
                                                  :coll
                                                  :vector
-                                                 :coll-type
+                                                 :coll-like
                                                  :carries-meta}
                                     :classname "cljs.core/PersistentVector"}
       cljs.core/Symbol             {:tag       :symbol
@@ -156,7 +156,7 @@
                                        :all-tags  #{:iterable
                                                     :coll
                                                     :array-map
-                                                    :coll-type
+                                                    :coll-like
                                                     :map-like
                                                     :map
                                                     :carries-meta}
@@ -167,14 +167,14 @@
                                        :all-tags  #{:iterable
                                                     :coll
                                                     :vector
-                                                    :coll-type
+                                                    :coll-like
                                                     :carries-meta}
                                        :classname "clojure.lang.PersistentVector"}
       clojure.lang.PersistentHashMap  {:tag       :map
                                        :type      clojure.lang.PersistentHashMap
                                        :all-tags  #{:iterable
                                                     :coll
-                                                    :coll-type
+                                                    :coll-like
                                                     :map-like
                                                     :map
                                                     :carries-meta}
@@ -184,7 +184,7 @@
                                        :type      clojure.lang.LazySeq
                                        :all-tags  #{:iterable
                                                     :coll
-                                                    :coll-type
+                                                    :coll-like
                                                     :seq
                                                     :carries-meta}
                                        :classname "clojure.lang.LazySeq"}}))
@@ -196,14 +196,14 @@
                                     :type      cljs.core/Atom
                                     :all-tags  #{:js-map-like-object
                                                  :cljs.core/Atom
-                                                 :coll-type
+                                                 :coll-like
                                                  :map-like}
                                     :classname "cljs.core/Atom"}
       cljs.core/Cons               {:tag       :seq
                                     :type      cljs.core/Cons
                                     :all-tags  #{:iterable
                                                  :coll
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/Cons"}
@@ -211,7 +211,7 @@
                                     :type      cljs.core/IntegerRange
                                     :all-tags  #{:iterable
                                                  :coll
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/IntegerRange"}
@@ -219,14 +219,14 @@
                                     :type      cljs.core/PersistentQueue
                                     :all-tags  #{:iterable
                                                  :coll
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/PersistentQueue"}
       cljs.core/Repeat             {:tag       :seq
                                     :type      cljs.core/Repeat
                                     :all-tags  #{:coll
-                                                 :coll-type
+                                                 :coll-like
                                                  :seq
                                                  :carries-meta}
                                     :classname "cljs.core/Repeat"}
@@ -235,7 +235,7 @@
                                     :all-tags  #{:iterable
                                                  :coll
                                                  :vector
-                                                 :coll-type
+                                                 :coll-like
                                                  :carries-meta}
                                     :classname "cljs.core/Subvec"}
       cljs.core/TransientVector    {:tag       :vector
@@ -243,7 +243,7 @@
                                     :all-tags  #{:coll
                                                  :vector
                                                  :transient
-                                                 :coll-type}
+                                                 :coll-like}
                                     :classname "cljs.core/TransientVector"}
       }
      :clj
@@ -256,7 +256,7 @@
                                       :type      clojure.lang.Cons
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :seq
                                                    :carries-meta}
                                       :classname "clojure.lang.Cons" }
@@ -267,7 +267,7 @@
                                       :type      clojure.lang.LongRange
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :seq
                                                    :carries-meta}
                                       :classname "clojure.lang.LongRange" }
@@ -277,7 +277,7 @@
                                       :type      clojure.lang.PersistentHashSet
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :set
                                                    :carries-meta
                                                    :set-like}
@@ -288,7 +288,7 @@
                                       :all-tags  #{:iterable
                                                    :coll
                                                    :list
-                                                   :coll-type
+                                                   :coll-like
                                                    :seq
                                                    :carries-meta}
                                       :classname "clojure.lang.PersistentList" }
@@ -297,7 +297,7 @@
                                       :type      clojure.lang.PersistentTreeMap
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :map-like
                                                    :map
                                                    :carries-meta}
@@ -307,7 +307,7 @@
                                       :type      clojure.lang.PersistentTreeSet
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :set
                                                    :carries-meta
                                                    :set-like}
@@ -318,7 +318,7 @@
                                       :type      clojure.lang.Repeat
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :seq
                                                    :carries-meta}
                                       :classname "clojure.lang.Repeat" }
@@ -330,19 +330,19 @@
 
       java.lang.Character            {:tag       :char
                                       :type      java.lang.Character
-                                      :all-tags  #{:char}
+                                      :all-tags  #{:char :scalar}
                                       :classname "java.lang.Character"}
 
 
       java.util.Date                 {:tag       :inst
                                       :type      java.util.Date
-                                      :all-tags  #{:inst}
+                                      :all-tags  #{:inst :literal}
                                       :classname "java.util.Date"}
 
       java.util.HashMap              {:tag       :map
                                       :type      java.util.HashMap
                                       :all-tags  #{:coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :map-like
                                                    :map}
                                       :classname "java.util.HashMap" }
@@ -353,7 +353,7 @@
                                       :all-tags  #{:iterable
                                                    :coll
                                                    :array
-                                                   :coll-type}
+                                                   :coll-like}
                                       :classname "java.util.ArrayList" }
 
 
@@ -361,7 +361,7 @@
                                       :type      java.util.HashSet
                                       :all-tags  #{:iterable
                                                    :coll
-                                                   :coll-type
+                                                   :coll-like
                                                    :set
                                                    :set-like}
                                       :classname "java.util.HashSet"}}))

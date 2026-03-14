@@ -690,8 +690,8 @@
          :lasertag.core/unknown-coll-size)))
 
 
-(defn- coll-size* [{:keys [x coll-type? all-tags] :as m}]
-  (when coll-type?
+(defn- coll-size* [{:keys [x coll-like? all-tags] :as m}]
+  (when coll-like?
     (when-not (or (contains? all-tags :js-weak-map)
                   (contains? all-tags :js-weak-set))
       (let [debug-unknown-coll-size?
@@ -726,10 +726,10 @@
      :all-tags     all-tags
      :set-like?    set-like?
      :map-like?    map-like?
-     :coll-type?   (or map-like?
+     :coll-like?   (or map-like?
                        set-like?
                        (contains? all-tags :coll)
-                       #?(:cljs (cljs-coll-type? x)))}))
+                       #?(:cljs (cljs-coll-like? x)))}))
 
 #?(:clj
    (defn- java-classes
@@ -742,7 +742,7 @@
 
 (defn- all-tags
   [{:keys [x] :as m}]
-  (let [{:keys [map-like? set-like? coll-type? all-tags classname]
+  (let [{:keys [map-like? set-like? coll-like? all-tags classname]
          :as all-tags-map}
         (all-tags* m)
 
@@ -750,7 +750,8 @@
         (concat  
          (cljc-datatypes x)
          
-         [(when coll-type? :coll-type)
+         [(when coll-like? :coll-like)
+          (when-not coll-like? :scalar)
           (when map-like? :map-like)
           (when set-like? :set-like)
           (when (carries-meta? x) :carries-meta)
@@ -930,11 +931,11 @@
                          (get cached/numbers x-type)))
                    (get cached/by-type-common x-type)
                    (get cached/by-type x-type))]
-    (if (and cached (contains? (:all-tags cached) :coll-type))
+    (if (and cached (contains? (:all-tags cached) :coll-like))
       (assoc cached 
              :coll-size 
              (coll-size* {:x          x
-                          :coll-type? true
+                          :coll-like? true
                           :all-tags   (:all-tags cached)}))
       cached)))
 

@@ -166,7 +166,7 @@
             (tag-map '(:a :b :c))
             {:tag       :seq,
              :type      cljs.core/List,
-             :all-tags  #{:seq :iterable :coll :list :coll-type :carries-meta},
+             :all-tags  #{:seq :iterable :coll :list :coll-like :carries-meta},
              :classname "cljs.core/List",
              :coll-size 3})))
      ;; TODO - why is :fn-args flipping from nil to []
@@ -191,7 +191,7 @@
              :all-tags  #{:object
                           :js-object
                           :js-map-like-object
-                          :coll-type
+                          :coll-like
                           :map-like},
              :type      js/Object,
              :tag       :object})))
@@ -202,7 +202,7 @@
                :type                    js/Object,
                :all-tags                #{:object
                                           :js-map-like-object
-                                          :coll-type
+                                          :coll-like
                                           :map-like
                                           :js-object},
                :classname               "Object",
@@ -216,7 +216,7 @@
             (tag-map '(:a :b :c))
             {:tag       :seq,
              :type      clojure.lang.PersistentList,
-             :all-tags  #{:iterable :coll :list :coll-type :seq :carries-meta},
+             :all-tags  #{:iterable :coll :list :coll-like :seq :carries-meta},
              :classname "clojure.lang.PersistentList",
              :coll-size 3})))
 
@@ -226,7 +226,7 @@
                                                 "b" 2}))
             {:tag       :map,
              :type      java.util.HashMap,
-             :all-tags  #{:coll :java-util-class :coll-type :map-like :map},
+             :all-tags  #{:coll :java-util-class :coll-like :map-like :map},
              :classname "java.util.HashMap",
              :coll-size 2})))
 
@@ -236,7 +236,7 @@
                                                  "b" 2}))
             {:tag       :set,
              :type      java.util.HashSet,
-             :all-tags  #{:iterable :coll :java-util-class :coll-type :set :set-like},
+             :all-tags  #{:iterable :coll :java-util-class :coll-like :set :set-like},
              :classname "java.util.HashSet",
              :coll-size 4})))
 
@@ -245,7 +245,7 @@
             (tag-map       (java.util.ArrayList. [1 2 3]))
             {:tag       :array,
              :type      java.util.ArrayList,
-             :all-tags  #{:iterable :coll :array :java-util-class :coll-type},
+             :all-tags  #{:iterable :coll :array :java-util-class :coll-like},
              :classname "java.util.ArrayList",
              :coll-size 3})))))
 
@@ -257,7 +257,7 @@
             (tag-map    (transient #{1 2 3}))
             {:tag       :set,
              :type      cljs.core/TransientHashSet,
-             :all-tags  #{:coll :transient :coll-type :set :set-like},
+             :all-tags  #{:coll :transient :coll-like :set :set-like},
              :classname "cljs.core/TransientHashSet",
              :coll-size 3})))
      (testing "cljs.core/TransientArrayMap"
@@ -265,7 +265,7 @@
             (tag-map    (transient {:a 2 :b 4}))
             {:tag       :map,
              :type      cljs.core/TransientArrayMap,
-             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :all-tags  #{:coll :transient :coll-like :map :map-like},
              :classname "cljs.core/TransientArrayMap",
              :coll-size 2})))
      (testing "cljs.core/PersistentHashMap$TransientHashMap"
@@ -282,7 +282,7 @@
                                     :j 10}))
             {:tag       :map,
              :type      cljs.core/TransientHashMap,
-             :all-tags  #{:map :coll :transient :coll-type :map-like},
+             :all-tags  #{:map :coll :transient :coll-like :map-like},
              :classname "cljs.core/TransientHashMap",
              :coll-size 10}
             ))))
@@ -293,7 +293,7 @@
             (tag-map    (transient #{1 2 3}))
             {:tag       :set,
              :type      clojure.lang.PersistentHashSet$TransientHashSet,
-             :all-tags  #{:coll :transient :coll-type :set :set-like},
+             :all-tags  #{:coll :transient :coll-like :set :set-like},
              :classname "clojure.lang.PersistentHashSet$TransientHashSet",
              :coll-size 3})))
      (testing "clojure.lang.PersistentArrayMap$TransientArrayMap"
@@ -301,7 +301,7 @@
             (tag-map    (transient {:a 2 :b 4}))
             {:tag       :map,
              :type      clojure.lang.PersistentArrayMap$TransientArrayMap,
-             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :all-tags  #{:coll :transient :coll-like :map :map-like},
              :classname "clojure.lang.PersistentArrayMap$TransientArrayMap",
              :coll-size 2})))
      (testing "clojure.lang.PersistentHashMap$TransientHashMap"
@@ -318,7 +318,7 @@
                                     :j 10}))
             {:tag       :map,
              :type      clojure.lang.PersistentHashMap$TransientHashMap,
-             :all-tags  #{:coll :transient :coll-type :map :map-like},
+             :all-tags  #{:coll :transient :coll-like :map :map-like},
              :classname "clojure.lang.PersistentHashMap$TransientHashMap",
              :coll-size 10})))))
 
