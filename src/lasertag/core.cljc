@@ -391,19 +391,7 @@
               {:fn-args
                :lasertag/unknown-function-signature-on-js-built-in-method})))))))
 
-(defn- fn-info [x k include-fn-info?]
-  (when include-fn-info?
-    (let [fn-info              (fn-info* x k)
-          [fn-args defrecord?] (fn-args x fn-info)
-          fn-args              (some->> fn-args seq (into []))]
-      (merge fn-info
-             (when fn-args
-               {:fn-args (into [] fn-args)})
-             (when defrecord?
-               {:defrecord? true})
-             #?(:cljs 
-                (cljs-fn-args x fn-args fn-info))))))
-
+(declare fn-info)
 
 ;; function resolution functions end--------------------------------------------
 
@@ -864,10 +852,9 @@
             dom-node-type-keyword] (dom-node x)]
        (merge
         ;; Get all the tags
-        (when-not (-> opts :include-all-tags? false?)
-          (all-tags {:x                     x
-                     :k                     k 
-                     :dom-node-type-keyword dom-node-type-keyword}))
+        (all-tags {:x                     x
+                   :k                     k 
+                   :dom-node-type-keyword dom-node-type-keyword})
 
         ;; Get dom node info 
         (when dom-node-type
@@ -887,10 +874,10 @@
                :js-built-in-object-name (str sym)})))))))
 
 (defn- tag-map*
-  [x k k+ opts]
+  [x k opts]
     (merge 
      ;; The lasertag for clj & cljs
-     {:tag k+}
+     {:tag k}
 
      ;; The `type` (calling clojure.core.type, or cljs.core.type) on the value 
      {:type #?(:cljs (if (= k :js-generator)
@@ -904,19 +891,10 @@
          (fn-info x k b)))
 
      #?(:cljs (cljs-tag-map* x k opts)
-        :clj  (when-not (-> opts :include-all-tags? false?)
-                (all-tags {:x    x
-                           :k    k 
-                           :opts opts})))))
+        :clj  (all-tags {:x    x
+                         :k    k 
+                         :opts opts}))))
 
-(defn- format-result [k {:keys [format]}]
-  (if format
-    (case format
-      :keyword k
-      :symbol (symbol (subs (str k) 1))
-      :string (subs (str k) 1)
-      k)
-    k))
 
 #?(:cljs 
    (defn- js-intl-object-key [x]
@@ -991,16 +969,11 @@
             (resolve-class-name-clj c))))))
 
 (defn- tag* [{:keys [x extras? opts]}]
-  (let [k   (k* x (type x))
-        k+  (format-result k opts)]
-    (if extras? (tag-map* x k k+ opts) k+)))
+  (let [k   (k* x (type x))]
+    (if extras?
+      (tag-map* x k opts)
+      k)))
 
-(defn tag
-  "Given a value, returns a tag representing the value's type."
-  ([x]
-   (tag x nil))
-  ([x opts] 
-   (tag* {:x x :extras? false :opts opts})))
 
 (defn cached-tag-map [x]
   (let [x-type (type x)
@@ -1018,6 +991,18 @@
                           :all-tags   (:all-tags cached)}))
       cached)))
 
+
+(defn tag
+  "Given a value, returns a tag representing the value's type."
+  ([x]
+   (tag x nil))
+  ([x opts] 
+   (or (some-> x cached-tag-map :tag)
+       (tag* {:x       x
+              :extras? false
+              :opts    opts}))))
+
+
 (defn tag-map
   "Given a value, returns a map with information about the value's type."
   ([x]
@@ -1029,12 +1014,16 @@
               :opts    opts}))))
 
 
-
-;; Remove :coll-size
-;; Remove :fn-args
-
-;; Add utility functions for java-class? and also java-lang-class? and java-util-class?
-;; Something like:
-;; (defn java-class? [x] (some->> x classname (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" )))
-
-;; Should ##Inf and #Nan get :scalar, or :literal?   Or both?
+(defn fn-info [x k include-fn-info?]
+  (when include-fn-info?
+    (let [fn-info              (fn-info* x k)
+          [fn-args defrecord?] (fn-args x fn-info)
+          fn-args              (some->> fn-args seq (into []))
+          ]
+      (merge fn-info
+             (when fn-args
+               {:fn-args (into [] fn-args)})
+             (when defrecord?
+               {:defrecord? true})
+             #?(:cljs 
+                (cljs-fn-args x fn-args fn-info))))))
