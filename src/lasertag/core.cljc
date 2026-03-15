@@ -11,6 +11,7 @@
 
 (ns lasertag.core
   (:require 
+   [clojure.pprint :refer [pprint]]
    [clojure.string :as string]
    [lasertag.messaging :as messaging]
    [lasertag.cached :as cached]
@@ -271,7 +272,7 @@
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)
-                  {:fn-ns (string/join "." fn-ns)}) 
+                  {:fn-ns (string/replace (string/join "." fn-ns) #"_" "-")}) 
                 (when-not built-in? (js-built-in-method-of x s fn-nm)))))
 
      (defn- cljs-fn-alt [o]
@@ -438,6 +439,7 @@
        [x types]
        (when-not (or (-> types :coll)
                      (-> types :scalar-type)
+                     (-> types :literal-type)
                      (-> types :number)
                      (->> [:record         
                            :number         
