@@ -5,60 +5,63 @@
   #?(:cljs
      {##Inf {:tag       :number
              :type      js/Number
-             :all-tags  #{:infinite :infinity :int :number}
+             :all-tags  #{:infinite :infinity :int :number :scalar}
              :classname "js/Number"}
       ##-Inf {:tag       :number
               :type      js/Number
-              :all-tags  #{:infinite :-infinity :int :number}
+              :all-tags  #{:infinite :-infinity :int :number :scalar}
               :classname "js/Number"}}
      :clj
      {##Inf  {:tag       :number
               :type      java.lang.Double
-              :all-tags  #{:infinity :infinite :number :double}
+              :all-tags  #{:infinity :infinite :number :double :scalar}
               :classname "java.lang.Double"}
       ##-Inf {:tag       :number
               :type      java.lang.Double
-              :all-tags  #{:-infinity :infinite :number :double}
+              :all-tags  #{:-infinity :infinite :number :double :scalar}
               :classname "java.lang.Double"}}))
 
 (def NaN
   #?(:cljs
      {:tag       :nan
       :type      js/Number
-      :all-tags  #{:nan :number }
+      :all-tags  #{:nan :number :scalar}
       :classname "js/Number"}
      :clj
      {:tag       :nan
       :type      java.lang.Double
-      :all-tags  #{:nan :number :double}
+      :all-tags  #{:nan :number :double :scalar}
       :classname "java.lang.Double"}))
 
 (def numbers
   #?(:cljs
      {js/Number {:tag       :number
                  :type      js/Number
-                 :all-tags  #{:int :number}
+                 :all-tags  #{:int :number :scalar}
                  :classname "js/Number"}}
 
      :clj
      {java.lang.Long   {:tag       :number
                         :type      java.lang.Long
-                        :all-tags  #{:int :long :number}
+                        :all-tags  #{:int :long :number :scalar}
                         :classname "java.lang.Long"}
       java.lang.Short  {:tag       :number
                         :type      java.lang.Short
                         :all-tags  #{:int
                                      :short
+                                     :scalar
                                      :number}
                         :classname "java.lang.Short"}
       java.lang.Float  {:tag       :number
                         :type      java.lang.Float
                         :all-tags  #{:number
+                                     :scalar
                                      :float}
                         :classname "java.lang.Float"}
       java.lang.Double {:tag       :number
                         :type      java.lang.Double
                         :all-tags  #{:double
+                                     :scalar
                                      :number}
                         :classname "java.lang.Double"}}))
 
@@ -67,7 +70,7 @@
   #?(:cljs
      {cljs.core/Keyword            {:tag       :keyword
                                     :type      cljs.core/Keyword
-                                    :all-tags  #{:keyword}
+                                    :all-tags  #{:keyword :scalar}
                                     :classname "cljs.core/Keyword"}
       cljs.core/LazySeq            {:tag       :seq
                                     :type      cljs.core/LazySeq
@@ -109,11 +112,11 @@
                                     :classname "cljs.core/PersistentVector"}
       cljs.core/Symbol             {:tag       :symbol
                                     :type      cljs.core/Symbol
-                                    :all-tags  #{:symbol :carries-meta}
+                                    :all-tags  #{:symbol :carries-meta :scalar}
                                     :classname "cljs.core/Symbol"}
       js/Boolean                   {:tag       :boolean
                                     :type      js/Boolean
-                                    :all-tags  #{:boolean}
+                                    :all-tags  #{:boolean :scalar}
                                     :classname "js/Boolean"}
       js/Date                      {:tag       :inst
                                     :type      js/Date
@@ -121,23 +124,23 @@
                                     :classname "Date"}
       js/String                    {:tag       :string
                                     :type      js/String
-                                    :all-tags  #{:iterable :string}
+                                    :all-tags  #{:iterable :string :scalar}
                                     :classname "js/String"}}
 
      :clj
      {clojure.lang.Keyword            {:tag       :keyword
                                        :type      clojure.lang.Keyword
-                                       :all-tags  #{:keyword}
+                                       :all-tags  #{:keyword :scalar}
                                        :classname "clojure.lang.Keyword"}
 
 
       clojure.lang.Symbol             {:tag       :symbol
                                        :type      clojure.lang.Symbol
-                                       :all-tags  #{:symbol :carries-meta}
+                                       :all-tags  #{:symbol :scalar :carries-meta}
                                        :classname "clojure.lang.Symbol"}
       java.lang.String                {:tag       :string
                                        :type      java.lang.String
-                                       :all-tags  #{:string}
+                                       :all-tags  #{:string :scalar}
                                        :classname "java.lang.String"}
 
       nil                                {:tag       :nil
@@ -147,7 +150,7 @@
 
       java.lang.Boolean               {:tag       :boolean
                                        :type      java.lang.Boolean
-                                       :all-tags  #{:boolean}
+                                       :all-tags  #{:boolean :scalar}
                                        :classname "java.lang.Boolean"}
 
       clojure.lang.PersistentArrayMap {:tag       :map
@@ -195,10 +198,8 @@
   #?(:cljs
      {cljs.core/Atom               {:tag       :atom
                                     :type      cljs.core/Atom
-                                    :all-tags  #{:js-map-like-object
-                                                 :atom
-                                                 :coll-like
-                                                 :map-like}
+                                    :all-tags  #{:atom
+                                                 :reference}
                                     :classname "cljs.core/Atom"}
       cljs.core/Cons               {:tag       :seq
                                     :type      cljs.core/Cons
