@@ -2,10 +2,45 @@
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
 
-## UNRELEASED
+<br>
+
+## 0.11.7
+2026-03-14
+### Breaking changes
+- Changed the following tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
+`:coll-type` -> `:coll-like`              
+
+- Removed the following redundant tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
+  `:number-type`              
+  `:java-lang-class`              
+  `:java-util-class`              
+
+- Removed the following options as they was not compatible with the new enhanced perf, or obsolete:
+  `:format`
+  `:include-all-tags`
+
+### Added
+- `fireworks.cached` namespace for enhanced perf - returns a "cached" result based on common value types
+
+- Added the support for the following missing primary tags:[#30](https://github.com/paintparty/lasertag/issues/30)<br>
+
+  `atom`
+  `:volatile`
+  `:future`
+  `:ref`
+  `:agent`
+  `:delay`
+  `:byte`
+  `:throwable`
+
+
+### Changed
+- Refactored core namespace for readability
+
 
 <br>
 <br>
+
 
 
 ## 0.11.6
