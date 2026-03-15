@@ -192,7 +192,8 @@
   (when (instance? #?(:cljs
                       js/Error
                       :clj
-                      java.lang.Throwable) x)
+                      java.lang.Throwable) 
+                   x)
     :throwable))
 
 (defn- pwos [x] (with-out-str (print x)))
@@ -588,6 +589,7 @@
             :transient      (when (contains? cljc-transients-set t)
                               :transient)
             :record         (when (record? x) :record)
+            :datatype       (when (record? x) :datatype)
             :number         (when (cljc-number? x number-type) :number)
             :typed-array    (when (typed-array? x) :js-typed-array)
             :typed-array+   (when (typed-array? x)
@@ -633,6 +635,7 @@
 (defn- map-like?* [x k all-tags]
   (or (contains? #{:map :js-object :js-map :js-data-view} k)
       (contains? all-tags :record)
+      (contains? all-tags :datatype)
       (contains? all-tags :js-map-like-object)
       #?(:clj (instance? java.util.AbstractMap x))))
 
@@ -960,6 +963,7 @@
          (when (future? x) :future)
          (when (delay? x) :delay)
          (when (instance? clojure.lang.IPending x) :promise)
+         (when (instance? clojure.lang.IType x) :datatype)
          (when-let [c (type x)]
            (or 
             (when (instance? java.util.AbstractMap x) :map)
