@@ -1,5 +1,5 @@
 <div>
-  <a href="https://clojars.org/io.github.paintparty/bling">
+  <a href="https://clojars.org/io.github.paintparty/lasertag">
     <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?color=0969da&style=flat-square&cacheSeconds=3" alt="Lasertag Clojars badge"></img>
   </a>
 </div>
@@ -21,8 +21,6 @@ The function `lasertag.core/tag` will return a descriptive tag:
 ```Clojure
 (require '[lasertag.core :refer [tag tag-map]])
 
-(tag 1)         ; => :number
-(tag 1.5)       ; => :number
 (tag "hi")      ; => :string
 (tag :hi)       ; => :keyword
 (tag "#^hi$")   ; => :regex
@@ -30,7 +28,9 @@ The function `lasertag.core/tag` will return a descriptive tag:
 (tag [1 2 3])   ; => :vector
 (tag '(1 2 3))  ; => :seq
 (tag (range 3)) ; => :seq
-(tag ##Inf)     ; => :infinity
+(tag 1)         ; => :number
+(tag 1.5)       ; => :number
+(tag ##Inf)     ; => :number
 ```
 
 <br>
@@ -42,14 +42,13 @@ The function `lasertag.core/tag` will return a descriptive tag:
 =>
 {:tag       :seq
  :type      clojure.lang.LongRange
- :all-tags  #{:iterable :coll :seq :carries-meta}
- :classname "clojure.lang.LongRange"
- :coll-size 3}
+ :all-tags  #{:iterable :coll :seq :carries-meta :lazy}
+ :classname "clojure.lang.LongRange"}
 ```
 
 <br>
 
-### Clojure Examples
+### Examples
 `lasertag.core/tag` vs `clojure.core/type`
 
 | Input value                     | `lasertag.core/tag`     | `clojure.core/type`               |
@@ -66,10 +65,10 @@ The function `lasertag.core/tag` will return a descriptive tag:
 | `(map inc (range 3))`           | `:seq`                  | `clojure.lang.LazySeq`            |
 | `(range 3)`                     | `:seq`                  | `clojure.lang.LongRange`          |
 | `(:a :b :c)`                    | `:seq`                  | `clojure.lang.PersistentList`     |
-|                      `Infinity` |             `:infinity` |      `java.lang.Double`           |
-|                     `-Infinity` |            `:-infinity` |      `java.lang.Double`           |
+|                      `Infinity` |             `:number` |      `java.lang.Double`           |
+|                     `-Infinity` |            `:number` |      `java.lang.Double`           |
 |                           `NaN` |                  `:nan` |      `java.lang.Double`           |
-|                           `1/3` |               `:number` |    `clojure.lang.Ratio`           |
+|                           `1/3` |                `:ratio` |    `clojure.lang.Ratio`           |
 |                      `(byte 0)` |               `:number` |        `java.lang.Byte`           |
 |                     `(short 3)` |               `:number` |       `java.lang.Short`           |
 |                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
@@ -102,8 +101,8 @@ The function `lasertag.core/tag` will return a descriptive tag:
 | `(map inc (range 3))`              | `:seq`             | `cljs.core/LazySeq`            |
 | `(range 3)`                        | `:seq`             | `cljs.core/IntegerRange`       |
 | `(:a :b :c)`                       | `:seq`             | `cljs.core/List`               |
-| `Infinity`                         | `:infinity`        | `#object[Boolean]`             |
-| `-Infinity`                        | `:-infinity`       | `#object[Boolean]`             |
+| `Infinity`                         | `:number`        | `#object[Boolean]`             |
+| `-Infinity`                        | `:number`       | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`        | `#object[Function]`            |
 | `(new js/Date.)`                   | `:inst`            | `#object[Date]`                |
 | `(.values #js [1 2 3])`            | `:iterable`        | `#object[Object]`              |
@@ -117,7 +116,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 <br>
 
 ## Setup
-Requires Clojure `1.9.0` or higher
+Requires Clojure `1.11.0` or higher
 
 If using with Babashka, requires Babashka `v1.12.196` or higher
 
@@ -129,13 +128,13 @@ Add as a dependency to your project:
 
 Deps:
 ```clojure
-io.github.paintparty/lasertag {:mvn/version "0.11.6"}
+io.github.paintparty/lasertag {:mvn/version "0.11.7"}
 ```
 <br>
 
 Leiningen:
 ```clojure
-[io.github.paintparty/lasertag "0.11.6"]
+[io.github.paintparty/lasertag "0.11.7"]
 ```
 <br>
 
@@ -155,186 +154,119 @@ Or import into your namespace:
 <br>
 
 ## Usage 
-By default, `lasertag.core/tag` returns a keyword:
+`lasertag.core/tag` returns a keyword describing the type of value:
 
 ```Clojure
 (tag 1) ;; => :number
 ```
 <br>
 
-You can pass an options map if you want a string or symbol:
-```Clojure
-(tag 1 {:format :string}) ;; => "number"
-(tag 1 {:format :symbol}) ;; => number
-```
-<br>
-
-The function `lasertag.core/tag-map` will return a map with additional info.
+`lasertag.core/tag-map` will return a map with additional info.
 
 ```Clojure
 ;; string
+
 (tag-map "hi")
 =>
 {:tag       :string
  :type      java.lang.String
- :all-tags  #{:string}
+ :all-tags  #{:string :scalar}
  :classname "java.lang.String"}
 
 
+
 ;; map 
-{:a :foo}
+
+(tag-map {:a :foo})
 =>
 {:tag       :map
  :type      clojure.lang.PersistentArrayMap
  :all-tags  #{:coll
               :array-map
+              :coll-like
               :map-like
               :map
               :carries-meta}
- :classname "clojure.lang.PersistentArrayMap"
- :coll-size 1}
+ :classname "clojure.lang.PersistentArrayMap"}
 
 
-;; function in ClojureScript
-(ns foo.core)
-(defn xy [x y] (+ x y))
 
-(tag-map xy)
+;; range 
+
+(tag-map (range 10))
 =>
-{:tag       :function
- :type      #object[Function]
- :fn-name   "xy"
- :fn-ns     "foo.core"
- :fn-args   [x y]
- :all-tags  #{:function}
- :classname "Function"}
+{:tag       :seq
+ :type      clojure.lang.LongRange
+ :all-tags  #{:iterable
+              :coll
+              :deferred
+              :coll-like
+              :lazy
+              :seq
+              :carries-meta}
+ :classname "clojure.lang.LongRange"}
 
 
-;; JS function
-(tag-map js/ParseFloat)
-=>
-{:tag                   :function
- :all-tags              #{:function}
- :type                  js/ParseFloat
- :fn-name               "parseFloat"
- :fn-args               [s]
- :js-built-in-method-of js/Number
- :js-built-in-function? true}
-```
 
-<br>
-
-> [!WARNING]
-> Currently, the `:fn-args` entry is only available in ClojureScript.
-> The `:fn-name` will not work as expected in ClojureScript advanced compilation.
-
-With `tag-map`, There are 3 additional params you can pass with the optional second argument (options map). Setting these to `false` will exclude certain information. Depending on how you are using `tag-map`, this could help with performance.
-
-```clojure
-:include-all-tags?              
-:include-function-info?          
-:include-js-built-in-object-info?
-```
-<br>
-
-The following example excludes the `:all-tags` entry:
-
-```clojure
-
-(tag-map xy) 
-=>
-{:tag      :function
- :all-tags #{:function}
- :type     #object[Function]
- :fn-name  "xy" 
- :fn-ns    "myns.core"
- :fn-args  [x y]}
-
-
-(tag-map xy {:include-all-tags? false}) 
-=>
-{:tag     :function
- :type    #object[Function]
- :fn-name "xy" 
- :fn-ns   "myns.core"
- :fn-args [x y]}
-```
-<br>
-
-Excluding the function-info related entries:
-
-```clojure
-(tag-map xy)
-=>
-{:tag      :function
- :all-tags #{:function}
- :type     #object[Function]
- :fn-args  [x y]
- :fn-name  "xy"
- :fn-ns    "myns.core"}
-
-
-(tag-map xy {:include-function-info? false})
-=>
-{:tag      :function
- :all-tags #{:function}
- :type     #object[Function]}
-```
-<br>
-
-Excluding the JS built-in-object related entries:
-
-```clojure
-(tag-map js/JSON)
-=>
-{:tag                     :object
- :all-tags                #{:object :js-object :map-like :coll-type}
- :type                    #object[Object]
- :js-built-in-object?     true
- :js-built-in-object-name "JSON"}
-
-(tag-map js/JSON {:include-js-built-in-object-info? false})
-=>
-{:tag      :object
- :all-tags #{:object :js-object :map-like :coll-type}
- :type     #object[Object]}
-```
-<br>
-<br>
-
-### Additional ClojureScript Examples
-
-```clojure
-;; Record type
+;; Record
 
 (defrecord MyRecordType [a b c d])
+(tag-map (->MyRecordType 4 8 4 5)) 
+=>
+{:tag       :record
+ :type      my.ns.MyRecordType
+ :all-tags  #{:datatype
+              :coll
+              :coll-like
+              :record
+              :map-like
+              :carries-meta}
+ :classname "my.ns.MyRecordType"}
 
-(def my-record-type (->MyRecordType 4 8 4 5))
 
-(tag my-record-type) 
-=> :record
+
+;; Delay
+
+(def my-delay (delay 100))
+(tag-map my-delay)
+=>
+{:tag       :delay
+ :type      clojure.lang.Delay
+ :all-tags  #{:deferred :delay}
+ :classname "clojure.lang.Delay"}
 
 
 
 ;; Multimethod definition
 
 (defmulti different-behavior (fn [x] (:x-type x)))
+(tag-map different-behavior)
+=>
+{:tag       :defmulti
+ :type      clojure.lang.MultiFn
+ :all-tags  #{:defmulti}
+ :classname "clojure.lang.MultiFn"}
 
-(tag different-behavior)
-=> :defmulti
+
+
+;; Var
+
+(def bar nil)
+(tag-map #'bar)
+=>
+{:tag       :var
+ :type      clojure.lang.Var
+ :all-tags  #{:reference :var}
+ :classname "clojure.lang.Var"}
 
 
 
-;; Javascript Promise
-
-(def my-promise (js/Promise. (fn [x] x)))
-
-(tag my-promise) 
-=> :promise
 ```
+
+<br>
 <br>
 
-### Instance methods on JavaScript built-ins
+<!-- ### Instance methods on JavaScript built-ins
 
 `lasertag.core/tag-map` can help to differentiate between an instance method on a JS built-in that might have the same name as another instance method on a different JS built-in.
 
@@ -389,7 +321,7 @@ If you need enhanced reflection in situations like this, the result of `lasertag
  :all-tags                   #{:function}
  :fn-args                    []
  :tag                        :function}
-```
+``` -->
 
 
 <br>
@@ -428,7 +360,7 @@ Issues for bugs, improvements, or features are very welcome. Please file an issu
 
 ## License
 
-Copyright © 2024-2025 Jeremiah Coyle
+Copyright © 2024-2026 Jeremiah Coyle
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at

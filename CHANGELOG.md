@@ -7,6 +7,8 @@
 ## 0.11.7
 2026-03-14
 ### Breaking changes
+- Bumped Clojure to version 1.11.1 (potentially breaking)
+
 - Changed the following tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
 `:coll-type` -> `:coll-like`              
 
@@ -15,7 +17,7 @@
   `:java-lang-class`              
   `:java-util-class`              
 
-- Removed the following options as they was not compatible with the new enhanced perf, or obsolete:
+- Removed the following options as they were not compatible with the new enhanced perf, or obsolete:
   `:format`
   `:include-all-tags`
 
@@ -23,8 +25,7 @@
 - `fireworks.cached` namespace for enhanced perf - returns a "cached" result based on common value types
 
 - Added the support for the following missing primary tags:[#30](https://github.com/paintparty/lasertag/issues/30)<br>
-
-  `atom`
+  `:atom`
   `:volatile`
   `:future`
   `:ref`
@@ -33,6 +34,10 @@
   `:byte`
   `:throwable`
 
+- Added the support for the following missing secondary tags:<br>
+  `:reference`
+  `:lazy`
+  `:deferred`
 
 ### Changed
 - Refactored core namespace for readability
