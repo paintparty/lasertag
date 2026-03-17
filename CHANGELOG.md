@@ -7,9 +7,11 @@
 ## 0.12.0
 2026-03-14
 ### Potentially breaking changes
-- Bumped Clojure to version 1.11.1 (potentially breaking)
+- Bumped Clojure to version 1.11.1
 
-- Changed the following tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
+- If using with bb, requires `v1.12.210` or higher
+
+- Changed the following tags in the `:all-tags` entry in map returned from `lasertag.core/tag-map`:<br>
 `:coll-type` -> `:coll-like`              
 
 - Removed the following redundant tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
