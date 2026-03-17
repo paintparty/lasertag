@@ -101,8 +101,8 @@ The function `lasertag.core/tag` will return a descriptive tag:
 | `(map inc (range 3))`              | `:seq`             | `cljs.core/LazySeq`            |
 | `(range 3)`                        | `:seq`             | `cljs.core/IntegerRange`       |
 | `(:a :b :c)`                       | `:seq`             | `cljs.core/List`               |
-| `Infinity`                         | `:number`        | `#object[Boolean]`             |
-| `-Infinity`                        | `:number`       | `#object[Boolean]`             |
+| `Infinity`                         | `:number`          | `#object[Boolean]`             |
+| `-Infinity`                        | `:number`          | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`        | `#object[Function]`            |
 | `(new js/Date.)`                   | `:inst`            | `#object[Date]`                |
 | `(.values #js [1 2 3])`            | `:iterable`        | `#object[Object]`              |
@@ -128,13 +128,13 @@ Add as a dependency to your project:
 
 Deps:
 ```clojure
-io.github.paintparty/lasertag {:mvn/version "0.11.7"}
+io.github.paintparty/lasertag {:mvn/version "0.12.0"}
 ```
 <br>
 
 Leiningen:
 ```clojure
-[io.github.paintparty/lasertag "0.11.7"]
+[io.github.paintparty/lasertag "0.12.0"]
 ```
 <br>
 

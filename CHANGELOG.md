@@ -4,7 +4,7 @@
 
 <br>
 
-## 0.11.7
+## 0.12.0
 2026-03-14
 ### Breaking changes
 - Bumped Clojure to version 1.11.1 (potentially breaking)
