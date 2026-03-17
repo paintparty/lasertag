@@ -6,7 +6,7 @@
 
 ## 0.12.0
 2026-03-14
-### Breaking changes
+### Potentially breaking changes
 - Bumped Clojure to version 1.11.1 (potentially breaking)
 
 - Changed the following tags in the `:all-tags` entry in result of calling `lasertag.core/tag-map`:<br>
