@@ -14,6 +14,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as string]
    [lasertag.messaging :as messaging]
+   [lasertag.fns :as fns]
    [lasertag.cached :as cached]
    #?(:cljs [lasertag.cljs-interop :as jsi]))
   #?(:clj
@@ -60,21 +61,7 @@
           (println "WARNING [lasertag.core/?] Unable to print value")))
    x))
 
-(def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
 
-(def char-map
-  [["_PERCENT_"     "%"]
-   ["_AMPERSAND_"   "&"]
-   ["_BANG_"        "!"]
-   ["_QMARK_"       "?"]
-   ["_PLUS_"        "+"]
-   ["_SHARP_"       "#"]
-   ["_BAR_"         "|"]
-   ["_EQ_"          "="]
-   ["_GT_"          ">"]
-   ["_LT_"          "<"]
-   ["_STAR_"        "*"]
-   ["_"             "-"]])  
 
 #?(:clj 
    (do 
@@ -196,24 +183,6 @@
                    x)
     :throwable))
 
-(defn- pwos [x] (with-out-str (print x)))
-
-(defn- lambda-args [args]
-  #?(:cljs
-     (if (every? #(re-find #"_SHARP_$" (name %)) args)
-       (let [num-args (count args)]
-         (map-indexed (fn [idx _]
-                        ;; TODO figure out a way to do just a %
-                        (symbol (str "%" (inc idx))))
-                      (range num-args)))
-       args)))
-
-(defn- demunge-fn-name [s]
-  (reduce
-   (fn [acc [k v]]
-     (string/replace acc (re-pattern k) v))
-   s 
-   char-map))
 
 (defn- partition-drop-last [coll]
   [(drop-last coll)
@@ -238,162 +207,107 @@
        (and (js/ArrayBuffer.isView x)
             (not (instance? js/ArrayBuffer x))
             (not (instance? js/DataView x))))
-     (defn- js-built-in-map [o]
-       (let [{:keys [sym]} (get jsi/js-built-ins-by-built-in o)]
-         {:js-built-in-method-of      o
-          :js-built-in-method-of-name (some-> sym name)
-          :js-built-in-function?      true}))
+     ))
 
-     (defn- js-built-in-method-of [x name-prop fn-nm]
-       (when 
-        (and (string? name-prop)
-             (re-find #"[^\$\.-]" name-prop))
-         (if-let [built-in-candidates
-                  (get jsi/objects-by-method-name fn-nm)]
-           (let [o (first (filter #(= x (aget (.-prototype %) fn-nm)) 
-                                  built-in-candidates))]
-             (js-built-in-map o))
-           (when-let [built-in (get jsi/objects-by-unique-method-name
-                                    fn-nm)]
-             (js-built-in-map built-in)))))
+;; #?(:clj
+;;    (do
+;;      (defn java-util-class? [s]
+;;        (boolean (some-> s (string/starts-with? "java.util"))))
 
-     (defn- cljs-defmulti [sym]
-       (when (symbol? sym)
-         (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
-           {:fn-ns   fn-ns
-            :fn-name fn-nm
-            :fn-args :lasertag/multimethod})) )
-
-     (defn- cljs-fn [x s]
-       (let [bits          (string/split s #"\$")
-             [fn-ns fn-nm] (partition-drop-last bits)
-             fn-nm         (demunge-fn-name fn-nm)
-             built-in?     (or (contains? jsi/js-built-in-objects x)
-                               (contains? jsi/js-built-in-functions x))]
-         (merge {:fn-name fn-nm}
-                (when built-in? {:js-built-in-function? true})
-                (when (seq fn-ns)
-                  {:fn-ns (string/replace (string/join "." fn-ns) #"_" "-")}) 
-                (when-not built-in? (js-built-in-method-of x s fn-nm)))))
-
-     (defn- cljs-fn-alt [o]
-       (let [out-str (pwos o)]
-         (if-let [[_ fn-ns fn-nm] (re-find #"^(.+)/(.+)$" out-str)]
-           {:fn-name           (demunge-fn-name fn-nm)
-            :fn-ns             fn-ns
-            :cljs-datatype-fn? true}
-           {:lambda? true})))))
-
-#?(:clj
-   (do
-     (defn java-util-class? [s]
-       (boolean (some-> s (string/starts-with? "java.util"))))
-
-     (defn java-lang-class? [s]
-       (boolean (some->> s (re-find #"java\.lang"))))
+;;      (defn java-lang-class? [s]
+;;        (boolean (some->> s (re-find #"java\.lang"))))
      
-     (defn java-class? [s]
-       (boolean (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" s)))
+;;      (defn java-class? [s]
+;;        (boolean (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" s)))
 
-     (defn java-class-name [x]
-       ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
-       ;; (some-> x type .getName Compiler/demunge)
-       (some-> (or (try (some-> x type .getName)
-                        (catch Exception e))
-                   (some-> x
-                           type
-                           str
-                           (string/replace #"^class (.*)$" "")))
+;;      (defn java-class-name [x]
+;;        ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
+;;        ;; (some-> x type .getName Compiler/demunge)
+;;        (some-> (or (try (some-> x type .getName)
+;;                         (catch Exception e))
+;;                    (some-> x
+;;                            type
+;;                            str
+;;                            (string/replace #"^class (.*)$" "")))
 
-               ;; Example of what these last 2 do:
-               ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
-               (string/replace #"^\[" "")
-               (string/replace #";$" "")))
+;;                ;; Example of what these last 2 do:
+;;                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
+;;                (string/replace #"^\[" "")
+;;                (string/replace #";$" "")))
      
-     (defn- find-classname [x]
-       ;; For custom datatypes ^class prefix is not present in str'd babashka classname
-       (re-find #"(?:^class )?(.*)$" (str x)))
+;;      (defn- find-classname [x]
+;;        ;; For custom datatypes ^class prefix is not present in str'd babashka classname
+;;        (re-find #"(?:^class )?(.*)$" (str x)))
 
-     (defn- resolve-classname [x]
-       (let [[_ nm] (find-classname x)
-             bits   (some-> nm (string/split #"\."))]
-         {:fn-ns   (-> bits
-                       drop-last
-                       (->> (string/join "."))
-                       (string/replace #"_" "-")) 
-          :fn-name (last bits)
-          :fn-args :lasertag/unknown-function-signature-on-java-class}))
+;;      (defn- resolve-classname [x]
+;;        (let [[_ nm] (find-classname x)
+;;              bits   (some-> nm (string/split #"\."))]
+;;          {:fn-ns   (-> bits
+;;                        drop-last
+;;                        (->> (string/join "."))
+;;                        (string/replace #"_" "-")) 
+;;           :fn-name (last bits)
+;;           :fn-args :lasertag/unknown-function-signature-on-java-class}))
 
-     (defn- resolve-fn-name [x]
-       (let [pwo-stringified (pwos x)
-             [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-         (when (and nm* (not (string/blank? nm*)))
-           (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                 fn-ns               (string/replace fn-ns #"_" "-")
-                 fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
-             (merge (if fn-nm 
-                      (if (re-find #"^fn--\d+$" fn-nm)
-                        {:lambda? true}
-                        {:fn-name fn-nm})
-                      {:lambda? true})
-                    {:fn-ns   fn-ns
-                     :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))
+;;      (defn- resolve-fn-name [x]
+;;        (let [pwo-stringified (pwos x)
+;;              [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
+;;          (when (and nm* (not (string/blank? nm*)))
+;;            (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
+;;                  fn-ns               (string/replace fn-ns #"_" "-")
+;;                  fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
+;;              (merge (if fn-nm 
+;;                       (if (re-find #"^fn--\d+$" fn-nm)
+;;                         {:lambda? true}
+;;                         {:fn-name fn-nm})
+;;                       {:lambda? true})
+;;                     {:fn-ns   fn-ns
+;;                      :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))
 
-(defn- fn-info* [x k]
-  #?(:cljs 
-     (let [name-prop (.-name x)]
-       (cond
-         (= k :defmulti)                 (cljs-defmulti name-prop)
-         (not (string/blank? name-prop)) (cljs-fn x name-prop)
-         :else                           (cljs-fn-alt x)))
-     :clj
-     (if (= k :defmulti)
-       {:fn-args :lasertag/multimethod}
-       (if (= k :class)
-         (resolve-classname x)
-         (resolve-fn-name x)))))
+;; (defn- fn-info* [x k]
+;;   #?(:cljs 
+;;      (let [name-prop (.-name x)]
+;;        (cond
+;;          (= k :defmulti)                 (cljs-defmulti name-prop)
+;;          (not (string/blank? name-prop)) (cljs-fn x name-prop)
+;;          :else                           (cljs-fn-alt x)))
+;;      :clj
+;;      (if (= k :defmulti)
+;;        {:fn-args :lasertag/multimethod}
+;;        (if (= k :class)
+;;          (resolve-classname x)
+;;          (resolve-fn-name x)))))
 
-(defn- fn-args* [x]
-  (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
-        strings (some-> s
-                        (string/split #","))
-        syms    (some->> strings
-                         ;; change to mapv?
-                         (map (comp symbol
-                                    string/trim)))]
-    syms))
+;; (defn- fn-args* [x]
+;;   (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
+;;         strings (some-> s
+;;                         (string/split #","))
+;;         syms    (some->> strings
+;;                          ;; change to mapv?
+;;                          (map (comp symbol
+;;                                     string/trim)))]
+;;     syms))
 
-(defn- fn-args-defrecord [coll fn-info]
-  (if (:cljs-datatype-fn? fn-info)
-    (if (and (seq coll) 
-             (= (take-last 3 coll)
-                '(__meta __extmap __hash)))
-      [(drop-last 3 coll) true]
-      [coll false])
-    [coll false]))
+;; (defn- fn-args-defrecord [coll fn-info]
+;;   (if (:cljs-datatype-fn? fn-info)
+;;     (if (and (seq coll) 
+;;              (= (take-last 3 coll)
+;;                 '(__meta __extmap __hash)))
+;;       [(drop-last 3 coll) true]
+;;       [coll false])
+;;     [coll false]))
 
-(defn- fn-args-lambda [coll fn-info]
-  (if (:lambda? fn-info) (lambda-args coll) coll))
+;; (defn- fn-args-lambda [coll fn-info]
+;;   (if (:lambda? fn-info) (lambda-args coll) coll))
 
-(defn- fn-args [x fn-info]
-  (let [fn-args              (fn-args* x)
-        [fn-args defrecord?] (fn-args-defrecord fn-args fn-info)
-        fn-args              (fn-args-lambda fn-args fn-info)]
-    [fn-args defrecord?]))
+;; (defn- fn-args [x fn-info]
+;;   (let [fn-args              (fn-args* x)
+;;         [fn-args defrecord?] (fn-args-defrecord fn-args fn-info)
+;;         fn-args              (fn-args-lambda fn-args fn-info)]
+;;     [fn-args defrecord?]))
 
-#?(:cljs 
-   (defn- cljs-fn-args [x fn-args fn-info]
-     (when-not fn-args 
-       (let [{:keys [_ args]} (get jsi/js-built-ins-by-built-in x)]
-         (merge 
-          (if args 
-            {:js-built-in-function? true
-             :fn-args               args}
-            (when (:js-built-in-method-of fn-info)
-              {:fn-args
-               :lasertag/unknown-function-signature-on-js-built-in-method})))))))
 
-(declare fn-info)
+;; (declare fn-info)
 
 ;; function resolution functions end--------------------------------------------
 
@@ -513,16 +427,6 @@
         :else
         (get cljc-transients (type x) nil)))
 
-#?(:clj
-   (defn clj-or-bb-array? [x]
-     ;; This try hack is for babashka,
-     ;; because .getClass method is sometimes not allowed
-     (or 
-      (try (some-> x .getClass .isArray)
-           (catch Exception e))
-      (try (some-> x class .isArray)
-           (catch Exception e)))))
-
 (defn- cljc-number? 
   ([x]
    (cljc-number? x nil))
@@ -531,31 +435,65 @@
         (not (contains? #{:nan :-infinity :infinity} k)))))
 
 #?(:clj 
-   (defn- clj-all-value-types [{:keys [x k]}]
-     (let [number-type (clj-number-type x)
-           t           (type x)]
-       (->> [number-type
-             (get java-number-types t)
-             (get clj-scalar-types t)
-             (get clj-literal-types t)
-             (get clj-reference-types t)
-             (cljc-coll-type x)
-             (when (fn? x) :function)
-             (when (contains? cljc-transients-set t) :transient)
-             (when (= clojure.lang.PersistentArrayMap t) :array-map)
-             (when (= clojure.lang.PersistentList t) :list)
-             (when (inst? x) :inst)
-             (when (or (contains? #{:vector :map :set :seq} k)
-                       (coll? x)
-                       (instance? java.util.Collection x)
-                       (clj-or-bb-array? x))
-               :coll)
-             (when (record? x) :record)
-             (when (record? x) :datatype)
-             (when (cljc-number? x number-type) :number)]
-            (remove nil?)
-            (cons k)
-            (into #{})))))
+   (do 
+     (defn clj-or-bb-array? [x]
+       ;; This try hack is for babashka,
+       ;; because .getClass method is sometimes not allowed
+       (or 
+        (try (some-> x .getClass .isArray)
+             (catch Exception e))
+        (try (some-> x class .isArray)
+             (catch Exception e))))
+     (defn- clj-all-value-types [{:keys [x k]}]
+       (let [number-type (clj-number-type x)
+             t           (type x)]
+         (->> [number-type
+               (get java-number-types t)
+               (get clj-scalar-types t)
+               (get clj-literal-types t)
+               (get clj-reference-types t)
+               (cljc-coll-type x)
+               (when (fn? x) :function)
+               (when (contains? cljc-transients-set t) :transient)
+               (when (= clojure.lang.PersistentArrayMap t) :array-map)
+               (when (= clojure.lang.PersistentList t) :list)
+               (when (inst? x) :inst)
+               (when (or (contains? #{:vector :map :set :seq} k)
+                         (coll? x)
+                         (instance? java.util.Collection x)
+                         (clj-or-bb-array? x))
+                 :coll)
+               (when (record? x) :record)
+               (when (record? x) :datatype)
+               (when (cljc-number? x number-type) :number)]
+              (remove nil?)
+              (cons k)
+              (into #{}))))
+     
+     
+     (defn java-util-class? [s]
+       (boolean (some-> s (string/starts-with? "java.util"))))
+
+     (defn java-lang-class? [s]
+       (boolean (some->> s (re-find #"java\.lang"))))
+     
+     (defn java-class? [s]
+       (boolean (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" s)))
+
+     (defn java-class-name [x]
+         ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
+         ;; (some-> x type .getName Compiler/demunge)
+       (some-> (or (try (some-> x type .getName)
+                        (catch Exception e))
+                   (some-> x
+                           type
+                           str
+                           (string/replace #"^class (.*)$" "")))
+
+                 ;; Example of what these last 2 do:
+                 ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
+               (string/replace #"^\[" "")
+               (string/replace #";$" "")))))
 
 ;; TODO - consider removing `js-` prefixes and just adding an additional :js tag
 #?(:cljs 
@@ -750,6 +688,7 @@
      [(when (instance? clojure.lang.IType x)
         :datatype)]))
 
+
 (defn- all-tags* [{:keys [x k] :as m}]
   (let [all-tags  #?(:cljs (cljs-all-value-types m)
                      :clj (clj-all-value-types m))
@@ -791,6 +730,14 @@
 (defn eager-seq? [x]
   (contains? eager-seq-classes (type x)))
 
+(defn anonymous-fn? [f]
+  #?(:cljs
+     (boolean (let [n (.-name f)]
+                (or (empty? n)
+                    (re-find #"fn__\d+" n))))
+     :clj
+     (boolean (re-find #"fn__\d+" (-> f class .getName)))))
+
 (defn- all-tags
   [{:keys [x k] :as m}]
   (let [{:keys [all-tags classname]
@@ -810,6 +757,7 @@
           (when (:scalar-type? all-tags-map) :scalar)
           (when (:literal-type? all-tags-map) :literal)
           (when (:reference-type? all-tags-map) :reference)
+          (when (anonymous-fn? x) :lambda)
           (when (carries-meta? x) :carries-meta)
           (when (contains? all-tags :transient) :transient)
           (when (contains? #{:delay :promise :future} k) :deferred)
@@ -878,15 +826,20 @@
               {:js-built-in-object?     true
                :js-built-in-object-name (str sym)})))))))
 
+
 (defn- tag-map*
   [x k opts]
 
-                 ;; Optionaly get reflective function info, same for clj & cljs
-  (let [fn-info (when (contains? #{:function :defmulti :class} k)
-                  (let [b (not (-> opts :include-function-info? false?))]
-                    (fn-info x k b)))
-        lambda? (:lambda? fn-info)
-        fn-info (some-> fn-info (dissoc :lambda?))]
+  ;; Optionaly get reflective function info, same for clj & cljs
+  (let [
+        ;; {:keys [lambda? defrecord?] :as fn-info}
+        ;; (when (contains? #{:function :defmulti :class} k)
+        ;;   (let [b (not (-> opts :include-function-info? false?))]
+        ;;     (fns/fn-info x k b)))
+
+        ;; fn-info 
+        ;; (some-> fn-info (dissoc :lambda?))
+        ]
     (merge 
      ;; The lasertag for clj & cljs
      {:tag k}
@@ -897,14 +850,10 @@
                        (type x))
                :clj (type x))}
      
-     fn-info
-
      #?(:cljs (cljs-tag-map* x k opts)
         :clj  (cond-> (all-tags {:x    x
                                  :k    k 
-                                 :opts opts})
-                lambda?
-                (update-in [:all-tags] conj :lambda))))))
+                                 :opts opts}))))))
 
 
 #?(:cljs 
@@ -1026,16 +975,12 @@
               :opts    opts}))))
 
 
-(defn fn-info [x k include-fn-info?]
-  (when include-fn-info?
-    (let [fn-info              (fn-info* x k)
-          [fn-args defrecord?] (fn-args x fn-info)
-          fn-args              (some->> fn-args seq (into []))
-          ]
-      (merge fn-info
-             (when fn-args
-               {:fn-args (into [] fn-args)})
-             (when defrecord?
-               {:defrecord? true})
-             #?(:cljs 
-                (cljs-fn-args x fn-args fn-info))))))
+;; (defn fn-info [x k include-fn-info?]
+;;   (when include-fn-info?
+;;     (let [fn-info              (? (fn-info* x k))
+;;           [fn-args defrecord?] (fn-args x fn-info)]
+;;       (merge fn-info
+;;              (when defrecord?
+;;                {:defrecord? true})
+;;              #?(:cljs 
+;;                 (cljs-fn-args x fn-args fn-info))))))
