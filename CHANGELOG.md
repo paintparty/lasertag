@@ -40,6 +40,7 @@
   `:reference`
   `:lazy`
   `:deferred`
+  `:scalar`
 
 ### Changed
 - Refactored core namespace for readability

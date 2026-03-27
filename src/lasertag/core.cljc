@@ -880,6 +880,13 @@
 
 (defn- tag-map*
   [x k opts]
+
+                 ;; Optionaly get reflective function info, same for clj & cljs
+  (let [fn-info (when (contains? #{:function :defmulti :class} k)
+                  (let [b (not (-> opts :include-function-info? false?))]
+                    (fn-info x k b)))
+        lambda? (:lambda? fn-info)
+        fn-info (some-> fn-info (dissoc :lambda?))]
     (merge 
      ;; The lasertag for clj & cljs
      {:tag k}
@@ -890,15 +897,14 @@
                        (type x))
                :clj (type x))}
      
-     ;; Optionaly get reflective function info, same for clj & cljs
-     (when (contains? #{:function :defmulti :class} k)
-       (let [b (not (-> opts :include-function-info? false?))]
-         (fn-info x k b)))
+     fn-info
 
      #?(:cljs (cljs-tag-map* x k opts)
-        :clj  (all-tags {:x    x
-                         :k    k 
-                         :opts opts}))))
+        :clj  (cond-> (all-tags {:x    x
+                                 :k    k 
+                                 :opts opts})
+                lambda?
+                (update-in [:all-tags] conj :lambda))))))
 
 
 #?(:cljs 
