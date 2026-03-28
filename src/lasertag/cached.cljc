@@ -82,7 +82,7 @@
                                                  :deferred
                                                  :carries-meta}
                                     :classname "cljs.core/LazySeq"}
-      cljs.core/List               {:tag       :seq
+      cljs.core/List               {:tag       :list
                                     :type      cljs.core/List
                                     :all-tags  #{:iterable
                                                  :coll
@@ -291,7 +291,7 @@
                                                    :set-like}
                                       :classname "clojure.lang.PersistentHashSet" }
 
-      clojure.lang.PersistentList    {:tag       :seq
+      clojure.lang.PersistentList    {:tag       :list
                                       :type      clojure.lang.PersistentList
                                       :all-tags  #{:iterable
                                                    :coll

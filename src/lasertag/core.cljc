@@ -423,6 +423,7 @@
         (record? x) :record
         (map? x)    :map
         (set? x)    :set
+        (list? x)   :list
         (seq? x)    :seq
         :else
         (get cljc-transients (type x) nil)))
