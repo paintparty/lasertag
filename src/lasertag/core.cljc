@@ -14,7 +14,6 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as string]
    [lasertag.messaging :as messaging]
-   [lasertag.fns :as fns]
    [lasertag.cached :as cached]
    #?(:cljs [lasertag.cljs-interop :as jsi]))
   #?(:clj
@@ -184,14 +183,21 @@
     :throwable))
 
 
-(defn- partition-drop-last [coll]
-  [(drop-last coll)
-   (last coll)])
+(defn- pwos [x] (with-out-str (print x)))
 
-(defn- cljc-NaN? [x] (and (number? x) (= "NaN" (str x))))
-(defn- infinity? [x] (and (number? x) (= "Infinity" (str x))))
-(defn- java-negative-infinity? [x] #?(:clj (and (number? x)
-                                                (= "-Infinity" (str x)))))
+
+(defn real-number? [n]
+  (and (number? n)
+       (not (infinite? n))
+       (not (NaN? n))))
+
+(defn whole-number? [n]
+  (and (real-number? n)
+       (zero? (mod n 1))))
+
+(defn fractional-number? [n]
+  (and (real-number? n)
+       (not (whole-number? n))))
 
 
 ;; cljs and js instance checks, cljs fn resolution functions start -------------
@@ -321,9 +327,9 @@
        (cond
          (lsb? k)      :int
          (= k :double) (cond 
-                         (cljc-NaN? x)               :nan
-                         (java-negative-infinity? x) :-infinity
-                         (infinity? x)               :infinity
+                         (NaN? x)     :nan
+                         (= x ##-Inf) :-infinity
+                         (= x ##Inf) :infinity
                          :else                       k)
          :else         k))))
 
@@ -337,7 +343,7 @@
            (cond 
              (int? x)   :int
              (float? x) (cond 
-                          (cljc-NaN? x)                     :nan
+                          (NaN? x)                     :nan
                           (= x js/Number.POSITIVE_INFINITY) :infinity
                           (= x js/Number.NEGATIVE_INFINITY) :-infinity
                           :else                             :float)
@@ -767,6 +773,7 @@
           (when lazyish-seq? :lazy)
           #?(:clj (when (instance? java.lang.Error x) :error))
           #?(:clj (when (instance? java.lang.Exception x) :exception))
+          #?(:clj (when (instance? CharSequence x) :char-sequence))
           #?(:cljs (when (= k :throwable)
                      (if (instance? cljs.core/ExceptionInfo x)
                        :exception
@@ -936,22 +943,77 @@
       (tag-map* x k opts)
       k)))
 
+(defn- ut "Update tags" 
+  [m k]
+  (update-in m [:all-tags] conj k))
+
+(defn- add-pos-or-neg-tag [m x]
+  (cond-> m
+    (neg? x)
+    (ut :neg)
+    (pos? x)
+    (ut :pos)))
+
+(defn- add-tags-to-real-number [m x]
+  (cond-> (update-in m [:all-tags] conj :real)
+    (not (zero? x))
+    (add-pos-or-neg-tag x)
+    (zero? x)
+    (ut :zero)
+    (whole-number? x)
+    (ut :whole)
+    (fractional-number? x)
+    (ut :fractional)
+    (nat-int? x)
+    (ut :nat-int)
+    (neg? x)
+    (ut :neg)
+    (neg-int? x)
+    (ut :neg-int)
+    (pos? x)
+    (ut :pos)
+    (pos-int? x)
+    (ut :pos-int)))
+
+;; (when (whole-number? x) :whole)
+;;                (when (fractional-number? x) :fractional) ;; <- this has to be at runtime
+;;                (when (nat-int? x) :nat-int)
+;;                (when (neg? x) :neg)
+;;                (when (neg-int? x) :neg-int)
+;;                (when (pos? x) :pos)
+;;                (when (pos-int? x) :pos-int)
+
 
 (defn cached-tag-map [x]
-  (let [x-type (type x)
-        cached (or (when (number? x)
-                     (or (get cached/infs x)
-                         (when (cljc-NaN? x) cached/NaN)
-                         (get cached/numbers x-type)))
-                   (get cached/by-type-common x-type)
-                   (get cached/by-type x-type))]
-    (if (and cached (contains? (:all-tags cached) :coll-like))
-      (assoc cached 
-             :coll-size 
-             (coll-size* {:x          x
-                          :coll-like? true
-                          :all-tags   (:all-tags cached)}))
-      cached)))
+  (when-let [cached (let [x-type (type x)]
+                      (or 
+                       (get cached/by-type-frequent x-type)
+                       (when (number? x)
+                         (or (get cached/infs x)
+                             (when (NaN? x) cached/NaN)
+                             (get cached/numbers x-type)))
+                       (get cached/by-type-common x-type)
+                       (get cached/by-type x-type)))]
+    (let [all-tags  (some-> cached :all-tags)]
+      (cond
+        ;; If value is Infinity or -Infinity, add :neg or :pos tag to :all-tags
+        (some-> all-tags (contains? :infinite))
+        (add-pos-or-neg-tag cached x)
+
+        ;; If value is a real number, augment :all-tags with addtional :tags 
+        ;; such as :whole, :fractional, :nat-int, etc.
+        (and cached (real-number? x))
+        (add-tags-to-real-number cached x)
+
+        :else
+        (cond-> cached
+          (contains? all-tags :coll-like)
+          (assoc :coll-size 
+                 (coll-size* {:x          x
+                              :coll-like? true
+                              :all-tags   all-tags}))
+          (carries-meta? x)
+          (update-in [:all-tags] conj :carries-meta))))))
 
 
 (defn tag

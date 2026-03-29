@@ -1,5 +1,6 @@
 (ns lasertag.fns
   (:require 
+   [lasertag.core :refer [tag tag-map]]
    [clojure.string :as string]
    #?(:cljs [lasertag.cljs-interop :as jsi])))
 
@@ -31,6 +32,10 @@
    ["_"             "-"]])  
 
 (defn- pwos [x] (with-out-str (print x)))
+
+(defn- partition-drop-last [coll]
+  [(drop-last coll)
+   (last coll)])
 
 (defn- demunge-fn-name [s]
   (reduce
@@ -137,16 +142,6 @@
             :cljs-datatype-fn? true}
            {:lambda? true})))
      
-    (defn- cljs-fn-args [x fn-args fn-info]
-     (when-not fn-args 
-       (let [{:keys [_ args]} (get jsi/js-built-ins-by-built-in x)]
-         (merge 
-          (if args 
-            {:js-built-in-function? true
-             :fn-args               args}
-            (when (:js-built-in-method-of fn-info)
-              {:fn-args
-               :lasertag/unknown-function-signature-on-js-built-in-method}))))))
      
     (defn- fn-args* [x]
       (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -192,16 +187,19 @@
          (resolve-fn-name x)))))
 
 
-(defn fn-info [x k include-fn-info?]
-  (when include-fn-info?
-    (let [fn-info              (fn-info* x k)
-          [fn-args defrecord?] 
-          #?(:cljs
-             (fn-args x fn-info)
-             :clj
-             nil)]
-      (merge fn-info
-             (when defrecord?
-               {:defrecord? true})
-             #?(:cljs 
-                (cljs-fn-args x fn-args fn-info))))))
+(defn fn-info
+  ([x]
+   (fn-info x nil))
+  ([x k]
+   (let [k                    (or k (tag x))
+         fn-info              (fn-info* x k)
+         [fn-args defrecord?] 
+         #?(:cljs
+            (fn-args x fn-info)
+            :clj
+            nil)]
+     (merge fn-info
+            (when defrecord?
+              {:defrecord? true})
+            #?(:cljs 
+               (cljs-fn-args x fn-args fn-info))))))
