@@ -1,17 +1,7 @@
-;; TODO
-;; pregenerate a large hash map with entries of all the entries
-;; across the categorical defined maps in this namespace
-;; Example 
-
-
 (ns lasertag.cached
-  (:require [clojure.set :as set])
-  #?(:cljs (:require-macros [lasertag.cached :refer [tag-maps tag-maps-by-class*]]))
-  ;; #?(:clj  (:import (clojure.lang PersistentVector$TransientVector
-  ;;                                 PersistentHashSet$TransientHashSet
-  ;;                                 PersistentArrayMap$TransientArrayMap
-  ;;                                 PersistentHashMap$TransientHashMap)))
-  )
+  (:require [clojure.set :as set]
+            [clojure.string :as string])
+  #?(:cljs (:require-macros [lasertag.cached :refer [tag-maps tag-maps-by-class*]])))
 
 (defn ?
   "Debugging macro internal to lib"
@@ -37,10 +27,49 @@
 (def transient-hash-map-class (cljc-type (transient (hash-map :a 1))))
 (def transient-array-map-class (cljc-type (transient (array-map :a 1))))
 (def transient-vector-class (cljc-type (transient (vector :a 1))))
+(def cljc-transients-primary-tags-by-class
+  {transient-hash-set-class  :set
+   transient-hash-map-class  :map
+   transient-array-map-class :map
+   transient-vector-class    :vector})
+
 (def subvec-class (cljc-type (subvec [1 2 3 4 5] 1 3)))
-
-
 ;; -----------------------------------------------------------------------------
+
+
+;;                                                                                                       
+;;                                                                                                       
+;; PPPPPPPPPPPPPPPPP   RRRRRRRRRRRRRRRRR   EEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD           SSSSSSSSSSSSSSS 
+;; P::::::::::::::::P  R::::::::::::::::R  E::::::::::::::::::::ED::::::::::::DDD      SS:::::::::::::::S
+;; P::::::PPPPPP:::::P R::::::RRRRRR:::::R E::::::::::::::::::::ED:::::::::::::::DD   S:::::SSSSSS::::::S
+;; PP:::::P     P:::::PRR:::::R     R:::::REE::::::EEEEEEEEE::::EDDD:::::DDDDD:::::D  S:::::S     SSSSSSS
+;;   P::::P     P:::::P  R::::R     R:::::R  E:::::E       EEEEEE  D:::::D    D:::::D S:::::S            
+;;   P::::P     P:::::P  R::::R     R:::::R  E:::::E               D:::::D     D:::::DS:::::S            
+;;   P::::PPPPPP:::::P   R::::RRRRRR:::::R   E::::::EEEEEEEEEE     D:::::D     D:::::D S::::SSSS         
+;;   P:::::::::::::PP    R:::::::::::::RR    E:::::::::::::::E     D:::::D     D:::::D  SS::::::SSSSS    
+;;   P::::PPPPPPPPP      R::::RRRRRR:::::R   E:::::::::::::::E     D:::::D     D:::::D    SSS::::::::SS  
+;;   P::::P              R::::R     R:::::R  E::::::EEEEEEEEEE     D:::::D     D:::::D       SSSSSS::::S 
+;;   P::::P              R::::R     R:::::R  E:::::E               D:::::D     D:::::D            S:::::S
+;;   P::::P              R::::R     R:::::R  E:::::E       EEEEEE  D:::::D    D:::::D             S:::::S
+;; PP::::::PP          RR:::::R     R:::::REE::::::EEEEEEEE:::::EDDD:::::DDDDD:::::D  SSSSSSS     S:::::S
+;; P::::::::P          R::::::R     R:::::RE::::::::::::::::::::ED:::::::::::::::DD   S::::::SSSSSS:::::S
+;; P::::::::P          R::::::R     R:::::RE::::::::::::::::::::ED::::::::::::DDD     S:::::::::::::::SS 
+;; PPPPPPPPPP          RRRRRRRR     RRRRRRREEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD         SSSSSSSSSSSSSSS   
+;;                                                                                                       
+;;                                                                                                      
+
+
+(defn throwable? [x]
+  (instance? #?(:cljs js/Error :clj java.lang.Throwable) x))
+
+(defn exception? [x]
+  #?(:clj (instance? java.lang.Exception x)
+     :cljs (and (throwable? x) (instance? cljs.core/ExceptionInfo x))))
+
+(defn error? [x]
+  #?(:clj (instance? java.lang.Error x)
+     :cljs (and (throwable? x) (not (exception? x)))))
+
 
 (defn real-number? [n]
   (and (number? n)
@@ -169,6 +198,30 @@
     clojure.lang.Ref      :ref
     clojure.lang.Var      :var}))
 
+(defn java-util-class? [s]
+  (boolean (some-> s (string/starts-with? "java.util"))))
+
+(defn java-lang-class? [s]
+  (boolean (some->> s (re-find #"java\.lang"))))
+
+(defn java-class? [s]
+  (boolean (re-find #"^(?:L|\[L)?java\.[a-z]+\..+" s)))
+
+(defn data-type? [x]
+  #?(:cljs false :clj (instance? clojure.lang.IType x)))
+
+(defn js-object? [x]
+  #?(:cljs (object? x) :clj false))
+
+(defn js-array? [x]
+  #?(:cljs (array? x) :clj false))
+
+(defn object? [x]
+  #?(:cljs (object? x) :clj false))
+
+(defn array? [x]
+  #?(:cljs (array? x) :clj false))
+
 (defn reference-type? [x]
   (boolean (get reference-types (cljc-type x))))
 
@@ -214,7 +267,7 @@
 
 (defn big-int? [x]
   #?(:cljs
-     false
+     (instance? js/BigInt x)
      :clj
      (or (instance? java.math.BigInteger x)
          (instance? clojure.lang.BigInt x))))
@@ -306,44 +359,23 @@
   (when (f x)
     (vswap! vol set/union (into #{} tags))))
 
-(defn all-tags-rt* 
-  "All tags, for values at runtime."
-  [x]
-  (let [vol             (volatile! #{})
-        add-tags!       (partial add-tags!* x vol)
-        is-scalar?      (scalar? x)
-        is-real-number? (real-number? x)]
-    (when is-real-number?
-      (add-tags! zero? :zero)
-      (add-tags! whole-number? :whole)
-      (add-tags! fractional-number? :fractional)
-      (add-tags! nat-int? :nat-int)
-      (add-tags! neg? :neg)
-      (add-tags! neg-int? :neg-int)
-      (add-tags! pos? :pos)
-      (add-tags! pos-int? :pos-int) 
-      (add-tags! big-int? :big-int))
-    (when-not is-scalar?
-      (add-tags! record? :record))
-    @vol))
-
 (defn number-tags
   "All secondary number tags, for values at runtime."
   [x]
   (let [vol             (volatile! #{})
-        add-tags!       (partial add-tags!* x vol)
+        tag!       (partial add-tags!* x vol)
         is-scalar?      (scalar? x)
         is-real-number? (real-number? x)]
     (when is-real-number?
-      (add-tags! zero? :zero)
-      (add-tags! whole-number? :whole)
-      (add-tags! fractional-number? :fractional)
-      (add-tags! nat-int? :nat-int)
-      (add-tags! neg? :neg)
-      (add-tags! neg-int? :neg-int)
-      (add-tags! pos? :pos)
-      (add-tags! pos-int? :pos-int) 
-      (add-tags! big-int? :big-int))
+      (tag! zero? :zero)
+      (tag! whole-number? :whole)
+      (tag! fractional-number? :fractional)
+      (tag! nat-int? :nat-int)
+      (tag! neg? :neg)
+      (tag! neg-int? :neg-int)
+      (tag! pos? :pos)
+      (tag! pos-int? :pos-int) 
+      (tag! big-int? :big-int))
     @vol))
 
 
@@ -353,59 +385,70 @@
    (all-tags* x nil))
   ([x {:keys [runtime?]}]
    (let [vol        (volatile! #{})
-         add-tags!  (partial add-tags!* x vol)
-         is-scalar? (scalar? x)
+         tag!  (partial add-tags!* x vol)
+         x-is-scalar? (scalar? x)
          is-real-number? (real-number? x)]
-     (add-tags! scalar? :scalar)
-     (add-tags! callable? :callable)
-     (add-tags! seqable? :seqable)
-     (add-tags! char-sequence? :char-sequence)
-     (add-tags! carries-meta? :carries-meta)
-     (add-tags! named? :named)
+
+     (when x-is-scalar? (vswap! vol conj :scalar))
+     (tag! callable? :callable)
+     (tag! seqable? :seqable)
+     (tag! char-sequence? :char-sequence)
+     (tag! carries-meta? :carries-meta)
+     (tag! named? :named)
 
      (when is-real-number?
        (vswap! vol conj :real)
-       (add-tags! byte? :byte)
-       (add-tags! cljc-ratio? :ratio)
-       (add-tags! big-decimal? :big-decimal)
-       (add-tags! short? :short)
-       (add-tags! double? :double)
-       (add-tags! long? :long)
-       (add-tags! float? :float)
-       (add-tags! int? :int)
-       (add-tags! big-int? :big-int))
+       (tag! byte? :byte)
+       (tag! cljc-ratio? :ratio)
+       (tag! big-decimal? :big-decimal)
+       (tag! short? :short)
+       (tag! double? :double)
+       (tag! long? :long)
+       (tag! float? :float)
+       (tag! int? :int)
+       (tag! big-int? :big-int))
 
-     (when-not is-scalar?
-       (add-tags! coll? :coll)
-       (add-tags! coll? :coll)
-       (add-tags! seq? :seq)
-       (add-tags! lazyish-seq? :lazy :deferred)
-       (add-tags! deferred? :deferred)
-       (add-tags! reference-type? :reference)
-       (add-tags! inst? :inst)
-       (add-tags! transient? :transient)
-       (add-tags! editable? :editable)
-       (add-tags! multi-function? :multi-function?)
-       (add-tags! sorted? :sorted)
-       (add-tags! stack? :stack)
-       (add-tags! cons? :cons)
-       (add-tags! range? :range)
-       (add-tags! subvec? :subvec)
-       (add-tags! coll-like? :coll-like)
-       (add-tags! associative? :associative)
-       (add-tags! sequential? :sequential)
-       (add-tags! cljc-map-entry? :map-entry)
-       (add-tags! array-map? :array-map)
-       (add-tags! hash-map? :hash-map)
-       (add-tags! map-like? :map-like)
-       (add-tags! set-like? :set-like)
-       (add-tags! list-like? :list-like)
-       (add-tags! coll-like? :coll-like))
-
+     (when-not x-is-scalar?
+       (cond 
+         (throwable? x)
+         (do
+           (vswap! vol conj :throwable)
+           (tag! error? :error)
+           (tag! exception? :exception))
+         
+         :else
+         (do  
+           (tag! reference-type? :reference)
+           (tag! inst? :inst)
+           (tag! coll? :coll)
+           (tag! seq? :seq)
+           (tag! lazyish-seq? :lazy :deferred)
+           (tag! deferred? :deferred)
+           (tag! transient? :transient)
+           (tag! editable? :editable)
+           (tag! multi-function? :multi-function?)
+           (tag! sorted? :sorted)
+           (tag! stack? :stack)
+           (tag! cons? :cons)
+           (tag! range? :range)
+           (tag! subvec? :subvec)
+           (tag! coll-like? :coll-like)
+           (tag! associative? :associative)
+           (tag! sequential? :sequential)
+           (tag! cljc-map-entry? :map-entry)
+           (tag! array-map? :array-map)
+           (tag! hash-map? :hash-map)
+           (tag! map-like? :map-like)
+           (tag! set-like? :set-like)
+           (tag! list-like? :list-like)
+           (tag! coll-like? :coll-like)
+           (tag! js-object? :js-object) ; <- nix
+           (tag! object? :object)
+           (tag! js-array? :js-array) ; <- nix
+           (tag! array? :array)
+           )))
      #_(when runtime? 
-         (add-tags! runtime? :record))
-     (when (subvec? x)
-       (? :VOL @vol))
+         (add-tag! runtime? :record))
      @vol)))
 
 
@@ -478,7 +521,7 @@
                            {:tag       tag
                             :type      cls
                             :all-tags  all-tags
-                            :classname (str cls)})))
+                            :classname (if (nil? cls) "nil" (str cls))})))
                 {}
                 m)))
 
@@ -631,7 +674,17 @@
                                                  :transient
                                                  :map
                                                  :list-like}
-                                    :classname "cljs.core/TransientVector"}}
+                                    :classname "cljs.core/TransientVector"}
+      cljs.core/Volatile           {:tag       :volatile
+                                    :type      cljs.core/Volatile
+                                    :all-tags  #{:volatile
+                                                 :reference}
+                                    :classname "cljs.core/Volatile"}
+      cljs.core/Var                {:tag       :var
+                                    :type      cljs.core/Var
+                                    :all-tags  #{:var
+                                                 :reference}
+                                    :classname "cljs.core/Var"}}
      :clj
      (by-class*
       {;; numbers
@@ -678,7 +731,7 @@
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentList$EmptyList :list]            (list)
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-       [clojure.lang.PersistentStructMap :map]                  (do (defstruct food :name :color) (struct food "strawberry" "red"))
+       [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
