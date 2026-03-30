@@ -8,9 +8,9 @@
  
 # Lasertag
 
-Lasertag is a library for categorizing values in Clojure, ClojureScript, and Babashka.
+A library for categorizing values in Clojure, ClojureScript, and Babashka.
 
-This lib took shape while developing of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
+Lasertag took shape while developing of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
 
 <br>
 
@@ -68,7 +68,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 |                      `Infinity` |             `:number` |      `java.lang.Double`           |
 |                     `-Infinity` |            `:number` |      `java.lang.Double`           |
 |                           `NaN` |                  `:number` |      `java.lang.Double`           |
-|                           `1/3` |                `:ratio` |    `clojure.lang.Ratio`           |
+|                           `1/3` |                `:number` |    `clojure.lang.Ratio`           |
 |                      `(byte 0)` |               `:number` |        `java.lang.Byte`           |
 |                     `(short 3)` |               `:number` |       `java.lang.Short`           |
 |                `(double 23.44)` |               `:number` |      `java.lang.Double`           |
