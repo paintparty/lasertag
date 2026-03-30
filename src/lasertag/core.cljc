@@ -626,9 +626,9 @@
 
 #?(:cljs
    (defn- cljs-coll-size-try
-     [{:keys [x k all-tags]}]
+     [{:keys [x tag all-tags]}]
      (cond
-       (or (= :js-object k)
+       (or (= :js-object tag)
            (contains? all-tags :js-map-like-object))
        (.-length (js/Object.keys x))
 
@@ -636,7 +636,7 @@
            (contains? all-tags :js-map))
        (.-size x)
 
-       (or (= k :array)
+       (or (= tag :array)
            (typed-array? x))
        (.-length x)
 
@@ -646,12 +646,12 @@
 
 #?(:clj
    (defn- clj-coll-size-try
-     [{:keys [x k abstract-instance? classname]}]
+     [{:keys [x tag abstract-instance? classname]}]
      (cond
        abstract-instance?
        (.size x)
 
-       (and (= k :array)
+       (and (= tag :array)
             (not (java-util-class? classname)))
        (alength x)
 
@@ -670,8 +670,8 @@
          :lasertag.core/unknown-coll-size)))
 
 
-(defn- coll-size* [{:keys [x coll-like? all-tags] :as m}]
-  (when coll-like?
+(defn ^:public coll-size* [{:keys [x all-tags] :as m}]
+  (when (:coll-like all-tags)
     (when-not (or (contains? all-tags :js-weak-map)
                   (contains? all-tags :js-weak-set))
       (let [debug-unknown-coll-size?
@@ -680,8 +680,7 @@
           (messaging/mock-unknown-coll-size x)
           (cljc-coll-size* (assoc m
                                   :abstract-instance?
-                                  (abstract-instance?*
-                                   x))))))))
+                                  (abstract-instance?* x))))))))
 
 (defn- cljc-datatypes [x]
   #?(:cljs
@@ -778,12 +777,8 @@
                        :error)))])
 
         all-tags
-        (apply conj all-tags (remove nil? more-tags))
-
-        coll-size
-        (coll-size* (merge m all-tags-map {:all-tags all-tags}))]
-    (merge {:all-tags  all-tags :classname classname}
-           (when coll-size {:coll-size coll-size}))))
+        (apply conj all-tags (remove nil? more-tags))]
+    {:all-tags all-tags :classname classname}))
 
 
 #?(:cljs
