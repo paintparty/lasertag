@@ -1,7 +1,18 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
-            [clojure.string :as string])
-  #?(:cljs (:require-macros [lasertag.cached :refer [tag-maps tag-maps-by-class*]])))
+            [clojure.string :as string]))
+
+
+;; -----------------------------------------------------------------------------
+;; Should always be set to false, unless writing tests during dev of lasertag
+
+(def ^:private write-tests? false)
+
+;; -----------------------------------------------------------------------------
+
+
+
+;; Debugging -------------------------------------------------------------------
 
 (defn ?
   "Debugging macro internal to lib"
@@ -511,19 +522,91 @@
       :classname classname
       :all-tags (set/union all-tags #{:nan})}}))
 
+
+(def gen-test-path
+   "./test/lasertag/generated.clj")
+
+
+
 #?(:clj
-   (defmacro by-class* [m]
-     (reduce-kv (fn [m [cls tag] x]
-                  (let [x         (eval x)
-                        all-tags  (conj (all-tags* x) tag)]
-                    (assoc m
-                           cls
-                           {:tag       tag
-                            :type      cls
-                            :all-tags  all-tags
-                            :classname (if (nil? cls) "nil" (str cls))})))
-                {}
-                m)))
+   (do 
+
+     (def comment-box-text
+       "This is used to generate the header of a test file saved in `gen-test-path`"
+       (str 
+        ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+        ";;\n"
+        ";;\n"
+        ";;   This namespace is automatically generated in lasertag.cached/by-class*.\n"
+        ";;\n"
+        ";;   Do not manually add anything to this namespace.\n"
+        ";;\n"
+        ";;   To regenerate, set `lasertag.cached/write-tests?` to `true`,"
+        "\n"
+        ";;   then run `lein test`."
+        "\n"
+        ";;\n"
+        ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" ))
+
+     (defn spit-test-header []
+       (require '[clojure.pprint :refer [pprint]])
+       (spit (str 
+              comment-box-text
+              "\n\n"
+              (with-out-str 
+                (clojure.pprint/pprint
+                 '(ns lasertag.generated
+                    (:require
+                     [clojure.test :refer [deftest is]]
+                     [lasertag.core :refer [tag-map]]
+                     [clojure.string :as string]))))
+              "\n")
+             :append false))
+
+     (defn spit-test-body [body]
+       (spit gen-test-path 
+             body
+             :append true))
+
+     (defmacro by-class* [m]
+       (when write-tests? (spit-test-header))
+       (reduce-kv (fn [m [cls tag] x*]
+                    (let [x         (eval x*)
+                          all-tags  (conj (all-tags* x) tag)
+                          classname (if (nil? cls) "nil" (str cls))
+                          result    {:tag       tag
+                                     :type      cls
+                                     :all-tags  all-tags
+                                     :classname classname}]
+
+                      (when write-tests?
+                        (require '[clojure.pprint :refer [pprint]])
+                        (spit (str "./test/lasertag/generated" ".clj") 
+                              (str
+                               "\n\n"
+                               (with-out-str
+                                 (clojure.pprint/pprint
+                                  (list 
+                                   'deftest (symbol (str classname "-test"))
+                                   (list 'is (list '= (list 'tag-map x*) result))))))
+                              :append true))
+
+                      (assoc m cls result)))
+                  {}
+                  m))))
+
+
+;; Add to jvm test generation
+;; [java.util.concurrent.Future :future]  (future (Thread/sleep 10) (+ 1 2))
+;; some functions
+;; some arrays
+;; throwables
+;; promise
+;; abstract datatype
+;; different real numbers whose tag maps have to be supplemented at runtime
+;; things implementing abstract java maps, sets, and lists
+;; vanilla classes
+
 
 (def by-class
   ;; TODO in all*
