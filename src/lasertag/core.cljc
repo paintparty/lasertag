@@ -81,15 +81,7 @@
         java.lang.String     :string
         java.lang.Boolean    :boolean
         java.lang.Character  :char})
-
-     (def java-number-types
-       {java.lang.Double     :double
-        java.lang.Short      :short
-        java.lang.Long       :long
-        java.lang.Float      :float
-        java.lang.Byte       :byte
-        java.math.BigDecimal :big-decimal
-        java.math.BigInteger :big-integer})))
+     ))
 
 
 #?(:cljs
@@ -109,10 +101,6 @@
         js/String         :string
         js/Boolean        :boolean
         nil               :nil})
-
-     (def js-number-types
-       {js/Number :js-number
-        js/BigInt :js-big-int})
 
      (def js-map-types
        {js/Map     :js-map
@@ -150,12 +138,10 @@
 (def scalar-types-set
   #?(:cljs
      (as-> #{} $
-       (apply conj $ (vals cljs-scalar-types))
-       (apply conj $ (vals js-number-types)))
+       (apply conj $ (vals cljs-scalar-types)))
      :clj
      (as-> #{} $
-       (apply conj $ (vals clj-scalar-types))
-       (apply conj $ (vals java-number-types)))))
+       (apply conj $ (vals clj-scalar-types)))))
 
 (def literal-types-set
   #?(:cljs
@@ -319,34 +305,12 @@
 (defn lsb? [k]
   (contains? #{:long :short :byte} k))
 
-#?(:clj
-   (defn- clj-number-type [x]
-     (when-let [k (get java-number-types (type x))]
-       (cond
-         (lsb? k)      :int
-         (= k :double) (cond
-                         (NaN? x)     :nan
-                         (= x ##-Inf) :-infinity
-                         (= x ##Inf) :infinity
-                         :else                       k)
-         :else         k))))
 
 
 ;; cljs value type helpers -----------------------------------------------------
 #?(:cljs
    (do
-     (defn- cljs-number-type [x]
-       (when-let [k (get js-number-types (type x))]
-         (if (= k :js-number)
-           (cond
-             (int? x)   :int
-             (float? x) (cond
-                          (NaN? x)                     :nan
-                          (= x js/Number.POSITIVE_INFINITY) :infinity
-                          (= x js/Number.NEGATIVE_INFINITY) :-infinity
-                          :else                             :float)
-             :else      :number)
-           k)))
+     
 
      (defn- cljs-iterable-type [x]
        (when (js-iterable? x)
@@ -449,12 +413,10 @@
              (catch Exception e))
         (try (some-> x class .isArray)
              (catch Exception e))))
+
      (defn- clj-all-value-types [{:keys [x k]}]
-       (let [number-type (clj-number-type x)
-             t           (type x)]
-         (->> [number-type
-               (get java-number-types t)
-               (get clj-scalar-types t)
+       (let [t           (type x)]
+         (->> [(get clj-scalar-types t)
                (get clj-literal-types t)
                (get clj-reference-types t)
                (cljc-coll-type x)
@@ -469,8 +431,7 @@
                          (clj-or-bb-array? x))
                  :coll)
                (when (record? x) :record)
-               (when (record? x) :datatype)
-               (when (cljc-number? x number-type) :number)]
+               (when (record? x) :datatype)]
               (remove nil?)
               (cons k)
               (into #{}))))
@@ -503,10 +464,7 @@
 ;; TODO - consider removing `js-` prefixes and just adding an additional :js tag
 #?(:cljs
    (defn- cljs-all-value-types [{:keys [x k dom-node-type-keyword]}]
-     (let [number-type
-           (cljs-number-type x)
-
-           t
+     (let [t
            (type x)
 
            types
@@ -864,11 +822,6 @@
                              :sym)]
        (keyword (str "js/" sym)))))
 
-(defn numberish-type [x]
-  (let [f #?(:cljs cljs-number-type :clj clj-number-type)]
-    (when-let [t (f x)]
-      (if (contains? #{:nan :-infinity :infinity} t)
-        t :number))))
 
 #?(:clj
    (defn resolve-class-name-clj [c]
@@ -886,8 +839,7 @@
 
 (defn- k* [x t]
   #?(:cljs
-     (or (numberish-type x)
-         (get cljs-scalar-types t)
+     (or (get cljs-scalar-types t)
          (get cljs-literal-types t)
          (cljc-coll-type x)
          (when (get js-map-types t) :map)
@@ -908,26 +860,26 @@
          (when (throwable? x) :throwable)
          :lasertag/value-type-unknown)
      :clj
-     (or (numberish-type x)
-         (get clj-scalar-types t)
-         (get clj-literal-types t)
-         (cljc-coll-type x)
-         (when (fn? x) :function)
-         (get clj-reference-types t)
-         (when (throwable? x) :throwable)
-         (when (future? x) :future)
-         (when (delay? x) :delay)
-         (when (instance? clojure.lang.IPending x) :promise)
-         (when (instance? clojure.lang.IType x) :datatype)
-         (when-let [c (type x)]
-           (or
-            (when (instance? java.util.AbstractMap x) :map)
-            (when (instance? java.util.AbstractSet x) :set)
-            (when (clj-or-bb-array? x) :array)
-            (when (instance? java.util.ArrayList x) :array)
-            (when (instance? java.util.ArrayDeque x) :array)
-            (when (instance? java.util.AbstractList x) :seq)
-            (resolve-class-name-clj c))))))
+     (or 
+      (get clj-scalar-types t)
+      (get clj-literal-types t)
+      (cljc-coll-type x)
+      (when (fn? x) :function)
+      (get clj-reference-types t)
+      (when (throwable? x) :throwable)
+      (when (future? x) :future)
+      (when (delay? x) :delay)
+      (when (instance? clojure.lang.IPending x) :promise)
+      (when (instance? clojure.lang.IType x) :datatype)
+      (when-let [c (type x)]
+        (or
+         (when (instance? java.util.AbstractMap x) :map)
+         (when (instance? java.util.AbstractSet x) :set)
+         (when (clj-or-bb-array? x) :array)
+         (when (instance? java.util.ArrayList x) :array)
+         (when (instance? java.util.ArrayDeque x) :array)
+         (when (instance? java.util.AbstractList x) :seq)
+         (resolve-class-name-clj c))))))
 
 (defn merged-with-runtime-tags [x m]
   (let [number-tags  (when (real-number? x) (cached/number-tags x))
