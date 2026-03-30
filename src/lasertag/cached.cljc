@@ -200,6 +200,12 @@
      :clj
      (instance? java.lang.Short x)))
 
+(defn byte? [x]
+  #?(:cljs
+     false
+     :clj
+     (instance? java.lang.Byte x)))
+
 (defn long? [x]
   #?(:cljs
      false
@@ -256,6 +262,10 @@
 (defn named? [x]
   #?(:clj  (instance? clojure.lang.Named x)
      :cljs (satisfies? cljs.core/INamed x)))
+
+(defn multi-function? [x]
+  #?(:clj  (instance? clojure.lang.MultiFn x)
+     :cljs (satisfies? cljs.core/MultiFn x)))
 
 (defn scalar? [x]
   (or (number? x)
@@ -355,14 +365,15 @@
 
      (when is-real-number?
        (vswap! vol conj :real)
-       (add-tags! cljc-ratio?  :ratio)
-       (add-tags! big-decimal?  :big-decimal)
-       (add-tags! short?  :short)
-       (add-tags! double?  :double)
-       (add-tags! long?  :long)
-       (add-tags! float?  :float)
-       (add-tags! int?  :int)
-       (add-tags! big-int?  :big-int))
+       (add-tags! byte? :byte)
+       (add-tags! cljc-ratio? :ratio)
+       (add-tags! big-decimal? :big-decimal)
+       (add-tags! short? :short)
+       (add-tags! double? :double)
+       (add-tags! long? :long)
+       (add-tags! float? :float)
+       (add-tags! int? :int)
+       (add-tags! big-int? :big-int))
 
      (when-not is-scalar?
        (add-tags! coll? :coll)
@@ -374,6 +385,7 @@
        (add-tags! inst? :inst)
        (add-tags! transient? :transient)
        (add-tags! editable? :editable)
+       (add-tags! multi-function? :multi-function?)
        (add-tags! sorted? :sorted)
        (add-tags! stack? :stack)
        (add-tags! cons? :cons)
@@ -624,6 +636,7 @@
      (by-class*
       {;; numbers
        [java.lang.Long :number]                                 21
+       [java.lang.Byte :number]                                 (byte 1)
        [java.lang.Double :number]                               21.42
        [java.lang.Short :number]                                (short 21)
        [clojure.lang.Ratio :number]                             2/3
@@ -656,7 +669,6 @@
        [clojure.lang.LongRange :seq]                            (range 3)
        [clojure.lang.Range :seq]                                (range 3)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
-
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
        [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
        [clojure.lang.PersistentTreeSet :set]                    (sorted-set 3 1 2)
@@ -668,10 +680,12 @@
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
        [clojure.lang.PersistentStructMap :map]                  (do (defstruct food :name :color) (struct food "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
-
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
        [java.util.HashSet :set]                                 (java.util.HashSet. #{"a" 1 "b" 2})
+
+       ;; Constructors
+       [clojure.lang.MultiFn :function]                         (defmulti different-behavior (fn [x] (:x-type x)))
 
        ;; temporal
        [java.util.Date :temporal]                               (java.util.Date.)
