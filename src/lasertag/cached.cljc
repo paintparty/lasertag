@@ -27,9 +27,19 @@
           (println "WARNING [lasertag.core/?] Unable to print value")))
    x))
 
-;; -----------------------------------------------------------------------------
 
-(defn cljc-type [x]
+
+
+;; Predefining classes so we don't need to import them -------------------------
+
+(defn cljc-type 
+  "Cljc-friendly and safe alternative to `clojure.core/type`.
+
+   `clojure.core/type` would return `:foo` in this example case:
+   `(type (with-meta [1] {:type :foo}))`
+
+   `cljc-type` will always return the class (or constructor)."
+  [x]
   #?(:clj  (class x)
      :cljs (.-constructor x)))
 
@@ -45,6 +55,21 @@
    transient-vector-class    :vector})
 
 (def subvec-class (cljc-type (subvec [1 2 3 4 5] 1 3)))
+
+(defn cljc-coll-type
+  "Provides a primary tag for custom cljc data structures that are implemented
+   on top of standard cljc collection interfaces."
+  [x]
+  (cond (vector? x) :vector
+        (record? x) :record
+        (map? x)    :map
+        (set? x)    :set
+        (list? x)   :list
+        (seq? x)    :seq
+        :else
+        (get cljc-transients-primary-tags-by-class
+             (cljc-type x)
+             nil)))
 ;; -----------------------------------------------------------------------------
 
 
@@ -98,24 +123,27 @@
        (not (whole-number? n))))
 
 
-(defn add-pos-or-neg-tag [m x]
-  (cond-> m
-    (when (neg? x) :neg)
-    (when (pos? x) :pos)))
-
 (defn cljc-array? [x]
   #?(:cljs
      (array? x)
+     :bb
+     (or (try (some-> x .getClass .isArray)
+              (catch Exception e))
+         (try (some-> x class .isArray)
+              (catch Exception e)))
      :clj
      (some-> x class .isArray)))
+
 
 (defn array-map? [x]
   (or (instance? #?(:cljs cljs.core/PersistentArrayMap :clj clojure.lang.PersistentArrayMap) x)
       (instance? #?(:cljs cljs.core/TransientArrayMap :clj transient-array-map-class) x)))
 
+
 (defn hash-map? [x]
   (or (instance?  #?(:cljs cljs.core/PersistentHashMap :clj clojure.lang.PersistentHashMap) x)
       (instance?  #?(:cljs cljs.core/TransientHashMap :clj transient-hash-map-class) x)))
+
 
 (defn hash-set? [x]
   (or (instance?  #?(:cljs cljs.core/PersistentHashSet :clj clojure.lang.PersistentHashSet) x)
@@ -124,23 +152,30 @@
 
 (defn map-like? [v]
   #?(:cljs
-     ()
+     (or (map? v)
+         (instance? cljs.core/IMap v)
+         (instance? js/Map v)
+         (instance? js/WeakMap v))
      :clj
-     (or (instance? clojure.lang.IPersistentMap v)
+     (or (map? v)
+         (instance? clojure.lang.IPersistentMap v)
          (instance? java.util.Map v)
          (array-map? v)
          (hash-map? v))))
 
 (defn set-like? [v]
   #?(:cljs
-     ()
+     (or (set? v)
+         (instance? js/Set v)
+         (instance? js/WeakSet v))
      :clj
-     (or (instance? clojure.lang.IPersistentSet v)
+     (or (set? v)
+         (instance? clojure.lang.IPersistentSet v)
          (instance? java.util.Set v))))
 
 (defn queue? [v]
   #?(:cljs
-     ()
+     (instance? cljs.core/PersistentQueue v)
      :clj
      (or (instance? java.util.Queue v)
          (instance? clojure.lang.PersistentQueue v))))
@@ -150,64 +185,70 @@
      :cljs (instance? cljs.core/Subvec x)))
 
 (defn list-like? [v]
-  #?(:cljs
-     ()
-     :clj
-     (or (sequential? v)
-         (instance? java.util.List v)
-         (instance? transient-vector-class v)
-         (cljc-array? v)
-         (queue? v))))
+  (or (sequential? v)
+      #?(:clj (instance? java.util.List v))
+      (instance? transient-vector-class v)
+      (cljc-array? v)
+      (queue? v)))
 
 (defn coll-like? [v]
+  (or (coll? v)
+      (seq? v)
+      #?(:clj (instance? java.util.Collection v))
+      (map-like? v)
+      (set-like? v)
+      (list-like? v)))
+
+(defn js-global-this? [x] 
   #?(:cljs
-     ()
+     (= x js/globalThis)
      :clj
-     (or (coll? v)
-         (seq? v)
-         (instance? java.util.Collection v)
-         (map-like? v)
-         (set-like? v)
-         (list-like? v))))
+     false))
 
+(defn js-object-instance? [x] 
+  #?(:cljs
+     (instance? js/Object x)
+     :clj
+     false))
 
-(def eager-seq-classes
-  (->> ['(:a)
-        (cons :a '(:b))
-        (seq [1 2 3])
-        (seq "foo")
-        (seq {:a 1})]
-       (map type)
-       set))
+(defn js-promise? [x]
+  #?(:cljs
+     (instance? js/Promise x)
+     :clj
+     false))
 
-(defn eager-seq? [x]
-  (contains? eager-seq-classes (type x)))
+(defn js-data-view? [x]
+  #?(:cljs
+     (instance? js/DataView x)
+     :clj
+     ()))
+
+(defn js-array-buffer? [x]
+  #?(:cljs
+     (instance? js/ArrayBuffer x)
+     :clj
+     false))
+
+(defn js-object? [x]
+  #?(:cljs (object? x) :clj false))
+
+(defn js-array? [x]
+  #?(:cljs (array? x) :clj false))
 
 (defn lazyish-seq? [x]
-  (or (instance? #?(:cljs () :clj clojure.lang.LazySeq) x)
-      (instance? #?(:cljs () :clj clojure.lang.Range) x)
-      (instance? #?(:cljs () :clj clojure.lang.LongRange) x)
-      (instance? #?(:cljs () :clj clojure.lang.Repeat) x)
-      (instance? #?(:cljs () :clj clojure.lang.Iterate) x)
-      (instance? #?(:cljs () :clj clojure.lang.Cons) x)
-      (instance? #?(:cljs () :clj clojure.lang.ChunkedCons) x)))
+  (or (instance? #?(:cljs cljs.core/LazySeq :clj clojure.lang.LazySeq) x)
+      (instance? #?(:cljs cljs.core/Range :clj clojure.lang.Range) x)
+      (instance? #?(:cljs cljs.core/IntegerRange :clj clojure.lang.LongRange) x)
+      (instance? #?(:cljs cljs.core/Repeat :clj clojure.lang.Repeat) x)
+      (instance? #?(:cljs cljs.core/Iterate :clj clojure.lang.Iterate) x)
+      (instance? #?(:cljs cljs.core/Cons :clj clojure.lang.Cons) x)
+      (instance? #?(:cljs cljs.core/ChunkedCons :clj clojure.lang.ChunkedCons) x)))
 
 (defn deferred? [x]
-  (or #?(:cljs () :clj (delay? x))
-      #?(:cljs () :clj (future? x))
-      #?(:cljs () :clj (instance? clojure.lang.IPending x))))
+  (or #?(:cljs (delay? x) :clj (delay? x))
+      #?(:cljs false :clj (future? x))
+      #?(:cljs (js-promise? x) :clj (instance? clojure.lang.IPending x))))
 
-(def reference-types
-#?(:cljs
-   {cljs.core.Atom     :atom
-    cljs.core.Volatile :volatile
-    cljs.core.Var      :var}
-   :clj
-   {clojure.lang.Atom     :atom
-    clojure.lang.Volatile :volatile
-    clojure.lang.Agent    :agent
-    clojure.lang.Ref      :ref
-    clojure.lang.Var      :var}))
 
 (defn java-util-class? [s]
   (boolean (some-> s (string/starts-with? "java.util"))))
@@ -221,20 +262,17 @@
 (defn data-type? [x]
   #?(:cljs false :clj (instance? clojure.lang.IType x)))
 
-(defn js-object? [x]
-  #?(:cljs (object? x) :clj false))
+(defn derefable? [x]
+  (or (volatile? x)
+      #?(:clj  (instance? clojure.lang.IDeref x)
+         :cljs (satisfies? cljs.core/IDeref x))))
 
-(defn js-array? [x]
-  #?(:cljs (array? x) :clj false))
-
-(defn object? [x]
-  #?(:cljs (object? x) :clj false))
-
-(defn array? [x]
-  #?(:cljs (array? x) :clj false))
-
-(defn reference-type? [x]
-  (boolean (get reference-types (cljc-type x))))
+(defn reference? 
+  "Returns true if x is a reference type."
+  [x]
+  #?(:clj  (instance? clojure.lang.IRef x)
+     :cljs (or (satisfies? cljs.core/Atom x)
+               (satisfies? cljs.core/Var x))))
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
@@ -364,7 +402,12 @@
 ;;                                                                                     
 ;;                                                                                     
 ;;                                                                                     
-;;                                                                                      
+;; 
+
+
+
+
+
 
 (defn add-tags!* [x vol f & tags]
   (when (f x)
@@ -429,7 +472,8 @@
          
          :else
          (do  
-           (tag! reference-type? :reference)
+           (tag! reference? :reference)
+           (tag! derefable? :derefable)
            (tag! inst? :inst)
            (tag! coll? :coll)
            (tag! seq? :seq)
@@ -443,7 +487,6 @@
            (tag! cons? :cons)
            (tag! range? :range)
            (tag! subvec? :subvec)
-           (tag! coll-like? :coll-like)
            (tag! associative? :associative)
            (tag! sequential? :sequential)
            (tag! cljc-map-entry? :map-entry)
@@ -453,10 +496,8 @@
            (tag! set-like? :set-like)
            (tag! list-like? :list-like)
            (tag! coll-like? :coll-like)
-           (tag! js-object? :js-object) ; <- nix
-           (tag! object? :object)
-           (tag! js-array? :js-array) ; <- nix
-           (tag! array? :array)
+           (tag! js-object? :js-object)
+           (tag! js-array? :js-array)
            )))
      #_(when runtime? 
          (add-tag! runtime? :record))
@@ -779,7 +820,7 @@
        [java.lang.Float :number]                                (float 21.42)
        [java.lang.Integer :number]                              (int 21)
        [clojure.lang.BigInt :number]                            21N
-       [java.math.BigInteger :number]                           21N
+       [java.math.BigInteger :number]                           (java.math.BigInteger. "21")
        [java.math.BigDecimal :number]                           21M
 
        ;; scalars
@@ -803,7 +844,7 @@
        [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
-       [clojure.lang.Range :seq]                                (range 3)
+       [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
        [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
@@ -819,9 +860,11 @@
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
        [java.util.HashSet :set]                                 (java.util.HashSet. #{"a" 1 "b" 2})
+       [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
 
        ;; Constructors
-       [clojure.lang.MultiFn :function]                         (defmulti different-behavior (fn [x] (:x-type x)))
+       [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
+                                                                    different-behavior)
 
        ;; temporal
        [java.util.Date :temporal]                               (java.util.Date.)
@@ -836,10 +879,49 @@
        [clojure.lang.Agent :agent]                              (agent :foo)
        [clojure.lang.Ref :ref]                                  (ref 0)
        [clojure.lang.Var :var]                                  (do (def my-var 42) #'my-var)
+       [clojure.lang.Delay :delay]                              (delay 21)
+
+       ;; Java Errors
+       ;;  [java.lang.AssertionError :throwable]                    (java.lang.AssertionError. "foo")
+       ;;  [java.lang.NoClassDefFoundError :throwable]              (java.lang.NoClassDefFoundError. "foo")
+       ;;  [java.lang.UnsatisfiedLinkError :throwable]              (java.lang.UnsatisfiedLinkError. "foo")
+       ;;  [java.lang.ClassCircularityError :throwable]             (java.lang.ClassCircularityError. "foo")
+       ;;  [java.lang.OutOfMemoryError :throwable]                  (java.lang.OutOfMemoryError. "foo")
+       ;;  [java.lang.StackOverflowError :throwable]                (java.lang.StackOverflowError. "foo")
+       ;;  [java.lang.InternalError :throwable]                     (java.lang.InternalError. "foo")
+       ;;  ;; [java.lang.ThreadDeath :throwable]                    (java.lang.ThreadDeath. "foo")           ;;<- class not found
+       ;;  ;; [java.lang.IOError :throwable]                        (java.lang.IOError. "foo")               ;;<- class not found
+       
+       ;; Java Exceptions
+       ;;  [java.lang.CloneNotSupportedException :throwable]        (java.lang.CloneNotSupportedException. "foo")
+       ;;  [java.lang.InterruptedException :throwable]              (java.lang.InterruptedException. "foo")
+       ;;  [java.io.FileNotFoundException :throwable]               (java.io.FileNotFoundException. "foo")
+       ;;  [java.net.SocketException :throwable]                    (java.net.SocketException. "foo")
+       ;;  [java.sql.SQLException :throwable]                       (java.sql.SQLException. "foo")
+       ;;  [java.lang.ClassNotFoundException :throwable]            (java.lang.ClassNotFoundException. "foo")
+       ;;  [java.lang.NoSuchMethodException :throwable]             (java.lang.NoSuchMethodException. "foo")
+       ;;  [java.lang.IllegalAccessException :throwable]            (java.lang.IllegalAccessException. "foo")
+       ;;  [java.lang.NullPointerException :throwable]              (java.lang.NullPointerException. "foo")
+       ;;  [java.lang.IllegalArgumentException :throwable]          (java.lang.IllegalArgumentException. "foo")
+       ;;  [java.lang.IllegalStateException :throwable]             (java.lang.IllegalStateException. "foo")
+       ;;  [java.lang.ArithmeticException :throwable]               (java.lang.ArithmeticException. "foo")
+       ;;  [java.lang.ArrayIndexOutOfBoundsException :throwable]    (java.lang.ArrayIndexOutOfBoundsException. "foo")
+       ;;  [java.lang.StringIndexOutOfBoundsException :throwable]   (java.lang.StringIndexOutOfBoundsException. "foo")
+       ;;  [java.lang.UnsupportedOperationException :throwable]     (java.lang.UnsupportedOperationException. "foo")
+       ;;  [java.util.concurrent.CancellationException :throwable]  (java.util.concurrent.CancellationException. "foo")
+       ;;  [java.util.NoSuchElementException :throwable]            (java.util.NoSuchElementException. "foo")
+       [java.lang.ClassCastException :throwable]                (java.lang.ClassCastException. "foo")
+
+       ;; Clojure Exceptions
+       [clojure.lang.ExceptionInfo :throwable]                  (ex-info "foo" {})
+       [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 3 "foo")
 
        ;; reflection
-       [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional '(:clj (System/getProperty "os.name") :cljs "JS") false) 
+       [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional '(:clj  (System/getProperty "os.name")
+                                                                                            :cljs "JS")
+                                                                                    false) 
        })))
+
 
 
 (def by-number-class

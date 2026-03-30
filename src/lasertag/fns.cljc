@@ -2,7 +2,8 @@
   (:require 
    [lasertag.core :refer [tag tag-map]]
    [clojure.string :as string]
-   #?(:cljs [lasertag.cljs-interop :as jsi])))
+   #?(:cljs [lasertag.jsi.native-plus :as jsi])
+   #?(:cljs [lasertag.jsi.native :as jsi.native])))
 
 (defn ? 
   "Debugging macro internal to lib"
@@ -73,7 +74,6 @@
                     {:fn-ns   fn-ns
                      :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))
 
-
 #?(:cljs 
    (do 
      (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
@@ -88,7 +88,7 @@
 
      (defn- cljs-fn-args [x fn-args fn-info]
        (when-not fn-args 
-         (let [{:keys [_ args]} (get jsi/js-built-ins-by-built-in x)]
+         (let [{:keys [_ args]} (get jsi.native/js-built-ins-by-built-in x)]
            (merge 
             (if args 
               {:js-built-in-function? true
@@ -97,7 +97,7 @@
                 {:fn-args :lasertag/unknown-function-signature-on-js-built-in-method}))))))
      
      (defn- js-built-in-map [o]
-       (let [{:keys [sym]} (get jsi/js-built-ins-by-built-in o)]
+       (let [{:keys [sym]} (get jsi.native/js-built-ins-by-built-in o)]
          {:js-built-in-method-of      o
           :js-built-in-method-of-name (some-> sym name)
           :js-built-in-function?      true}))
