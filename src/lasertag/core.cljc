@@ -339,7 +339,7 @@
        (.-size x)
 
        (or (= tag :array)
-           (lasertag.jsi.tag/typed-array? x))
+           (cached/js-typed-array? x))
        (.-length x)
 
        :else

@@ -1,5 +1,6 @@
 (ns lasertag.jsi.native)
 
+
 (defonce Atomics
   (try js/Atomics
        (catch js/Object e nil)))
@@ -38,7 +39,7 @@
                                    #js[(new js/Error \"some error\")] \"Hello\")"
                         :args '[array]}]
     [js/EvalError {:sym 'EvalError :demo "(new js/EvalError)" :args '[]}]
-    [js/RangeError {:sym 'RangeError #_#_:demo "(new js/RangeError)" :args '[]}]
+    [js/RangeError {:sym 'RangeError :demo "(new js/RangeError)" :args '[]}]
     [js/ReferenceError {:sym 'ReferenceError :demo "(new js/ReferenceError)" :args '[]}]
     [js/SyntaxError {:sym 'SyntaxError :demo "(new js/SyntaxError)" :args '[]}]
     [js/TypeError {:sym 'TypeError :demo "(new js/TypeError)" :args '[]}]
@@ -66,7 +67,7 @@
    [[js/Map {:sym 'Map :demo "(new js/Map #js[#js[\"a\", 1], #js[\"b\", 2]])" :args '[...]}]
     [js/Set {:sym 'Set :demo "(new js/Set #js[1 2])" :args '[...]}]
     [js/WeakMap {:sym  'WeakMap
-                 #_#_:demo "(let [wm (js/WeakMap.)
+                 :demo "(let [wm (js/WeakMap.)
                               o  #js{:a 1}]
                          (.set wm o 100))"
                  :args '[...]}]
@@ -83,8 +84,8 @@
     [js/Uint16Array {:sym 'Uint16Array :demo "(new js/Uint16Array #js[1 2 3])" :args '[...]}]
     [js/Int32Array {:sym 'Int32Array :demo "(new js/Int32Array #js[1 2 3])" :args '[...]}]
     [js/Uint32Array {:sym 'Uint32Array :demo "(new js/Uint32Array #js[1 2 3])" :args '[...]}]
-    [js/BigInt64Array {:sym 'BigInt64Array #_#_:demo "(new js/BigInt64Array 3)" :args '[...]}]
-    [js/BigUint64Array {:sym 'BigUint64Array #_#_:demo "(new js/BigUint64Array 3)" :args '[...]}]
+    [js/BigInt64Array {:sym 'BigInt64Array :demo "(new js/BigInt64Array 3)" :args '[...]}]
+    [js/BigUint64Array {:sym 'BigUint64Array :demo "(new js/BigUint64Array 3)" :args '[...]}]
     [js/Float32Array {:sym 'Float32Array :demo "(new js/Float32Array #js[1 2 3])" :args '[...]}]
     [js/Float64Array {:sym 'Float64Array :demo "(new js/Float64Array #js[1 2 3])" :args '[...]}]]
 
@@ -130,7 +131,7 @@
                                           :type \"conjunction\"})"
                          :args '[...]}]
     [js/Intl.Locale {:sym 'Intl.Locale
-                     #_#_:demo "(new js/Intl.Locale
+                     :demo "(new js/Intl.Locale
                                  \"ko\"
                                  #js{:script \"Kore\",
                                      :region \"KR\",
@@ -213,3 +214,33 @@
 
 (defonce js-built-in-intl-by-object
   (into {} js-built-in-intl-by-object*))
+
+(defonce js-built-in-errors-by-object*
+  (get js-built-ins-by-category "Error objects"))
+
+(defonce js-built-in-errors-by-object
+  (into {} js-built-in-errors-by-object*))
+
+(defonce js-built-in-indexed-collections-by-object*
+  (get js-built-ins-by-category "Indexed collections"))
+
+(defonce js-built-in-indexed-collections-by-object
+  (into {} js-built-in-indexed-collections-by-object*))
+
+
+;; for cached
+;; Error objects       :throwable, maybe js-error? :js
+;; Indexed collections :array, maybe :typed-array, :js
+;; Internationalization :intl
+;; Managing memory      :object :memory
+
+
+;; These are the built-ins you cannot access directly, e.g. `js/Iterator`
+;; Iterator 
+;; AsyncIterator
+;; GeneratorFunction 
+;; AsyncGeneratorFunction 
+;; Generator 
+;; AsyncGenerator 
+;; AsyncFunction 
+;; Errors

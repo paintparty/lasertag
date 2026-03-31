@@ -1,6 +1,8 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            #?(:cljs
+               [lasertag.jsi.native :as jsi.native])))
 
 
 ;; -----------------------------------------------------------------------------
@@ -150,12 +152,17 @@
       (instance?  #?(:cljs cljs.core/TransientHashSet :clj transient-hash-set-class) x)))
 
 
+(defn js-map? [v]
+  #?(:cljs
+     (or (instance? js/Map v)
+         (instance? js/WeakMap v))
+     :clj false))
+
 (defn map-like? [v]
   #?(:cljs
      (or (map? v)
          (instance? cljs.core/IMap v)
-         (instance? js/Map v)
-         (instance? js/WeakMap v))
+         (js-map? v))
      :clj
      (or (map? v)
          (instance? clojure.lang.IPersistentMap v)
@@ -163,11 +170,17 @@
          (array-map? v)
          (hash-map? v))))
 
+(defn js-set? [v]
+  #?(:cljs
+     (or (instance? js/Set v)
+         (instance? js/WeakSet v))
+     :clj
+     false))
+
 (defn set-like? [v]
   #?(:cljs
      (or (set? v)
-         (instance? js/Set v)
-         (instance? js/WeakSet v))
+         (js-set? v))
      :clj
      (or (set? v)
          (instance? clojure.lang.IPersistentSet v)
@@ -221,7 +234,7 @@
   #?(:cljs
      (instance? js/DataView x)
      :clj
-     ()))
+     false))
 
 (defn js-array-buffer? [x]
   #?(:cljs
@@ -234,6 +247,30 @@
 
 (defn js-array? [x]
   #?(:cljs (array? x) :clj false))
+
+(defn ^:no-doc js-generator? [x]
+  #?(:cljs
+     (and (js-iterable? x)
+          (= (str x) "[object Generator]"))
+     :clj
+     false))
+
+(defn ^:no-doc js-typed-array? [x]
+  #?(:cljs
+     (and (js/ArrayBuffer.isView x)
+          (not (instance? js/ArrayBuffer x))
+          (not (instance? js/DataView x)))))
+
+
+(defn js-intl?
+  [x]
+  #?(:cljs
+     (some->> x
+              cljc-type
+              (contains? jsi.native/js-built-in-intl-by-object))
+     :clj
+     false))
+
 
 (defn lazyish-seq? [x]
   (or (instance? #?(:cljs cljs.core/LazySeq :clj clojure.lang.LazySeq) x)
@@ -398,20 +435,12 @@
 ;;      TTTTTTTTTTTAAAAAAA                   AAAAAAA   GGGGGG   GGGG SSSSSSSSSSSSSSS   
 ;;                                                                                     
 ;;                                                                                     
-;;                                                                                     
-;;                                                                                     
-;;                                                                                     
-;;                                                                                     
-;; 
-
-
-
-
 
 
 (defn add-tags!* [x vol f & tags]
   (when (f x)
     (vswap! vol set/union (into #{} tags))))
+
 
 (defn number-tags
   "All secondary number tags, for values at runtime."
@@ -441,7 +470,7 @@
    (let [vol        (volatile! #{})
          tag!  (partial add-tags!* x vol)
          x-is-scalar? (scalar? x)
-         is-real-number? (real-number? x)]
+         x-is-real-number? (real-number? x)]
 
      (when x-is-scalar? (vswap! vol conj :scalar))
      (tag! callable? :callable)
@@ -450,7 +479,7 @@
      (tag! carries-meta? :carries-meta)
      (tag! named? :named)
 
-     (when is-real-number?
+     (when x-is-real-number?
        (vswap! vol conj :real)
        (tag! byte? :byte)
        (tag! cljc-ratio? :ratio)
@@ -490,15 +519,26 @@
            (tag! associative? :associative)
            (tag! sequential? :sequential)
            (tag! cljc-map-entry? :map-entry)
+           (tag! map? :array-map)
            (tag! array-map? :array-map)
            (tag! hash-map? :hash-map)
            (tag! map-like? :map-like)
            (tag! set-like? :set-like)
            (tag! list-like? :list-like)
            (tag! coll-like? :coll-like)
-           (tag! js-object? :js-object)
-           (tag! js-array? :js-array)
-           )))
+           (tag! cljc-array? :array)
+           #?(:cljs
+              (do
+                (tag! js-object? :object :map-like :js)
+                (tag! js-array? :array :array-like :list-like :js)
+                (tag! js-map? :map-like :js)
+                (tag! js-set? :set-like :js)
+                (tag! js-generator? :generator :js)
+                (tag! iterable? :iterable :js)
+                (tag! js-promise? :promise :js)
+                (tag! js-global-this? :global-this :js)
+                (tag! js-typed-array? :typed-array :array-like :js)
+                )))))
      #_(when runtime? 
          (add-tag! runtime? :record))
      @vol)))
@@ -847,13 +887,13 @@
        [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
+       [clojure.lang.PersistentList$EmptyList :list]            (list)
        [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
        [clojure.lang.PersistentTreeSet :set]                    (sorted-set 3 1 2)
        [clojure.lang.PersistentArrayMap$TransientArrayMap :map] (transient (array-map 1 2 3 4))
        [clojure.lang.PersistentHashMap$TransientHashMap :map]   (transient (hash-map 1 2 3 4))
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
-       [clojure.lang.PersistentList$EmptyList :list]            (list)
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
        [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)

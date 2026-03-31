@@ -29,11 +29,6 @@
 (defn- pwos [x] (with-out-str (print x)))
 
 
-(defn ^:no-doc typed-array? [x]
-  (and (js/ArrayBuffer.isView x)
-       (not (instance? js/ArrayBuffer x))
-       (not (instance? js/DataView x))))
-
 
 (defn- js-classname [x]
   (when-not (nil? x)
@@ -63,33 +58,32 @@
   {js/Set     :js-set
    js/WeakSet :js-weak-set})
 
-
-(def js-indexed-coll-types
-  {js/Array             :array
-   js/Int8Array         :js-int8-array
-   js/Uint8Array        :js-unsigned-int8-array
-   js/Uint8ClampedArray :js-unsigned-int8-clamped-array
-   js/Int16Array        :js-int16-array
-   js/Uint16Array       :js-unsigned-int16-array
-   js/Int32Array        :js-int32-array
-   js/Uint32Array       :js-unsigned-int32-array
-   js/BigInt64Array     :js-big-int64-array
-   js/BigUint64Array    :js-big-unsigned-int64-array
-   js/Float32Array      :js-float32-array
-   js/Float64Array      :js-float64-array})
-
-
-(def js-indexed-coll-types-set
-  (->> js-indexed-coll-types
-       keys
-       (into #{})))
+;; (def js-indexed-coll-types
+;;   {
+;;    js/Array             :array
+;;    js/Int8Array         :js-int8-array
+;;    js/Uint8Array        :js-unsigned-int8-array
+;;    js/Uint8ClampedArray :js-unsigned-int8-clamped-array
+;;    js/Int16Array        :js-int16-array
+;;    js/Uint16Array       :js-unsigned-int16-array
+;;    js/Int32Array        :js-int32-array
+;;    js/Uint32Array       :js-unsigned-int32-array
+;;    js/BigInt64Array     :js-big-int64-array
+;;    js/BigUint64Array    :js-big-unsigned-int64-array
+;;    js/Float32Array      :js-float32-array
+;;    js/Float64Array      :js-float64-array
+;;    })
 
 
-(defn- cljs-iterable-type [x]
-  (when (js-iterable? x)
-    (if (= (str x) "[object Generator]")
-      :generator
-      :iterable)))
+;; (def js-indexed-coll-types-set
+;;   (->> js-indexed-coll-types
+;;        keys
+;;        (into #{})))
+
+
+(defn- js-generator? [x]
+  (and (js-iterable? x)
+       (= (str x) "[object Generator]")))
 
 
 (defn- js-object-instance-map-like
@@ -126,25 +120,15 @@
         {:cljc-coll-type (cached/cljc-coll-type x)
          :js-map-types   (get js-map-types t)
          :js-set-types   (get js-set-types t)
-         :iterable       (cljs-iterable-type x)
-         :array          (when (array? x) :array)
-         :array-map      (when (= cljs.core/PersistentArrayMap t) :array-map)
-         :list           (when (= cljs.core/List t) :list)
          :object         (when (object? x) :object)
          :fn             (when (fn? x) :function)
-         :inst           (when (inst? x) :inst)
-         :defmulti       (when (cached/multi-function? x) :defmulti)
-         :js-promise     (when (cached/js-promise? x) :js-promise)
-         :js-global-this (when (cached/js-global-this? x) :js-global-this)
-         :coll           (when (or (contains? #{:vector :map :set :seq} k)
-                                   (coll? x))
-                           :coll)
          :record         (when (record? x) :record)
          :datatype       (when (record? x) :datatype)
-         :typed-array    (when (typed-array? x) :js-typed-array)
-         :typed-array+   (when (typed-array? x)
-                           (get js-indexed-coll-types
-                                (cached/cljc-type x)))}
+         :generator      (when (js-generator? x) :generator)
+         :iterable       (when (js-iterable? x) :iterable)
+         :js-promise     (when (cached/js-promise? x) :js-promise)
+         :js-global-this (when (cached/js-global-this? x) :js-global-this)
+         :typed-array    (when (cached/js-typed-array? x) :js-typed-array)}
 
         js-object-instance-map-like
         (js-object-instance-map-like x types)]
@@ -195,65 +179,41 @@
        (nth dom-node-type-keywords n nil)])))
 
 
-(defn- js-intl-object-key
-  [x]
-  (when-let [sym (some->> x
-                          cached/cljc-type
-                          (get jsi.native/js-built-in-intl-by-object)
-                          :sym)]
-    (keyword (str "js/" sym))))
-
 
 (defn k*
   "Assigns a primary tag for values that cannot be found in any of the public
    lasertag.cached/* maps."
   [x t]
   (or
-   ;; If coll, returns tag for coll type
+   ;; Might not need this?
    (cached/cljc-coll-type x)
 
-   ;; If map-like native JS data structure, returns :map tag
-   (when (get js-map-types t) :map)
+  ;; These should be covered
+  ;;  (when (cached/js-map? x) :map)
+  ;;  (when (cached/js-set? x) :set)
+  ;;  (when (cached/js-typed-array? x) :array)
 
-   ;; If set-like native JS data structure, returns :set tag
-   (when (get js-set-types t) :set)
+   (when (cached/js-generator? x) :generator)
 
-   ;; If native JS Indexed array, returns :array tag
-   (when (contains? js-indexed-coll-types-set t) :array)
+   (when (js-iterable? x) :iterable)
 
-   ;; If native JS Iterable, returns :iterable tag
-   ;; If a Generator, returns :generator tag
-   (cljs-iterable-type x)
-
-   ;; If native JS Object, returns :object tag
    (when (object? x) :object)
 
-   ;; If function, returns :function tag. Pretty sure this needs to come after
-   ;; what is above, or some of those would be tagged :function
-   (when (fn? x) :function)
+   (when (fn? x) :function) ;; <- Pretty sure this needs to come after what is above, or some of those would be tagged :function
+   
+  ;; These should be covered?
+  ;;  (when (cached/multi-function? x) :multi-function)
 
-   ;; If multi-function, returns :multi-function tag
-   ;;           TODO - Move this to cached
-   (when (cached/multi-function? x) :multi-function)
-
-   ;; If native js-promise, returns :promise tag
-   ;;           TODO - Move this to cached
    (when (cached/js-promise? x) :promise)
 
-   ;; If js global this var, returns :js-global-this tag
    (when (cached/js-global-this? x) :js-global-this)
    
-   ;; Returns a keyword representation of a js built-in Internationalization
-   ;; class such as js/Intl.Local => :js/Intl.Local
-   ;;           TODO - Move this to cached
-   (js-intl-object-key x)
+  ;; These should be covered?
+  ;;  (when (cached/js-intl? x) :intl)
 
-   ;; If value is an instance of js/DataView, returns a :data-view tag
-   ;;           TODO - Move this to cached
-   (when (cached/js-data-view? x) :js-data-view)
+  ;; These should be covered?
+  ;;  (when (cached/js-data-view? x) :js-data-view)
 
-   ;; If value is an instance of js/ArrayBuffer, returns a :byte-array tag
-   ;;           TODO - Move this to cached
    (when (cached/js-array-buffer? x) :byte-array)
 
    ;; Catch all for other objects, returns a keyword of the classname
@@ -262,18 +222,10 @@
    (js-object-instance x)
 
    ;; If instance of js/Error, returns :throwable tag
+   ;; Leave in but should be covr=ered
    (when (cached/throwable? x) :throwable)
 
    ;; Returns namespaced keyword if no tag was produced
    :lasertag/value-type-unknown))
 
-;; These are the built-ins you cannot access directly, e.g. `js/Iterator`
-;; Iterator 
-;; AsyncIterator
-;; GeneratorFunction 
-;; AsyncGeneratorFunction 
-;; Generator 
-;; AsyncGenerator 
-;; AsyncFunction 
-;; Errors
 

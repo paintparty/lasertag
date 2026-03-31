@@ -4,7 +4,8 @@
   "description": "ClojureScript tests for Lasertag tagging library",
   "main": "index.js",
   "scripts": {
-    "test": "shadow-cljs compile test && karma start --single-run"
+    "test": "shadow-cljs compile test && karma start --single-run",
+    "testgen": "shadow-cljs watch testgen"
   },
   "keywords": [],
   "author": "",

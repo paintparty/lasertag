@@ -1,6 +1,9 @@
 {:source-paths ["src/" "test/"]
- :dependencies []
- :builds       {:test {:target    :karma
-                       :output-to "out/test.js"
-                       :ns-regexp "-test$"
-                       :autorun   true}}}
+ :dependencies [[org.babashka/sci "0.12.51"]]
+ :builds       {:test    {:target    :karma
+                          :output-to "out/test.js"
+                          :ns-regexp "-test$"
+                          :autorun   true}
+                :codegen {:target    :node-script
+                          :output-to "out/testgen.js"
+                          :main      lasertag.jsi.codegen/main}}}
