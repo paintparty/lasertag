@@ -672,17 +672,6 @@
                   m))))
 
 
-;; Add to jvm test generation
-;; [java.util.concurrent.Future :future]  (future (Thread/sleep 10) (+ 1 2))
-;; some functions
-;; some arrays
-;; throwables
-;; promise
-;; abstract datatype
-;; different real numbers whose tag maps have to be supplemented at runtime
-;; things implementing abstract java maps, sets, and lists
-;; vanilla classes
-
 
 (def by-class
   ;; TODO in all*

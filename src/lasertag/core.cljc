@@ -1,4 +1,3 @@
-
 (ns lasertag.core
   (:require
    [clojure.string :as string]
@@ -384,3 +383,32 @@
                                   (abstract-instance?* x))))))))
 
 ;; -----------------------------------------------------------------------------
+;; TODO 
+
+;; General cleanup
+;; Change .jsi ns to .cljs
+
+;; Add to jvm test generation
+;; [java.util.concurrent.Future :future]  (future (Thread/sleep 10) (+ 1 2))
+;; some functions
+;; some arrays
+;; throwables
+;; promise
+;; abstract datatype
+;; different real numbers whose tag maps have to be supplemented at runtime
+;; things implementing abstract java maps, sets, and lists
+;; vanilla classes
+
+;; Same, or similar thing for js test generation
+
+
+;; run test suites
+;; bb test suite
+;; test with fw
+
+;; Update readme
+
+;; docstring / quickdoc
+
+;; pred lib predspread
+;; medley, tupelo, valip, clj-commons, useful, one from metosin, one from clj guy
