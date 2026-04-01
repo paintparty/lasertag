@@ -327,7 +327,8 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 <br>
 
 ## Test
- The JVM tests require [leiningen](https://leiningen.org/) to be installed.
+The JVM tests require [leiningen](https://leiningen.org/) to be installed.
+
 
 ```Clojure
 lein test
@@ -344,6 +345,22 @@ Babashka tests:
 ```Clojure
 bb test:bb
 ```
+
+## Developing
+Most of the tests are auto-generated.
+
+To regenerate tests for JVM Clojure, look at source of `lasertag.cached`.
+
+The cljs tests can also need to be regenerated. Additionally, the data structure
+that serves most of the results for `lasertag.core/tag` & `lasertag.core/tag-map`
+ in cljs needs to be pre-generated. For both of these:
+
+In one terminal: `npm run codegen`
+In another terminal: `npm run codegen-watch`
+
+For more details on toggling this generation during dev, look at the source of
+`lasertag.cljs.codegen`.
+
 
 <br>
 

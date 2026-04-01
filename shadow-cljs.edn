@@ -5,5 +5,5 @@
                           :ns-regexp "-test$"
                           :autorun   true}
                 :codegen {:target    :node-script
-                          :output-to "out/testgen.js"
+                          :output-to "out/codegen.js"
                           :main      lasertag.jsi.codegen/main}}}

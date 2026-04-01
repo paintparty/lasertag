@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "shadow-cljs compile test && karma start --single-run",
-    "testgen": "shadow-cljs watch testgen"
+    "codegen": "shadow-cljs watch codegen",
+    "codegen-watch": "node --watch out/codegen.js"
   },
   "keywords": [],
   "author": "",
