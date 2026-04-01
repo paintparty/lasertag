@@ -301,18 +301,18 @@
 (defn derefable? [x]
   (or (volatile? x)
       #?(:clj  (instance? clojure.lang.IDeref x)
-         :cljs (satisfies? cljs.core/IDeref x))))
+         :cljs (instance? cljs.core/IDeref x))))
 
 (defn reference? 
   "Returns true if x is a reference type."
   [x]
   #?(:clj  (instance? clojure.lang.IRef x)
-     :cljs (or (satisfies? cljs.core/Atom x)
-               (satisfies? cljs.core/Var x))))
+     :cljs (or (instance? cljs.core/Atom x)
+               (instance? cljs.core/Var x))))
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
-     :cljs (satisfies? IWithMeta x)))
+     :cljs (instance? IWithMeta x)))
 
 (defn callable? [v]
   (or (ifn? v)
@@ -372,7 +372,7 @@
 
 ;; (defn sorted? [x]
 ;;   #?(:clj  (instance? clojure.lang.Sorted x)
-;;      :cljs (satisfies? cljs.core/ISorted x)))
+;;      :cljs (instance? cljs.core/ISorted x)))
 
 (defn editable? [x]
   (instance?  #?(:cljs cljs.core/IEditableCollection :clj clojure.lang.IEditableCollection) x))
@@ -383,7 +383,7 @@
 
 (defn transient? [v]
   #?(:clj  (instance? clojure.lang.ITransientCollection v)
-     :cljs (satisfies? cljs.core/ITransientCollection v)))
+     :cljs (instance? cljs.core/ITransientCollection v)))
 
 (defn stack? [x]
   (instance?  #?(:cljs cljs.core/IStack :clj clojure.lang.IPersistentStack) x))
@@ -399,11 +399,11 @@
 
 (defn named? [x]
   #?(:clj  (instance? clojure.lang.Named x)
-     :cljs (satisfies? cljs.core/INamed x)))
+     :cljs (instance? cljs.core/INamed x)))
 
 (defn multi-function? [x]
   #?(:clj  (instance? clojure.lang.MultiFn x)
-     :cljs (satisfies? cljs.core/MultiFn x)))
+     :cljs (instance? cljs.core/MultiFn x)))
 
 (defn scalar? [x]
   (or (number? x)
@@ -509,7 +509,7 @@
            (tag! deferred? :deferred)
            (tag! transient? :transient)
            (tag! editable? :editable)
-           (tag! multi-function? :multi-function?)
+           (tag! multi-function? :multi-function)
            (tag! sorted? :sorted)
            (tag! stack? :stack)
            (tag! cons? :cons)

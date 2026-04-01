@@ -185,13 +185,7 @@
    lasertag.cached/* maps."
   [x t]
   (or
-   ;; Might not need this?
    (cached/cljc-coll-type x)
-
-  ;; These should be covered
-  ;;  (when (cached/js-map? x) :map)
-  ;;  (when (cached/js-set? x) :set)
-  ;;  (when (cached/js-typed-array? x) :array)
 
    (when (cached/js-generator? x) :generator)
 
@@ -201,18 +195,11 @@
 
    (when (fn? x) :function) ;; <- Pretty sure this needs to come after what is above, or some of those would be tagged :function
    
-  ;; These should be covered?
-  ;;  (when (cached/multi-function? x) :multi-function)
-
    (when (cached/js-promise? x) :promise)
 
    (when (cached/js-global-this? x) :js-global-this)
    
-  ;; These should be covered?
-  ;;  (when (cached/js-intl? x) :intl)
-
-  ;; These should be covered?
-  ;;  (when (cached/js-data-view? x) :js-data-view)
+   (when (cached/js-data-view? x) :js-data-view)
 
    (when (cached/js-array-buffer? x) :byte-array)
 

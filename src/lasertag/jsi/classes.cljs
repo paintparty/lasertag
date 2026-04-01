@@ -10,6 +10,7 @@
 
 (ns lasertag.jsi.classes)
 
+
 (def
  by-class
  {js/Intl.Collator
@@ -26,8 +27,12 @@
      :coll-like
      :hash-map
      :map-like
-     :map
-     :carries-meta}},
+     :map}},
+  cljs.core/MultiFn
+  {:type cljs.core/MultiFn,
+   :classname "cljs.core/MultiFn",
+   :tag :function,
+   :all-tags #{:callable :multi-function :function}},
   cljs.core/Cons
   {:type cljs.core/Cons,
    :classname "cljs.core/Cons",
@@ -35,7 +40,6 @@
    :all-tags
    #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
      :list-like
-     :carries-meta
      :cons}},
   js/RegExp
   {:type js/RegExp,
@@ -51,7 +55,7 @@
   {:type cljs.core/TransientVector,
    :classname "cljs.core/TransientVector",
    :tag :vector,
-   :all-tags #{:callable :transient :list-like :coll-like :vector}},
+   :all-tags #{:callable :list-like :coll-like :vector}},
   js/Float64Array
   {:type js/Float64Array,
    :classname "js/Float64Array",
@@ -65,8 +69,7 @@
    #{:iterable :js :callable :seqable :associative :coll :array-map
      :coll-like
      :map-like
-     :map
-     :carries-meta}},
+     :map}},
   js/EvalError
   {:type js/EvalError,
    :classname "js/EvalError",
@@ -78,8 +81,7 @@
    :tag :queue,
    :all-tags
    #{:iterable :js :seqable :queue :sequential :coll :coll-like :seq
-     :list-like
-     :carries-meta}},
+     :list-like}},
   js/Intl.Locale
   {:type js/Intl.Locale,
    :classname "js/Intl.Locale",
@@ -99,7 +101,7 @@
   {:type cljs.core/Keyword,
    :classname "cljs.core/Keyword",
    :tag :keyword,
-   :all-tags #{:scalar :callable :named :keyword}},
+   :all-tags #{:scalar :callable :keyword}},
   js/ReferenceError
   {:type js/ReferenceError,
    :classname "js/ReferenceError",
@@ -113,8 +115,7 @@
    #{:iterable :js :seqable :sequential :coll :deferred :coll-like
      :lazy
      :seq
-     :list-like
-     :carries-meta}},
+     :list-like}},
   js/Float32Array
   {:type js/Float32Array,
    :classname "js/Float32Array",
@@ -125,26 +126,22 @@
    :classname "cljs.core/MapEntry",
    :tag :vector,
    :all-tags
-   #{:callable :seqable :sequential :associative :coll :vector
+   #{:callable :seqable :coll :associative :sequential :list-like
      :coll-like
-     :list-like
-     :carries-meta}},
+     :vector}},
   cljs.core/EmptyList
   {:type cljs.core/EmptyList,
    :classname "cljs.core/EmptyList",
    :tag :list,
    :all-tags
-   #{:seqable :carries-meta :coll :seq :sequential :list-like
-     :coll-like
-     :list}},
+   #{:seqable :coll :seq :sequential :list-like :coll-like :list}},
   cljs.core/LazySeq
   {:type cljs.core/LazySeq,
    :classname "cljs.core/LazySeq",
    :tag :seq,
    :all-tags
-   #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
-     :list-like
-     :carries-meta}},
+   #{:seqable :coll :seq :lazy :deferred :sequential :list-like
+     :coll-like}},
   cljs.core/Subvec
   {:type cljs.core/Subvec,
    :classname "cljs.core/Subvec",
@@ -154,8 +151,7 @@
      :vector
      :subvec
      :coll-like
-     :list-like
-     :carries-meta}},
+     :list-like}},
   js/Uint8ClampedArray
   {:type js/Uint8ClampedArray,
    :classname "js/Uint8ClampedArray",
@@ -185,7 +181,7 @@
   {:type cljs.core/TransientHashMap,
    :classname "cljs.core/TransientHashMap",
    :tag :map,
-   :all-tags #{:callable :transient :hash-map :map}},
+   :all-tags #{:callable :hash-map :map}},
   js/String
   {:type js/String,
    :classname "js/String",
@@ -209,24 +205,20 @@
    #{:iterable :js :callable :seqable :sequential :associative :coll
      :vector
      :coll-like
-     :list-like
-     :carries-meta}},
+     :list-like}},
   cljs.core/List
   {:type cljs.core/List,
    :classname "cljs.core/List",
    :tag :list,
    :all-tags
-   #{:seqable :carries-meta :coll :seq :sequential :list-like
-     :coll-like
-     :list}},
+   #{:seqable :coll :seq :sequential :list-like :coll-like :list}},
   cljs.core/Repeat
   {:type cljs.core/Repeat,
    :classname "cljs.core/Repeat",
    :tag :seq,
    :all-tags
-   #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
-     :list-like
-     :carries-meta}},
+   #{:seqable :coll :seq :lazy :deferred :sequential :list-like
+     :coll-like}},
   js/Intl.DateTimeFormat
   {:type js/Intl.DateTimeFormat,
    :classname "js/Intl.DateTimeFormat",
@@ -241,7 +233,7 @@
   {:type cljs.core/TransientArrayMap,
    :classname "cljs.core/TransientArrayMap",
    :tag :map,
-   :all-tags #{:callable :transient :array-map :map}},
+   :all-tags #{:callable :array-map :map}},
   js/Int32Array
   {:type js/Int32Array,
    :classname "js/Int32Array",
@@ -266,15 +258,14 @@
   {:type cljs.core/TransientHashSet,
    :classname "cljs.core/TransientHashSet",
    :tag :set,
-   :all-tags #{:callable :transient :set}},
+   :all-tags #{:callable :set}},
   cljs.core/PersistentHashSet
   {:type cljs.core/PersistentHashSet,
    :classname "cljs.core/PersistentHashSet",
    :tag :set,
    :all-tags
-   #{:iterable :js :callable :seqable :coll :coll-like :set
-     :carries-meta
-     :set-like}},
+   #{:callable :seqable :coll :set-like :coll-like :iterable :js
+     :set}},
   js/Intl.NumberFormat
   {:type js/Intl.NumberFormat,
    :classname "js/Intl.NumberFormat",
@@ -293,8 +284,7 @@
    #{:callable :seqable :associative :coll :array-map :coll-like
      :sorted
      :map-like
-     :map
-     :carries-meta}},
+     :map}},
   js/Map
   {:type js/Map,
    :classname "js/Map",
@@ -315,9 +305,7 @@
    :classname "cljs.core/PersistentTreeSet",
    :tag :set,
    :all-tags
-   #{:callable :seqable :carries-meta :coll :sorted :set-like
-     :coll-like
-     :set}},
+   #{:callable :seqable :coll :sorted :set-like :coll-like :set}},
   js/Intl.ListFormat
   {:type js/Intl.ListFormat,
    :classname "js/Intl.ListFormat",
@@ -377,7 +365,6 @@
      :lazy
      :seq
      :list-like
-     :carries-meta
      :range}},
   js/Int8Array
   {:type js/Int8Array,

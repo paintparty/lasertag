@@ -68,6 +68,7 @@
      ["cljs.core/TransientHashSet" :set]    "(transient #{1 2 3})"
      ["cljs.core/PersistentQueue" :queue]   "cljs.core.PersistentQueue.EMPTY"
      ["cljs.core/MapEntry" :vector]         "(-> {:a 1} first)"
+     ["cljs.core/MultiFn" :function]        "(do (defmulti different-behavior (fn [x] (:x-type x))) different-behavior)"
      
      ;; ---------------------------------------------------------------------
      ;; JS Built-ins
@@ -200,9 +201,20 @@
 (defn write-classes! []
   (write-file-sync! 
    "./src/lasertag/jsi/classes.cljs"
-   (header-comment+namespace-form
-    header-comment
-    '(ns lasertag.jsi.classes))))
+   (str (header-comment+namespace-form
+         header-comment
+         '(ns lasertag.jsi.classes)
+         
+         )
+        (with-out-str
+          (clojure.pprint/pprint
+           (list 'def
+                 'by-class
+                 (reduce-kv
+                  (fn [m k v]
+                    (assoc m k (dissoc v :demo)))
+                  {}
+                  by-class)))))))
 
 (defn main []
   (when write-tests? (write-tests!))

@@ -39,7 +39,21 @@
     :tag :map,
     :all-tags
     #{:iterable :js :callable :seqable :associative :coll :array-map
-      :coll-like :hash-map :map-like :map :carries-meta}})))
+      :coll-like :hash-map :map-like :map}})))
+
+
+(deftest
+ cljs.core/MultiFn-test
+ (is
+  (=
+   (tag-map
+    (do
+     (defmulti different-behavior (fn [x] (:x-type x)))
+     different-behavior))
+   {:type cljs.core/MultiFn,
+    :classname "cljs.core/MultiFn",
+    :tag :function, 
+    :all-tags #{:callable :multi-function :function}})))
 
 
 (deftest
@@ -52,7 +66,7 @@
     :tag :seq,
     :all-tags
     #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
-      :list-like :carries-meta :cons}})))
+      :list-like :cons}})))
 
 
 (deftest
@@ -85,7 +99,7 @@
    {:type cljs.core/TransientVector,
     :classname "cljs.core/TransientVector",
     :tag :vector,
-    :all-tags #{:callable :transient :list-like :coll-like :vector}})))
+    :all-tags #{:callable :list-like :coll-like :vector}})))
 
 
 (deftest
@@ -109,7 +123,7 @@
     :tag :map,
     :all-tags
     #{:iterable :js :callable :seqable :associative :coll :array-map
-      :coll-like :map-like :map :carries-meta}})))
+      :coll-like :map-like :map}})))
 
 
 (deftest
@@ -133,7 +147,7 @@
     :tag :queue,
     :all-tags
     #{:iterable :js :seqable :queue :sequential :coll :coll-like :seq
-      :list-like :carries-meta}})))
+      :list-like}})))
 
 
 (deftest
@@ -189,7 +203,7 @@
    {:type cljs.core/Keyword,
     :classname "cljs.core/Keyword",
     :tag :keyword, 
-    :all-tags #{:scalar :callable :named :keyword}})))
+    :all-tags #{:scalar :callable :keyword}})))
 
 
 (deftest
@@ -213,7 +227,7 @@
     :tag :seq,
     :all-tags
     #{:iterable :js :seqable :sequential :coll :deferred :coll-like
-      :lazy :seq :list-like :carries-meta}})))
+      :lazy :seq :list-like}})))
 
 
 (deftest
@@ -236,8 +250,8 @@
     :classname "cljs.core/MapEntry",
     :tag :vector,
     :all-tags
-    #{:callable :seqable :sequential :associative :coll :vector
-      :coll-like :list-like :carries-meta}})))
+    #{:callable :seqable :coll :associative :sequential :list-like
+      :coll-like :vector}})))
 
 
 (deftest
@@ -249,8 +263,7 @@
     :classname "cljs.core/EmptyList",
     :tag :list,
     :all-tags
-    #{:seqable :carries-meta :coll :seq :sequential :list-like
-      :coll-like :list}})))
+    #{:seqable :coll :seq :sequential :list-like :coll-like :list}})))
 
 
 (deftest
@@ -262,8 +275,8 @@
     :classname "cljs.core/LazySeq",
     :tag :seq,
     :all-tags
-    #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
-      :list-like :carries-meta}})))
+    #{:seqable :coll :seq :lazy :deferred :sequential :list-like
+      :coll-like}})))
 
 
 (deftest
@@ -276,7 +289,7 @@
     :tag :vector,
     :all-tags
     #{:iterable :js :callable :seqable :sequential :associative :coll
-      :vector :subvec :coll-like :list-like :carries-meta}})))
+      :vector :subvec :coll-like :list-like}})))
 
 
 (deftest
@@ -342,7 +355,7 @@
    {:type cljs.core/TransientHashMap,
     :classname "cljs.core/TransientHashMap",
     :tag :map, 
-    :all-tags #{:callable :transient :hash-map :map}})))
+    :all-tags #{:callable :hash-map :map}})))
 
 
 (deftest
@@ -392,7 +405,7 @@
     :tag :vector,
     :all-tags
     #{:iterable :js :callable :seqable :sequential :associative :coll
-      :vector :coll-like :list-like :carries-meta}})))
+      :vector :coll-like :list-like}})))
 
 
 (deftest
@@ -404,8 +417,7 @@
     :classname "cljs.core/List",
     :tag :list,
     :all-tags
-    #{:seqable :carries-meta :coll :seq :sequential :list-like
-      :coll-like :list}})))
+    #{:seqable :coll :seq :sequential :list-like :coll-like :list}})))
 
 
 (deftest
@@ -417,8 +429,8 @@
     :classname "cljs.core/Repeat",
     :tag :seq,
     :all-tags
-    #{:seqable :sequential :coll :deferred :coll-like :lazy :seq
-      :list-like :carries-meta}})))
+    #{:seqable :coll :seq :lazy :deferred :sequential :list-like
+      :coll-like}})))
 
 
 (deftest
@@ -452,7 +464,7 @@
    {:type cljs.core/TransientArrayMap,
     :classname "cljs.core/TransientArrayMap",
     :tag :map, 
-    :all-tags #{:callable :transient :array-map :map}})))
+    :all-tags #{:callable :array-map :map}})))
 
 
 (deftest
@@ -511,7 +523,7 @@
    {:type cljs.core/TransientHashSet,
     :classname "cljs.core/TransientHashSet",
     :tag :set, 
-    :all-tags #{:callable :transient :set}})))
+    :all-tags #{:callable :set}})))
 
 
 (deftest
@@ -523,8 +535,8 @@
     :classname "cljs.core/PersistentHashSet",
     :tag :set,
     :all-tags
-    #{:iterable :js :callable :seqable :coll :coll-like :set
-      :carries-meta :set-like}})))
+    #{:callable :seqable :coll :set-like :coll-like :iterable :js
+      :set}})))
 
 
 (deftest
@@ -563,7 +575,7 @@
     :tag :map,
     :all-tags
     #{:callable :seqable :associative :coll :array-map :coll-like
-      :sorted :map-like :map :carries-meta}})))
+      :sorted :map-like :map}})))
 
 
 (deftest
@@ -608,8 +620,7 @@
     :classname "cljs.core/PersistentTreeSet",
     :tag :set,
     :all-tags
-    #{:callable :seqable :carries-meta :coll :sorted :set-like
-      :coll-like :set}})))
+    #{:callable :seqable :coll :sorted :set-like :coll-like :set}})))
 
 
 (deftest
@@ -737,7 +748,7 @@
     :tag :seq,
     :all-tags
     #{:iterable :js :seqable :sequential :coll :deferred :coll-like
-      :lazy :seq :list-like :carries-meta :range}})))
+      :lazy :seq :list-like :range}})))
 
 
 (deftest
