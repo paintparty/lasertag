@@ -2,8 +2,11 @@
   (:require 
    [lasertag.core :refer [tag tag-map]]
    [clojure.string :as string]
-   #?(:cljs [lasertag.jsi.native-plus :as jsi])
-   #?(:cljs [lasertag.jsi.native :as jsi.native])))
+   #?(:cljs [lasertag.jsi.native-plus :refer [objects-by-unique-method-name
+                                           objects-by-method-name
+                                           js-built-in-objects
+                                           js-built-in-functions]])
+   #?(:cljs [lasertag.jsi.native] :as jsi-native)))
 
 (defn ? 
   "Debugging macro internal to lib"
@@ -107,11 +110,11 @@
         (and (string? name-prop)
              (re-find #"[^\$\.-]" name-prop))
          (if-let [built-in-candidates
-                  (get jsi/objects-by-method-name fn-nm)]
+                  (get objects-by-method-name fn-nm)]
            (let [o (first (filter #(= x (aget (.-prototype %) fn-nm)) 
                                   built-in-candidates))]
              (js-built-in-map o))
-           (when-let [built-in (get jsi/objects-by-unique-method-name
+           (when-let [built-in (get objects-by-unique-method-name
                                     fn-nm)]
              (js-built-in-map built-in)))))
 
@@ -126,8 +129,8 @@
        (let [bits          (string/split s #"\$")
              [fn-ns fn-nm] (partition-drop-last bits)
              fn-nm         (demunge-fn-name fn-nm)
-             built-in?     (or (contains? jsi/js-built-in-objects x)
-                               (contains? jsi/js-built-in-functions x))]
+             built-in?     (or (contains? js-built-in-objects x)
+                               (contains? js-built-in-functions x))]
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)

@@ -1,14 +1,17 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
             [clojure.string :as string]
-            #?(:cljs
-               [lasertag.jsi.native :as jsi.native])))
+            #?(:cljs [lasertag.jsi.native :as jsi.native])
+            #?(:cljs [lasertag.jsi.classes])
+            ))
 
 
 ;; -----------------------------------------------------------------------------
 ;; Should always be set to false, unless writing tests during dev of lasertag
 
-(def ^:private write-tests? false)
+(def ^:private write-tests? true)
+
+(def gen-test-path "./test/lasertag/generated.clj")
 
 ;; -----------------------------------------------------------------------------
 
@@ -604,11 +607,6 @@
       :all-tags (set/union all-tags #{:nan})}}))
 
 
-(def gen-test-path
-   "./test/lasertag/generated.clj")
-
-
-
 #?(:clj
    (do 
 
@@ -631,7 +629,8 @@
 
      (defn spit-test-header []
        (require '[clojure.pprint :refer [pprint]])
-       (spit (str 
+       (spit gen-test-path
+             (str 
               comment-box-text
               "\n\n"
               (with-out-str 
@@ -644,10 +643,6 @@
               "\n")
              :append false))
 
-     (defn spit-test-body [body]
-       (spit gen-test-path 
-             body
-             :append true))
 
      (defmacro by-class* [m]
        (when write-tests? (spit-test-header))
@@ -694,161 +689,7 @@
   ;; Nix the categories, just section off with comments or prioritize with metadata 
   ;; Maybe create a single freqs that would be array map
   #?(:cljs
-     {js/Number                    {:tag       :number
-                                    :type      js/Number
-                                    :all-tags  #{:number :scalar}
-                                    :classname "js/Number"}
-      cljs.core/Keyword            {:tag       :keyword
-                                    :type      cljs.core/Keyword
-                                    :all-tags  #{:keyword :scalar}
-                                    :classname "cljs.core/Keyword"}
-      cljs.core/LazySeq            {:tag       :seq
-                                    :type      cljs.core/LazySeq
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :coll-like
-                                                 :seq
-                                                 :lazy
-                                                 :deferred
-                                                 :carries-meta}
-                                    :classname "cljs.core/LazySeq"}
-      cljs.core/List               {:tag       :seq
-                                    :type      cljs.core/List
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :list
-                                                 :coll-like
-                                                 :seq
-                                                 :carries-meta}
-                                    :classname "cljs.core/List"}
-      cljs.core/PersistentArrayMap {:tag       :map
-                                    :type      cljs.core/PersistentArrayMap
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :array-map
-                                                 :coll-like
-                                                 :map-like
-                                                 :map
-                                                 :carries-meta}
-                                    :classname "cljs.core/PersistentArrayMap"}
-      cljs.core/PersistentHashMap  {:tag       :map
-                                    :type      cljs.core/PersistentHashMap
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :hash-map
-                                                 :coll-like
-                                                 :map-like
-                                                 :map
-                                                 :carries-meta}
-                                    :classname "cljs.core/PersistentHashMap"}
-      cljs.core/PersistentHashSet  {:tag       :set
-                                    :type      cljs.core/PersistentHashSet
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :set-map
-                                                 :coll-like
-                                                 :set-like
-                                                 :set
-                                                 :carries-meta}
-                                    :classname "cljs.core/PersistentHashMap"}
-      cljs.core/PersistentVector   {:tag       :vector
-                                    :type      cljs.core/PersistentVector
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :vector
-                                                 :coll-like
-                                                 :carries-meta}
-                                    :classname "cljs.core/PersistentVector"}
-      cljs.core/Symbol             {:tag       :symbol
-                                    :type      cljs.core/Symbol
-                                    :all-tags  #{:symbol :carries-meta :scalar}
-                                    :classname "cljs.core/Symbol"}
-      js/Boolean                   {:tag       :boolean
-                                    :type      js/Boolean
-                                    :all-tags  #{:boolean :scalar}
-                                    :classname "js/Boolean"}
-      js/Date                      {:tag       :inst
-                                    :type      js/Date
-                                    :all-tags  #{:inst :temporal}
-                                    :classname "Date"}
-      js/String                    {:tag       :string
-                                    :type      js/String
-                                    :all-tags  #{:iterable :string :scalar}
-                                    :classname "js/String"}
-      cljs.core/Atom               {:tag       :atom
-                                    :type      cljs.core/Atom
-                                    :all-tags  #{:atom
-                                                 :reference}
-                                    :classname "cljs.core/Atom"}
-      cljs.core/Cons               {:tag       :seq
-                                    :type      cljs.core/Cons
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :coll-like
-                                                 :seq
-                                                 :carries-meta}
-                                    :classname "cljs.core/Cons"}
-      cljs.core/IntegerRange       {:tag       :seq
-                                    :type      cljs.core/IntegerRange
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :coll-like
-                                                 :seq
-                                                 :lazy
-                                                 :deferred
-                                                 :carries-meta}
-                                    :classname "cljs.core/IntegerRange"}
-      cljs.core/PersistentQueue    {:tag       :seq
-                                    :type      cljs.core/PersistentQueue
-                                    :all-tags  #{:iterable
-                                                 :coll
-                                                 :coll-like
-                                                 :seq
-                                                 :carries-meta}
-                                    :classname "cljs.core/PersistentQueue"}
-      cljs.core/Repeat             {:tag       :seq
-                                    :type      cljs.core/Repeat
-                                    :all-tags  #{:seqable
-                                                 :sequential
-                                                 :coll
-                                                 :deferred
-                                                 :coll-like
-                                                 :lazy
-                                                 :seq
-                                                 :list-like
-                                                 :carries-meta}
-                                    :classname "cljs.core/Repeat"}
-      cljs.core/Subvec             {:tag       :vector
-                                    :type      cljs.core/Subvec
-                                    :all-tags  #{:callable
-                                                 :seqable
-                                                 :sequential
-                                                 :associative
-                                                 :coll
-                                                 :subvec
-                                                 :coll-like
-                                                 :stack
-                                                 :list-like
-                                                 :carries-meta}
-                                    :classname "cljs.core/Subvec"}
-      cljs.core/TransientVector    {:tag       :vector
-                                    :type      cljs.core/TransientVector
-                                    :all-tags  #{:callable
-                                                 :coll-like
-                                                 :transient
-                                                 :map
-                                                 :list-like}
-                                    :classname "cljs.core/TransientVector"}
-      cljs.core/Volatile           {:tag       :volatile
-                                    :type      cljs.core/Volatile
-                                    :all-tags  #{:volatile
-                                                 :reference}
-                                    :classname "cljs.core/Volatile"}
-      cljs.core/Var                {:tag       :var
-                                    :type      cljs.core/Var
-                                    :all-tags  #{:var
-                                                 :reference}
-                                    :classname "cljs.core/Var"}}
+      lasertag.jsi.classes/by-class
      :clj
      (by-class*
       {;; numbers
@@ -962,45 +803,41 @@
                                                                                     false) 
        })))
 
-
-
 (def by-number-class
-  (select-keys by-class
-               #?(:cljs
-                  [js/Number]
-                  :clj
-                  [java.lang.Long
-                   java.lang.Double
-                   java.lang.Short
-                   clojure.lang.Ratio
-                   java.lang.Float
-                   java.lang.Integer
-                   clojure.lang.BigInt
-                   java.math.BigInteger
-                   java.math.BigDecimal])))
+  (select-keys 
+   #?(:cljs lasertag.jsi.classes/by-class :clj by-class)
+   #?(:cljs
+      [js/Number]
+      :clj
+      [java.lang.Long
+       java.lang.Double
+       java.lang.Short
+       clojure.lang.Ratio
+       java.lang.Float
+       java.lang.Integer
+       clojure.lang.BigInt
+       java.math.BigInteger
+       java.math.BigDecimal])))
 
 
 (def by-priority-class
-  (select-keys by-class
-               #?(:cljs
-                  [cljs.core/Keyword            
-                   js/String            
-                   js/Boolean 
-                   cljs.core/LazySeq  
-                   cljs.core/PersistentVector  
-                   cljs.core/PersistentArrayMap   
-                   cljs.core/PersistentHashMap                   
-                   cljs.core/PersistentHashSet]
-                  :clj
-                  [clojure.lang.Keyword
-                   java.lang.String
-                   java.lang.Boolean
-                   clojure.lang.LazySeq
-                   clojure.lang.PersistentVector
-                   clojure.lang.PersistentArrayMap
-                   clojure.lang.PersistentHashMap
-                   clojure.lang.PersistentHashSet])))
-
-
-
-
+  (select-keys 
+   #?(:cljs lasertag.jsi.classes/by-class :clj by-class)
+   #?(:cljs
+      [cljs.core/Keyword            
+       js/String            
+       js/Boolean 
+       cljs.core/LazySeq  
+       cljs.core/PersistentVector  
+       cljs.core/PersistentArrayMap   
+       cljs.core/PersistentHashMap                   
+       cljs.core/PersistentHashSet]
+      :clj
+      [clojure.lang.Keyword
+       java.lang.String
+       java.lang.Boolean
+       clojure.lang.LazySeq
+       clojure.lang.PersistentVector
+       clojure.lang.PersistentArrayMap
+       clojure.lang.PersistentHashMap
+       clojure.lang.PersistentHashSet])))
