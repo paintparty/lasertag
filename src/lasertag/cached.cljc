@@ -65,19 +65,15 @@
   "Provides a primary tag for custom cljc data structures that are implemented
    on top of standard cljc collection interfaces."
   [x]
-  (cond (vector? x) :vector
-        (record? x) :record
-        (map? x)    :map
-        (set? x)    :set
-        (list? x)   :list
-        (seq? x)    :seq
-        :else
-        (get cljc-transients-primary-tags-by-class
-             (cljc-type x)
-             nil)))
+  (cond (coll? x)
+        (cond  (vector? x) :vector
+               (record? x) :record
+               (map? x) :map
+               (set? x) :set
+               (list? x) :list)
+        (seq? x) :seq))
+
 ;; -----------------------------------------------------------------------------
-
-
 ;;                                                                                                       
 ;;                                                                                                       
 ;; PPPPPPPPPPPPPPPPP   RRRRRRRRRRRRRRRRR   EEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD           SSSSSSSSSSSSSSS 
