@@ -9,7 +9,7 @@
 ;; -----------------------------------------------------------------------------
 ;; Should always be set to false, unless writing tests during dev of lasertag
 
-(def ^:private write-tests? true)
+(def ^:private write-tests? false)
 
 (def gen-test-path "./test/lasertag/generated.clj")
 
@@ -43,10 +43,11 @@
    `clojure.core/type` would return `:foo` in this example case:
    `(type (with-meta [1] {:type :foo}))`
 
-   `cljc-type` will always return the class (or constructor)."
+   `cljc-type` will always return the class (or constructor in cljs)."
   [x]
-  #?(:clj  (class x)
-     :cljs (.-constructor x)))
+  (if (meta x)
+    #?(:cljs (.-constructor x) :clj (class x))
+    (type x)))
 
 
 (def transient-hash-set-class (cljc-type (transient (hash-set :a :b))))
@@ -445,7 +446,7 @@
   "All secondary number tags, for values at runtime."
   [x]
   (let [vol             (volatile! #{})
-        tag!       (partial add-tags!* x vol)
+        tag!            (partial add-tags!* x vol)
         is-scalar?      (scalar? x)
         is-real-number? (real-number? x)]
     (when is-real-number?
@@ -670,9 +671,6 @@
 
 
 (def by-class
-  ;; TODO in all*
-  ;; Nix the categories, just section off with comments or prioritize with metadata 
-  ;; Maybe create a single freqs that would be array map
   #?(:cljs
       lasertag.jsi.classes/by-class
      :clj
@@ -731,7 +729,6 @@
        ;; Constructors
        [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
                                                                     different-behavior)
-
        ;; temporal
        [java.util.Date :temporal]                               (java.util.Date.)
        [java.time.Instant :temporal]                            (java.time.Instant/now)
@@ -783,10 +780,10 @@
        [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 3 "foo")
 
        ;; reflection
-       [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional '(:clj  (System/getProperty "os.name")
-                                                                                            :cljs "JS")
-                                                                                    false) 
-       })))
+       [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
+                                                                 '(:clj  (System/getProperty "os.name")
+                                                                         :cljs "JS")
+                                                                 false)})))
 
 (def by-number-class
   (select-keys 
@@ -803,7 +800,6 @@
        clojure.lang.BigInt
        java.math.BigInteger
        java.math.BigDecimal])))
-
 
 (def by-priority-class
   (select-keys 
