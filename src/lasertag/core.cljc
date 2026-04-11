@@ -262,10 +262,16 @@
   ([x]
    (tag x nil))
   ([x opts]
-   (or (some-> x cached-tag-map :tag)
-       (tag* {:x       x
-              :extras? false
-              :opts    opts}))))
+   (try (or (some-> x cached-tag-map :tag)
+            (tag* {:x       x
+                   :extras? false
+                   :opts    opts}))
+        (catch #?(:cljs js/Object :clj Throwable)  e
+          (messaging/print-warning! 
+           e
+           {:fqns-fn "fireworks.core/tag"
+            :desc    "Unable to produce tag"})
+          :lasertag.core/error))))
 
 
 (defn tag-map
@@ -273,15 +279,23 @@
   ([x]
    (tag-map x nil))
   ([x opts]
-   (or #?(:cljs
-          ;; Temporary fix to use new all-tags* logic on cached cljs tag-maps v0.13.0
-          ;; Remove when pre-compilation of cljs tag-maps is done
-          (some->> (cached-tag-map x) (merged-with-runtime-tags x))
-          :clj
-          (cached-tag-map x)) 
-       (tag* {:x       x
-              :extras? true
-              :opts    opts}))))
+   (try (or #?(:cljs
+               (some->> (cached-tag-map x)
+                        (merged-with-runtime-tags x))
+               :clj
+               (cached-tag-map x)) 
+            (tag* {:x       x
+                   :extras? true
+                   :opts    opts}))
+        (catch #?(:cljs js/Object :clj Throwable)  e
+          (messaging/print-warning! 
+           e
+           (cond-> {:fqns-fn        "fireworks.core/tag-map"
+                    :desc           "Unable to produce tag map"
+                    :supplied-value x}
+             opts
+             (assoc :supplied-opts opts)))
+          {:tag :lasertag.core/error}))))
 
 
 ;; TODO
@@ -366,7 +380,7 @@
           (cljs-coll-size-try m))
        (catch #?(:cljs js/Object :clj Throwable)  e
          (when (:suppress-coll-size-warning? (:opts m))
-           (messaging/print-unknown-coll-size-warning e))
+           (messaging/print-unknown-coll-size-warning! e))
          :lasertag.core/unknown-coll-size)))
 
 
