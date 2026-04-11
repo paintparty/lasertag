@@ -23,7 +23,7 @@
    :classname "cljs.core/PersistentHashMap",
    :tag :map,
    :all-tags
-   #{:iterable :js :callable :seqable :associative :coll :array-map
+   #{:iterable :callable :seqable :associative :coll :array-map
      :coll-like
      :hash-map
      :map-like
@@ -66,7 +66,7 @@
    :classname "cljs.core/PersistentArrayMap",
    :tag :map,
    :all-tags
-   #{:iterable :js :callable :seqable :associative :coll :array-map
+   #{:iterable :callable :seqable :associative :coll :array-map
      :coll-like
      :map-like
      :map}},
@@ -80,8 +80,8 @@
    :classname "cljs.core/PersistentQueue",
    :tag :queue,
    :all-tags
-   #{:iterable :js :seqable :queue :sequential :coll :coll-like :seq
-     :list-like}},
+   #{:seqable :coll :seq :sequential :list-like :coll-like :iterable
+     :queue}},
   js/Intl.Locale
   {:type js/Intl.Locale,
    :classname "js/Intl.Locale",
@@ -112,8 +112,7 @@
    :classname "cljs.core/IntegerRange",
    :tag :seq,
    :all-tags
-   #{:iterable :js :seqable :sequential :coll :deferred :coll-like
-     :lazy
+   #{:iterable :seqable :sequential :coll :deferred :coll-like :lazy
      :seq
      :list-like}},
   js/Float32Array
@@ -147,7 +146,7 @@
    :classname "cljs.core/Subvec",
    :tag :vector,
    :all-tags
-   #{:iterable :js :callable :seqable :sequential :associative :coll
+   #{:iterable :callable :seqable :sequential :associative :coll
      :vector
      :subvec
      :coll-like
@@ -202,7 +201,7 @@
    :classname "cljs.core/PersistentVector",
    :tag :vector,
    :all-tags
-   #{:iterable :js :callable :seqable :sequential :associative :coll
+   #{:iterable :callable :seqable :sequential :associative :coll
      :vector
      :coll-like
      :list-like}},
@@ -264,8 +263,7 @@
    :classname "cljs.core/PersistentHashSet",
    :tag :set,
    :all-tags
-   #{:callable :seqable :coll :set-like :coll-like :iterable :js
-     :set}},
+   #{:callable :seqable :coll :set-like :coll-like :iterable :set}},
   js/Intl.NumberFormat
   {:type js/Intl.NumberFormat,
    :classname "js/Intl.NumberFormat",
@@ -361,8 +359,7 @@
    :classname "cljs.core/Range",
    :tag :seq,
    :all-tags
-   #{:iterable :js :seqable :sequential :coll :deferred :coll-like
-     :lazy
+   #{:iterable :seqable :sequential :coll :deferred :coll-like :lazy
      :seq
      :list-like
      :range}},

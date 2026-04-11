@@ -4,6 +4,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as string]
    [lasertag.cached :as cached]
+   [lasertag.core :as lt]
    [lasertag.jsi.native]
    [cljs.reader :as reader])
   (:require-macros [lasertag.jsi.codegen :refer [with-datafied-demos]]))
@@ -11,7 +12,7 @@
 
 ;; -----------------------------------------------------------------------------
 (def ^:private write-classes? false)
-(def ^:private write-tests? true)
+(def ^:private write-tests? false)
 ;; -----------------------------------------------------------------------------
 
 
