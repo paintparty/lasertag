@@ -528,12 +528,12 @@
            (tag! cljc-array? :array)
            #?(:cljs
               (do
+                (tag! iterable? :iterable)
                 (tag! js-object? :object :map-like :js)
                 (tag! js-array? :array :array-like :list-like :js)
                 (tag! js-map? :map-like :js)
                 (tag! js-set? :set-like :js)
                 (tag! js-generator? :generator :js)
-                (tag! iterable? :iterable :js)
                 (tag! js-promise? :promise :js)
                 (tag! js-global-this? :global-this :js)
                 (tag! js-typed-array? :typed-array :array-like :js)
