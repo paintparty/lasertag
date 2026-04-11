@@ -3,10 +3,10 @@
    [lasertag.core :refer [tag tag-map]]
    [clojure.string :as string]
    #?(:cljs [lasertag.jsi.native-plus :refer [objects-by-unique-method-name
-                                           objects-by-method-name
-                                           js-built-in-objects
-                                           js-built-in-functions]])
-   #?(:cljs [lasertag.jsi.native] :as jsi-native)))
+                                              objects-by-method-name
+                                              js-built-in-objects
+                                              js-built-in-functions]])
+   #?(:cljs [lasertag.jsi.native :as jsi.native])))
 
 (defn ? 
   "Debugging macro internal to lib"
