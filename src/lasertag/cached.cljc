@@ -63,16 +63,19 @@
 (def subvec-class (cljc-type (subvec [1 2 3 4 5] 1 3)))
 
 (defn cljc-coll-type
-  "Provides a primary tag for custom cljc data structures that are implemented
-   on top of standard cljc collection interfaces."
+  "Provides a primary tag for:
+   - Data structures whose class constructor may not be present in cached map,
+     such as various data structures that implement ISeq. 
+   - Custom cljc data structures that are implemented on top of standard cljc
+     collection interfaces."
   [x]
-  (cond (coll? x)
-        (cond  (vector? x) :vector
-               (record? x) :record
-               (map? x) :map
-               (set? x) :set
-               (list? x) :list)
-        (seq? x) :seq))
+  (when (coll? x)
+    (cond (vector? x) :vector
+          (record? x) :record
+          (map? x) :map
+          (set? x) :set
+          (list? x) :list 
+          (seq? x) :seq)))
 
 ;; -----------------------------------------------------------------------------
 ;;                                                                                                       
@@ -670,6 +673,7 @@
 
 
 
+;; TODO - describe what this is and how it works
 (def by-class
   #?(:cljs
       lasertag.jsi.classes/by-class
@@ -703,6 +707,9 @@
        [clojure.lang.PersistentArrayMap :map]                   {:a 1}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
+       [clojure.lang.ISeq :seq]                                 (seq [1 2 3])
+       [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
+       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
        [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
        [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
