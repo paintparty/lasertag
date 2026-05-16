@@ -351,9 +351,9 @@ Most of the tests are auto-generated.
 
 To regenerate tests for JVM Clojure, look at source of `lasertag.cached`.
 
-The cljs tests can also need to be regenerated. Additionally, the data structure
+The cljs tests can also be regenerated. Additionally, the data structure
 that serves most of the results for `lasertag.core/tag` & `lasertag.core/tag-map`
- in cljs needs to be pre-generated. For both of these:
+in cljs needs to be pre-generated. For both of these:
 
 In one terminal: `npm run codegen`
 In another terminal: `npm run codegen-watch`
