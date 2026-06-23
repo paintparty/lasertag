@@ -6,22 +6,9 @@
    #?(:cljs [lasertag.jsi.native-plus :as jsi])
    #?(:cljs [lasertag.jsi.tag])
    #?(:cljs [lasertag.jsi.native :as jsi.native])
+  ;;  #?(:cljs [lasertag.macros :refer-macros [? !?]])
+  ;;  #?(:clj [lasertag.macros :refer [? !?]])
    [clojure.set :as set]))
-
-
-(defn ?
-  "Debugging macro internal to lib"
-  ([x]
-   (? nil x))
-  ([l x]
-   (try (if l
-          (println (str " " l "\n") x)
-          (println x))
-        (catch #?(:cljs js/Object :clj Throwable)
-               e
-          (println "WARNING [lasertag.core/?] Unable to print value")))
-   x))
-
 
 #?(:clj
    (do
