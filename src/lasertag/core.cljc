@@ -90,21 +90,29 @@
 
 
 (defn- all-tags* [{:keys [x k] :as m}]
-  (let [all-tags  #?(:cljs (lasertag.jsi.tag/cljs-all-value-types m)
-                     :clj (clj-all-value-types m))
-        map-like? (map-like?* x k all-tags)
-        set-like? (or (contains? #{:set :js-set} k)
-                      #?(:clj (instance? java.util.AbstractSet x)))]
+  (let [all-tags   #?(:cljs (lasertag.jsi.tag/cljs-all-value-types m)
+                      :clj  (clj-all-value-types m))
+        map-like?  (map-like?* x k all-tags)
+        set-like?  (or (contains? #{:set :js-set} k)
+                       #?(:clj (instance? java.util.AbstractSet x)))
+        coll-like? (or map-like?
+                       set-like?
+                       (contains? all-tags :coll)
+                       #?(:cljs (lasertag.jsi.tag/cljs-coll-like? x)))
+        all-tags   (cond-> all-tags
+                     map-like?
+                     (conj :map-like)
+                     set-like?
+                     (conj :set-like)
+                     coll-like?
+                     (conj :coll-like))]
 
     ;; TODO - Add :array-like? and maybe :list-like?
-    {:classname       (classname* x)
-     :all-tags        all-tags
-     :set-like?       set-like?
-     :map-like?       map-like?
-     :coll-like?      (or map-like?
-                          set-like?
-                          (contains? all-tags :coll)
-                          #?(:cljs (lasertag.jsi.tag/cljs-coll-like? x)))}))
+    {:classname  (classname* x)
+     :all-tags   all-tags
+     :set-like?  set-like?
+     :map-like?  map-like?
+     :coll-like? coll-like?}))
 
 (defn- anonymous-fn? [f]
   (boolean
@@ -264,12 +272,17 @@
 
 (defn cached-tag-map [x]
   (when-let [cached (let [x-type (cached/cljc-type x)]
-                      (or
-                       (get cached/by-priority-class x-type)
-                       (when (number? x)
-                         (or (get cached/non-finite-numbers-by-class x)
-                             (get cached/by-number-class x-type)))
-                       (get cached/by-class x-type)))]
+
+                      #_(when (= (str x-type) "class fireworks.sample.MyType")
+                        #_(= x-type clojure.lang.PersistentVector$ChunkedSeq)
+                        (println (if (get cached/by-class x-type)
+                                   "by-class"
+                                   "by-tag-map*")))
+
+                      (or (get cached/by-class x-type)
+                          (when (number? x)
+                            (or (get cached/non-finite-numbers-by-class x)
+                                (get cached/by-number-class x-type)))))]
     cached))
 
 
