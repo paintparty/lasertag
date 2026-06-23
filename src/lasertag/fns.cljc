@@ -8,19 +8,6 @@
                                               js-built-in-functions]])
    #?(:cljs [lasertag.jsi.native :as jsi.native])))
 
-(defn ? 
-  "Debugging macro internal to lib"
-  ([x]
-   (? nil x))
-  ([l x]
-   (try (if l
-          (println (str " " l "\n") x)
-          (println x))
-        (catch #?(:cljs js/Object :clj Throwable)
-               e
-          (println "WARNING [lasertag.core/?] Unable to print value")))
-   x))
-
 (def char-map
   [["_PERCENT_"     "%"]
    ["_AMPERSAND_"   "&"]
@@ -48,6 +35,7 @@
    s 
    char-map))
 
+;; TODO - find simpler way to resolve classname such as .getName
 #?(:clj
    (do
      (defn- find-classname [x]

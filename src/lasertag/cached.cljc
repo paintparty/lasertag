@@ -17,24 +17,6 @@
 
 
 
-;; Debugging -------------------------------------------------------------------
-
-(defn ?
-  "Debugging macro internal to lib"
-  ([x]
-   (? nil x))
-  ([l x]
-   (try (if l
-          (println (str " " l "\n") x)
-          (println x))
-        (catch #?(:cljs js/Object :clj Throwable)
-               e
-          (println "WARNING [lasertag.core/?] Unable to print value")))
-   x))
-
-
-
-
 ;; Predefining classes so we don't need to import them -------------------------
 
 (defn cljc-type 

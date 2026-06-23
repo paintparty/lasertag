@@ -16,20 +16,6 @@
 ;; -----------------------------------------------------------------------------
 
 
-(defn ?
-  "Debugging macro internal to lib"
-  ([x]
-   (? nil x))
-  ([l x]
-   (try (if l
-          (println (str " " l "\n") x)
-          (pprint x))
-        (catch js/Object
-               e
-          (println "WARNING [lasertag.cljs.testgen/?] Unable to print value")))
-   x))
-
-
 (defonce Atomics
   (try js/Atomics
        (catch js/Object e nil)))

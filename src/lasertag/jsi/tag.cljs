@@ -29,7 +29,6 @@
 (defn- pwos [x] (with-out-str (print x)))
 
 
-
 (defn- js-classname [x]
   (when-not (nil? x)
     (let [k (if-let [c (.-constructor x)]
