@@ -248,6 +248,7 @@
       (cached/cljc-coll-type x)
       (when (fn? x) :function)
       (when (cached/throwable? x) :throwable)
+      (when (cached/temporal? x) :datetime)
       (when (future? x) :future)
       (when (instance? clojure.lang.IPending x) :promise)
       (when (instance? clojure.lang.IType x) :datatype)
