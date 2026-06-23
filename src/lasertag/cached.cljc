@@ -192,9 +192,13 @@
 (defn queue? [v]
   #?(:cljs
      (instance? cljs.core/PersistentQueue v)
+     :bb
+     ;; Remove in bb 0.21.x when java.util.Queue goes in
+     (instance? clojure.lang.PersistentQueue v)
      :clj
-     (or (instance? java.util.Queue v)
-         (instance? clojure.lang.PersistentQueue v))))
+     (or
+      (instance? java.util.Queue v)
+      (instance? clojure.lang.PersistentQueue v))))
 
 (defn subvec? [x]
   #?(:clj  (instance? subvec-class x)
@@ -274,15 +278,62 @@
      :clj
      false))
 
+(defn lazy-seq?
+  #?(:clj  "Returns true if x implements `clojure.lang.LazySeq`"
+     :cljs "Returns true if x implements `cljs.core/LazySeq`")
+  [x]
+  (instance? #?(:clj clojure.lang.LazySeq :cljs cljs.core/LazySeq) x))
+
+(defn range?
+  #?(:clj  "Returns true if x implements `clojure.lang.Range`"
+     :cljs "Returns true if x implements `cljs.core/Range`")
+  [x]
+  (instance? #?(:clj clojure.lang.Range :cljs cljs.core/Range) x))
+
+(defn integer-range?
+  #?(:clj  "Returns true if x implements `clojure.lang.LongRange`"
+     :cljs "Returns true if x implements `cljs.core/IntegerRange`")
+  [x]
+  (instance? #?(:clj clojure.lang.LongRange :cljs cljs.core/IntegerRange) x))
+
+(defn repeat?
+  #?(:clj  "Returns true if x implements `clojure.lang.Repeat`"
+     :cljs "Returns true if x implements `cljs.core/Repeat`")
+  [x]
+  (instance? #?(:clj clojure.lang.Repeat :cljs cljs.core/Repeat) x))
+
+(defn iterate?
+  #?(:clj  "Returns true if x implements `clojure.lang.Iterate`"
+     :cljs "Returns true if x implements `cljs.core/Iterate`")
+  [x]
+  (instance? #?(:clj clojure.lang.Iterate :cljs cljs.core/Iterate) x))
+
+(defn cons?
+  #?(:clj  "Returns true if x implements `clojure.lang.Cons`"
+     :cljs "Returns true if x implements `cljs.core/Cons`")
+  [x]
+  (instance? #?(:clj clojure.lang.Cons :cljs cljs.core/Cons) x))
+
+(defn chunked-cons?
+  #?(:clj  "Returns true if x implements `clojure.lang.ChunkedCons`"
+     :cljs "Returns true if x implements `cljs.core/ChunkedCons`"
+     :bb   "Returns false; ChunkedCons is not implemented natively in Babashka.")
+  [x]
+  #?(:cljs (instance? cljs.core/ChunkedCons x)
+     ;; bb 0.21.x fix 
+     :bb   nil
+     :clj  (instance? clojure.lang.ChunkedCons x)))
 
 (defn lazyish-seq? [x]
-  (or (instance? #?(:cljs cljs.core/LazySeq :clj clojure.lang.LazySeq) x)
-      (instance? #?(:cljs cljs.core/Range :clj clojure.lang.Range) x)
-      (instance? #?(:cljs cljs.core/IntegerRange :clj clojure.lang.LongRange) x)
-      (instance? #?(:cljs cljs.core/Repeat :clj clojure.lang.Repeat) x)
-      (instance? #?(:cljs cljs.core/Iterate :clj clojure.lang.Iterate) x)
-      (instance? #?(:cljs cljs.core/Cons :clj clojure.lang.Cons) x)
-      (instance? #?(:cljs cljs.core/ChunkedCons :clj clojure.lang.ChunkedCons) x)))
+  (or
+   (lazy-seq? x)
+   (range? x)
+   (integer-range? x)
+   (repeat? x)
+   (iterate? x)
+   (cons? x)
+   ;; bb 0.21.x secondary tags will be missing
+   (chunked-cons? x)))
 
 (defn deferred? [x]
   (or #?(:cljs (delay? x) :clj (delay? x))
@@ -708,11 +759,14 @@
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
        [clojure.lang.ISeq :seq]                                 (seq [1 2 3])
-       [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
-       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
+      ;; bb 0.21.x
+      ;;  [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
+      ;; bb 0.21.x
+      ;;  [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
        [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
-       [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
+      ;; bb 0.21.x
+      ;;  [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
        [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
@@ -726,7 +780,8 @@
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-       [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
+      ;; bb 0.21.x
+      ;;  [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
@@ -737,11 +792,13 @@
        [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
                                                                     different-behavior)
        ;; temporal
-       [java.util.Date :temporal]                               (java.util.Date.)
-       [java.time.Instant :temporal]                            (java.time.Instant/now)
-       [java.time.LocalDate :temporal]                          (java.time.LocalDate/now)
-       [java.time.ZonedDateTime :temporal]                      (java.time.ZonedDateTime/now)
-       [java.sql.Timestamp :temporal]                           (java.sql.Timestamp. (System/currentTimeMillis))
+       [java.util.Date :datetime]                               (java.util.Date.)
+       [java.time.Instant :datetime]                            (java.time.Instant/now)
+       [java.time.LocalDate :datetime]                          (java.time.LocalDate/now)
+       [java.time.ZonedDateTime :datetime]                      (java.time.ZonedDateTime/now)
+      
+      ;; leave out for bb for now 
+      ;;  [java.sql.Timestamp :datetime]                           (java.sql.Timestamp. (System/currentTimeMillis))
 
        ;; reference types
        [clojure.lang.Volatile :volatile]                        (volatile! 1)
