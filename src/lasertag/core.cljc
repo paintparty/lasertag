@@ -54,12 +54,40 @@
                (string/replace #";$" "")))))
 
 
+(defn- object-fields 
+  "Returns true if the given object instance has one or more named fields 
+   declared in its underlying structure across JVM, CLJS, and Babashka."
+  [obj]
+  (if (nil? obj)
+    false
+    #?(:bb   (let [members (:members (clojure.reflect/reflect obj))]
+               ;; Filter for members that represent the fields
+               (->> members
+                    (filter :flags)
+                    (map :name)
+                    clojure.set/into  ; isolates names
+                    ))
+       :clj  (.getDeclaredFields (.getClass obj))
+       :cljs (js/Object.keys obj))))
+
+(defn- object-field-count
+  "Returns true if the given object instance has one or more named fields 
+   declared in its underlying structure across JVM, CLJS, and Babashka."
+  [obj]
+  (if (nil? obj)
+    false
+    #?(:bb   (->> (object-fields obj) count)
+       :clj  (alength (object-fields obj))
+       :cljs (alength (object-fields obj)))))
+
+
 (defn- map-like?* [x k all-tags]
   (or (contains? #{:map :js-object :js-map :js-data-view} k)
       (contains? all-tags :record)
       (contains? all-tags :datatype)
       (contains? all-tags :js-map-like-object)
-      #?(:clj (instance? java.util.AbstractMap x))))
+      #?(:clj (instance? java.util.AbstractMap x))
+      (and (= k :datatype) (pos? (object-field-count x)))))
 
 
 (defn- classname* [x]
@@ -355,13 +383,17 @@
            (cached/js-typed-array? x))
        (.-length x)
 
+       (and (contains? all-tags :map-like?)
+            (= tag :datatype))
+       (object-field-count x)
+
        :else
        (count x))))
 
 
 #?(:clj
    (defn- clj-coll-size-try
-     [{:keys [x tag abstract-instance? classname]}]
+     [{:keys [x tag all-tags abstract-instance? classname] :as m}]
      (cond
        abstract-instance?
        (.size x)
@@ -369,6 +401,10 @@
        (and (= tag :array)
             (not (cached/java-util-class? classname)))
        (alength x)
+
+       (and (contains? all-tags :datatype)
+            (contains? all-tags :map-like))
+       (object-field-count x)
 
        :else
        (count x))))
