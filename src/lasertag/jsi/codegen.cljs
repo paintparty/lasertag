@@ -49,6 +49,7 @@
      ["nil" :nil]                             "nil"
      ["cljs.core/UUID" :uuid ]                "(uuid \"4fe5d828-6444-11e8-8222-720007e40350\")"
      ["js/RegExp" :regex]                     "(js/RegExp. \"hello\")"
+     ["js/Date" :datetime]                    "(js/Date.)"
      ["cljs.core/PersistentArrayMap" :map]    "{1 2 3 4}"
      ["cljs.core/PersistentHashMap" :map]     "(hash-map 1 2 3 4)"
      ["cljs.core/LazySeq" :seq]               "(map inc [1 2 3])"
