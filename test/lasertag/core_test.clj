@@ -10,11 +10,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ns
- lasertag.generated
- (:require
-  [clojure.test :refer [deftest is]]
-  [lasertag.core :refer [tag-map]]
-  [clojure.string :as string]))
+ lasertag.core-test
+  (:require
+   [clojure.test :refer [deftest is]]
+   [lasertag.core :refer [tag-map]]
+   [lasertag.macros :refer [?]]
+   [clojure.string :as string]))
 
 
 
@@ -782,3 +783,4 @@
     :type java.math.BigInteger,
     :all-tags #{:big-int :number :real :scalar},
     :classname "java.math.BigInteger"})))
+

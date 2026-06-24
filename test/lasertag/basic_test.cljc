@@ -1,30 +1,22 @@
 (ns lasertag.basic-test
   (:require [lasertag.core :refer [tag tag-map]]
-            
             [clojure.pprint :refer [pprint]]
-            #?(:cljs [cljs.test :refer [deftest is testing]])
-            ;; #?(:cljs [lasertag.macros :refer-macros [?]])
-            ;; #?(:clj [lasertag.macros :refer [?]])
-            #?(:clj [clojure.test :refer :all]))
-  (:require-macros [lasertag.macros :refer [?]])
-  #?(:clj
-     (:import (clojure.lang PersistentVector$TransientVector
-                            PersistentHashSet$TransientHashSet
-                            PersistentArrayMap$TransientArrayMap
-                            PersistentHashMap$TransientHashMap))))
-
-#?(:cljs
-   ()
-   :clj
-   (do
-     #_(? (lasertag.core/tag-map (seq [1 2 3])))
-     #_(? (lasertag.core/tag-map (hash-map :a 1)))))
+            #?(:cljs [cljs.test :refer [deftest is testing]]
+               :clj  [clojure.test :refer [deftest is testing]])
+            #?(:clj  [lasertag.macros :refer [?]])
+            [lasertag.cached :as cached])
+  ;; This require breaks testing in clj and bb (cognitect.test-runner)
+  ;; leave it comment out unless debugging
+  #_(:require-macros [lasertag.macros :refer [?]]))
 
 
+;; Basic experimentation
 #?(:bb
    nil
    :clj
    (do
+     #_(? (lasertag.core/tag-map (seq [1 2 3])))
+     #_(? (lasertag.core/tag-map (hash-map :a 1)))
     ;;  (deftype CustomMap [m]
     ;;    clojure.lang.IPersistentMap
     ;;    ;;  (count [_] (count m))
@@ -114,13 +106,13 @@
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
           {:tag      :function,
-           :all-tags #{:function :carries-meta}})))
+           :all-tags #{:function :carries-meta :callable}})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
      (is (=
-          (? (dissoc (dissoc (tag-map #(inc %)) :type)
-                     :classname))
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                     :classname)
           {:tag      :function,
            :all-tags #{:callable :lambda :function :carries-meta}}))))
 
@@ -137,15 +129,15 @@
        (is (=
             (dissoc (tag-map xy {:include-function-info? false}) :type)
             {:tag       :function,
-             :all-tags  #{:function :carries-meta},
+             :all-tags  #{:function :carries-meta :callable},
              :classname "sci.impl.fns"}))))
    :clj
    (deftest clj-elide-function-info
      (is (=
-          (? (dissoc (tag-map xy {:include-function-info? false}) :type))
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function,
            :all-tags  #{:callable :function :carries-meta},
-           :classname "lasertag.core_test$xy"}))))
+           :classname "lasertag.basic_test$xy"}))))
 
 
 ;; #?(:clj
@@ -719,3 +711,4 @@
 ;;  (? :no-file (lasertag/tag-map (js/BigInt "999999999999")))
 ;;  (? :no-file (lasertag/tag-map ##Inf))
 ;;  (? :no-file (lasertag/tag-map ##-Inf))
+  

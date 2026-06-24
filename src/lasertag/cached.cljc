@@ -1,9 +1,10 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
             [clojure.string :as string]
+            #?(:clj  [lasertag.macros :refer [?]])
             #?(:cljs [lasertag.jsi.native :as jsi.native])
-            #?(:cljs [lasertag.jsi.classes])
-            ))
+            #?(:cljs [lasertag.jsi.classes]))
+  #_(:require-macros [lasertag.macros :refer [?]]))
 
 
 ;; -----------------------------------------------------------------------------
@@ -181,7 +182,8 @@
      (instance? cljs.core/PersistentQueue v)
      :bb
      ;; Remove in bb 0.21.x when java.util.Queue goes in
-     (instance? clojure.lang.PersistentQueue v)
+     (or (instance? clojure.lang.PersistentQueue v)
+         (instance? java.util.ArrayDeque v))
      :clj
      (or
       (instance? java.util.Queue v)
@@ -799,6 +801,21 @@
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
        [java.util.HashSet :set]                                 (java.util.HashSet. #{"a" 1 "b" 2})
        [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
+
+;; (= (tag-map (java.util.ArrayDeque. [1 2 3]))
+;;    {:tag :array, 
+;;     :type java.util.ArrayDeque, 
+;;     :all-tags #{:seqable :array :coll-like :list-like}, 
+;;     :classname "java.util.ArrayDeque"})
+
+;; (not (= {:tag :array,
+;;          :type java.util.ArrayDeque, 
+;;          :all-tags #{:seqable :array :coll-like}, 
+;;          :classname "java.util.ArrayDeque"}
+;;         {:tag :array,
+;;          :type java.util.ArrayDeque, 
+;;          :all-tags #{:seqable :array :coll-like :list-like}, 
+;;          :classname "java.util.ArrayDeque"}))
 
        ;; Constructors
        [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))

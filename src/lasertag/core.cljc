@@ -52,7 +52,7 @@
                (->> members
                     (filter :flags)
                     (map :name)
-                    clojure.set/into  ; isolates names
+                    vec  ; isolates names
                     ))
        :clj  (.getDeclaredFields (.getClass obj))
        :cljs (js/Object.keys obj))))
