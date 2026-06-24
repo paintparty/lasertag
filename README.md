@@ -355,11 +355,21 @@ The cljs tests can also be regenerated. Additionally, the data structure
 that serves most of the results for `lasertag.core/tag` & `lasertag.core/tag-map`
 in cljs needs to be pre-generated. For both of these:
 
+1)
+Toggle `lasertag.cljs.codegen/write-tests?` and 
+`lasertag.cljs.codegen/write-classes?` to `true` in `lasertag.cljs.codegen`.
+
+2)
 In one terminal: `npm run codegen`
+
+3)
 In another terminal: `npm run codegen-watch`
 
-For more details on toggling this generation during dev, look at the source of
-`lasertag.cljs.codegen`.
+4)
+Kill the `npm run codegen-watch` process.
+
+5)
+Toggle the defs from step 1 back to `false`
 
 
 <br>

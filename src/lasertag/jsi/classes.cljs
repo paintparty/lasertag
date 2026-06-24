@@ -75,6 +75,11 @@
    :classname "js/EvalError",
    :tag :throwable,
    :all-tags #{:throwable :error}},
+  js/Date
+  {:type js/Date,
+   :classname "js/Date",
+   :tag :datetime,
+   :all-tags #{:inst :datetime}},
   cljs.core/PersistentQueue
   {:type cljs.core/PersistentQueue,
    :classname "cljs.core/PersistentQueue",

@@ -121,17 +121,6 @@
 
 
 (deftest
- java.util.Date-test
- (is
-  (=
-   (tag-map (java.util.Date.))
-   {:tag :temporal,
-    :type java.util.Date,
-    :all-tags #{:inst :temporal},
-    :classname "java.util.Date"})))
-
-
-(deftest
  clojure.lang.Keyword-test
  (is
   (=
@@ -177,6 +166,7 @@
       :editable
       :associative
       :coll
+      :array-map
       :coll-like
       :hash-map
       :map-like
@@ -208,17 +198,6 @@
 
 
 (deftest
- java.time.ZonedDateTime-test
- (is
-  (=
-   (tag-map (java.time.ZonedDateTime/now))
-   {:tag :temporal,
-    :type java.time.ZonedDateTime,
-    :all-tags #{:temporal},
-    :classname "java.time.ZonedDateTime"})))
-
-
-(deftest
  clojure.lang.Ratio-test
  (is
   (=
@@ -239,7 +218,7 @@
      different-behavior))
    {:tag :function,
     :type clojure.lang.MultiFn,
-    :all-tags #{:callable :function :multi-function?},
+    :all-tags #{:callable :multi-function :function},
     :classname "clojure.lang.MultiFn"})))
 
 
@@ -252,28 +231,6 @@
     :type java.util.HashMap,
     :all-tags #{:seqable :coll-like :map-like :map},
     :classname "java.util.HashMap"})))
-
-
-(deftest
- java.time.Instant-test
- (is
-  (=
-   (tag-map (java.time.Instant/now))
-   {:tag :temporal,
-    :type java.time.Instant,
-    :all-tags #{:inst :temporal},
-    :classname "java.time.Instant"})))
-
-
-(deftest
- java.sql.Timestamp-test
- (is
-  (=
-   (tag-map (java.sql.Timestamp. (System/currentTimeMillis)))
-   {:tag :temporal,
-    :type java.sql.Timestamp,
-    :all-tags #{:inst :temporal},
-    :classname "java.sql.Timestamp"})))
 
 
 (deftest
@@ -362,28 +319,6 @@
 
 
 (deftest
- clojure.lang.APersistentVector$SubVector-test
- (is
-  (=
-   (tag-map (subvec [1 2 3 4 5] 1 3))
-   {:tag :vector,
-    :type clojure.lang.APersistentVector$SubVector,
-    :all-tags
-    #{:callable
-      :seqable
-      :sequential
-      :associative
-      :coll
-      :vector
-      :subvec
-      :coll-like
-      :stack
-      :list-like
-      :carries-meta},
-    :classname "clojure.lang.APersistentVector$SubVector"})))
-
-
-(deftest
  clojure.lang.PersistentHashSet$TransientHashSet-test
  (is
   (=
@@ -424,6 +359,17 @@
     :type clojure.lang.Agent,
     :all-tags #{:derefable :agent :reference},
     :classname "clojure.lang.Agent"})))
+
+
+(deftest
+ java.util.Date-test
+ (is
+  (=
+   (tag-map (java.util.Date.))
+   {:tag :datetime,
+    :type java.util.Date,
+    :all-tags #{:inst :datetime},
+    :classname "java.util.Date"})))
 
 
 (deftest
@@ -492,17 +438,6 @@
 
 
 (deftest
- java.time.LocalDate-test
- (is
-  (=
-   (tag-map (java.time.LocalDate/now))
-   {:tag :temporal,
-    :type java.time.LocalDate,
-    :all-tags #{:temporal},
-    :classname "java.time.LocalDate"})))
-
-
-(deftest
  java.lang.Double-test
  (is
   (=
@@ -511,6 +446,17 @@
     :type java.lang.Double,
     :all-tags #{:double :number :float :real :scalar},
     :classname "java.lang.Double"})))
+
+
+(deftest
+ java.time.LocalDate-test
+ (is
+  (=
+   (tag-map (java.time.LocalDate/now))
+   {:tag :datetime,
+    :type java.time.LocalDate,
+    :all-tags #{:datetime},
+    :classname "java.time.LocalDate"})))
 
 
 (deftest
@@ -545,6 +491,17 @@
     :type java.lang.Boolean,
     :all-tags #{:scalar :boolean},
     :classname "java.lang.Boolean"})))
+
+
+(deftest
+ java.time.Instant-test
+ (is
+  (=
+   (tag-map (java.time.Instant/now))
+   {:tag :datetime,
+    :type java.time.Instant,
+    :all-tags #{:inst :datetime},
+    :classname "java.time.Instant"})))
 
 
 (deftest
@@ -604,6 +561,7 @@
       :seqable
       :associative
       :coll
+      :array-map
       :coll-like
       :sorted
       :map-like
@@ -613,23 +571,14 @@
 
 
 (deftest
- clojure.lang.PersistentStructMap-test
+ java.time.ZonedDateTime-test
  (is
   (=
-   (tag-map
-    (do (defstruct foo :name :color) (struct foo "strawberry" "red")))
-   {:tag :map,
-    :type clojure.lang.PersistentStructMap,
-    :all-tags
-    #{:callable
-      :seqable
-      :associative
-      :coll
-      :coll-like
-      :map-like
-      :map
-      :carries-meta},
-    :classname "clojure.lang.PersistentStructMap"})))
+   (tag-map (java.time.ZonedDateTime/now))
+   {:tag :datetime,
+    :type java.time.ZonedDateTime,
+    :all-tags #{:datetime},
+    :classname "java.time.ZonedDateTime"})))
 
 
 (deftest

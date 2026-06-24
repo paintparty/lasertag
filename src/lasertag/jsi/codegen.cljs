@@ -6,17 +6,29 @@
    [lasertag.cached :as cached]
    [lasertag.core :as lt]
    [lasertag.jsi.native]
-   [cljs.reader :as reader])
+   [cljs.reader :as reader]
+   [clojure.string :as str])
   (:require-macros [lasertag.jsi.codegen :refer [with-datafied-demos]]))
 
 
 ;; -----------------------------------------------------------------------------
-(def ^:private write-classes? false)
-(def ^:private write-tests? false)
+;; Toggle this to regenerate the data structure that serves most of the results
+;; for `lasertag.core/tag` & `lasertag.core/tag-map` in cljs.
+;; Generated ns is `lasertag.jsi.classes`
+
+;; (def ^:private write-classes? false)
+(def ^:private write-classes? true)
+
+
+;; Toggle this to regenerate the cljs tests
+;; Generated ns is `lasertag.generated`
+
+;; (def ^:private write-tests? false)
+(def ^:private write-tests? true)
 ;; -----------------------------------------------------------------------------
 
 
-(defonce Atomics
+(def Atomics
   (try js/Atomics
        (catch js/Object e nil)))
 
@@ -60,22 +72,22 @@
      
 
      ;; TODO - Check and add
-    ;;  ["cljs.core/ArrayNodeSeq" :seq]          "(seq (apply hash-map (interleave (range 100) (range 100))))"
-    ;;  ["cljs.core/ChunkedCons" :seq]           "(chunk-cons (chunk (doto (chunk-buffer 1) (chunk-append 0))) nil)"
-    ;;  ["cljs.core/ChunkedSeq" :seq]            "(seq (vec (range 33)))"
-    ;;  ["cljs.core/Cycle" :seq]                 "(cycle [1 2 3])"
-    ;;  ["cljs.core/ES6IteratorSeq" :seq]        "(es6-iterator-seq (.values #js [1 2 3]))"
-    ;;  ["cljs.core/IndexedSeq" :seq]            "(seq [1 2 3])"
-    ;;  ["cljs.core/IntegerRangeChunk" :chunk]   "(chunk-first (seq (range 32)))"
-    ;;  ["cljs.core/Iterate" :seq]               "(iterate inc 0)"
-    ;;  ["cljs.core/KeySeq" :seq]                "(keys {:a 1 :b 2})"
-    ;;  ["cljs.core/NodeSeq" :seq]               "(seq (apply hash-map (range 20)))"
-    ;;  ["cljs.core/PersistentArrayMapSeq" :seq] "(seq (array-map :a 1 :b 2))"
-    ;;  ["cljs.core/PersistentQueueSeq" :seq]    "(seq (conj cljs.core.PersistentQueue.EMPTY 1 2 3))"
-    ;;  ["cljs.core/PersistentTreeMapSeq" :seq]  "(seq (sorted-map :a 1 :b 2))"
-    ;;  ["cljs.core/RSeq" :seq]                  "(rseq [1 2 3])"
-    ;;  ["cljs.core/ValSeq" :seq]                "(vals {:a 1 :b 2})"
-
+     ;;  ["cljs.core/ArrayNodeSeq" :seq]          "(seq (apply hash-map (interleave (range 100) (range 100))))"
+     ;;  ["cljs.core/ChunkedCons" :seq]           "(chunk-cons (chunk (doto (chunk-buffer 1) (chunk-append 0))) nil)"
+     ;;  ["cljs.core/ChunkedSeq" :seq]            "(seq (vec (range 33)))"
+     ;;  ["cljs.core/Cycle" :seq]                 "(cycle [1 2 3])"
+     ;;  ["cljs.core/ES6IteratorSeq" :seq]        "(es6-iterator-seq (.values #js [1 2 3]))"
+     ;;  ["cljs.core/IndexedSeq" :seq]            "(seq [1 2 3])"
+     ;;  ["cljs.core/IntegerRangeChunk" :chunk]   "(chunk-first (seq (range 32)))"
+     ;;  ["cljs.core/Iterate" :seq]               "(iterate inc 0)"
+     ;;  ["cljs.core/KeySeq" :seq]                "(keys {:a 1 :b 2})"
+     ;;  ["cljs.core/NodeSeq" :seq]               "(seq (apply hash-map (range 20)))"
+     ;;  ["cljs.core/PersistentArrayMapSeq" :seq] "(seq (array-map :a 1 :b 2))"
+     ;;  ["cljs.core/PersistentQueueSeq" :seq]    "(seq (conj cljs.core.PersistentQueue.EMPTY 1 2 3))"
+     ;;  ["cljs.core/PersistentTreeMapSeq" :seq]  "(seq (sorted-map :a 1 :b 2))"
+     ;;  ["cljs.core/RSeq" :seq]                  "(rseq [1 2 3])"
+     ;;  ["cljs.core/ValSeq" :seq]                "(vals {:a 1 :b 2})"
+     
 
      ;; ---------------------------------------------------------------------
      ;; JS Built-ins
@@ -98,7 +110,7 @@
      ["js/Map" :map]                          "(new js/Map (array (array \"a\", 1), (array \"b\", 2)))",
      ["js/Set" :set]                          "(new js/Set (array 1 2))",
      ["js/WeakMap" :map]                      "(let [wm (js/WeakMap.) o (js-obj :a 1)] (.set wm o 100))",
-     ["js/WeakSet" :set]                      "(new js/Set (array 1 2))"
+     ["js/WeakSet" :set]                      "(js/WeakSet. (array (js-obj :id 1)) (js-obj :id 2))"
 
      ;; Indexed collections 
      ["js/BigInt64Array" :array]              "(new js/BigInt64Array 3)",
@@ -177,11 +189,13 @@
    (with-out-str (clojure.pprint/pprint form ))
    "\n\n"))
 
+(def test-path "./test/lasertag/core_test.cljs")
+
 (defn write-tests! []
-  (write-file-sync! "./test/lasertag/cljs/generated.cljs"
+  (write-file-sync! test-path
                     (header-comment+namespace-form
                      header-comment
-                     '(ns lasertag.generated
+                     '(ns lasertag.core-test
                         (:require
                          [clojure.test :refer [deftest is]]
                          [lasertag.core :refer [tag-map]]
@@ -191,13 +205,15 @@
   (doseq [[sym {:keys [classname demo]
                 :as   m}] by-class] 
     (write-file-sync! 
-     "./test/lasertag/cljs/generated.cljs"
+     test-path
      (str
       "\n\n"
       (with-out-str
         (clojure.pprint/pprint
          (list 
-          'deftest (symbol (str classname "-test"))
+          'deftest (symbol (-> (str classname "-test")
+                               (str/replace #"^js/|^cljs.core/" "")
+                               (str/replace #"\." "_")))
           (list 'is
                 (list '=
                       (list 'tag-map (reader/read-string demo))

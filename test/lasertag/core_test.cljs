@@ -9,7 +9,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ns
- lasertag.generated
+ lasertag.core-test
  (:require
   [clojure.test :refer [deftest is]]
   [lasertag.core :refer [tag-map]] 
@@ -19,7 +19,7 @@
 
 
 (deftest
- js/Intl.Collator-test
+ Intl_Collator-test
  (is
   (=
    (tag-map (new js/Intl.Collator "sv"))
@@ -30,7 +30,7 @@
 
 
 (deftest
- cljs.core/PersistentHashMap-test
+ PersistentHashMap-test
  (is
   (=
    (tag-map (hash-map 1 2 3 4))
@@ -43,7 +43,7 @@
 
 
 (deftest
- cljs.core/MultiFn-test
+ MultiFn-test
  (is
   (=
    (tag-map
@@ -57,7 +57,7 @@
 
 
 (deftest
- cljs.core/Cons-test
+ Cons-test
  (is
   (=
    (tag-map (cons 1 (list 2 3)))
@@ -70,7 +70,7 @@
 
 
 (deftest
- js/RegExp-test
+ RegExp-test
  (is
   (=
    (tag-map (js/RegExp. "hello"))
@@ -81,7 +81,7 @@
 
 
 (deftest
- js/TypeError-test
+ TypeError-test
  (is
   (=
    (tag-map (new js/TypeError))
@@ -92,7 +92,7 @@
 
 
 (deftest
- cljs.core/TransientVector-test
+ TransientVector-test
  (is
   (=
    (tag-map (transient [1 2 3]))
@@ -103,7 +103,7 @@
 
 
 (deftest
- js/Float64Array-test
+ Float64Array-test
  (is
   (=
    (tag-map (new js/Float64Array (array 1 2 3)))
@@ -114,7 +114,7 @@
 
 
 (deftest
- cljs.core/PersistentArrayMap-test
+ PersistentArrayMap-test
  (is
   (=
    (tag-map {1 2, 3 4})
@@ -127,7 +127,7 @@
 
 
 (deftest
- js/EvalError-test
+ EvalError-test
  (is
   (=
    (tag-map (new js/EvalError))
@@ -138,7 +138,18 @@
 
 
 (deftest
- cljs.core/PersistentQueue-test
+ Date-test
+ (is
+  (=
+   (tag-map (js/Date.))
+   {:type js/Date,
+    :classname "js/Date",
+    :tag :datetime, 
+    :all-tags #{:inst :datetime}})))
+
+
+(deftest
+ PersistentQueue-test
  (is
   (=
    (tag-map cljs.core.PersistentQueue.EMPTY)
@@ -151,7 +162,7 @@
 
 
 (deftest
- js/Intl.Locale-test
+ Intl_Locale-test
  (is
   (=
    (tag-map
@@ -174,7 +185,7 @@
 
 
 (deftest
- js/Int16Array-test
+ Int16Array-test
  (is
   (=
    (tag-map (new js/Int16Array (array 1 2 3)))
@@ -185,7 +196,7 @@
 
 
 (deftest
- js/URIError-test
+ URIError-test
  (is
   (=
    (tag-map (new js/URIError))
@@ -196,7 +207,7 @@
 
 
 (deftest
- cljs.core/Keyword-test
+ Keyword-test
  (is
   (=
    (tag-map :foo)
@@ -207,7 +218,7 @@
 
 
 (deftest
- js/ReferenceError-test
+ ReferenceError-test
  (is
   (=
    (tag-map (new js/ReferenceError))
@@ -218,7 +229,7 @@
 
 
 (deftest
- cljs.core/IntegerRange-test
+ IntegerRange-test
  (is
   (=
    (tag-map (range 3))
@@ -231,7 +242,7 @@
 
 
 (deftest
- js/Float32Array-test
+ Float32Array-test
  (is
   (=
    (tag-map (new js/Float32Array (array 1 2 3)))
@@ -242,7 +253,7 @@
 
 
 (deftest
- cljs.core/MapEntry-test
+ MapEntry-test
  (is
   (=
    (tag-map (-> {:a 1} first))
@@ -255,7 +266,7 @@
 
 
 (deftest
- cljs.core/EmptyList-test
+ EmptyList-test
  (is
   (=
    (tag-map (list))
@@ -267,7 +278,7 @@
 
 
 (deftest
- cljs.core/LazySeq-test
+ LazySeq-test
  (is
   (=
    (tag-map (map inc [1 2 3]))
@@ -280,7 +291,7 @@
 
 
 (deftest
- cljs.core/Subvec-test
+ Subvec-test
  (is
   (=
    (tag-map (subvec [1 2 3 4 5] 1 3))
@@ -293,7 +304,7 @@
 
 
 (deftest
- js/Uint8ClampedArray-test
+ Uint8ClampedArray-test
  (is
   (=
    (tag-map (new js/Uint8ClampedArray (array 1 2 3)))
@@ -304,7 +315,7 @@
 
 
 (deftest
- js/Promise-test
+ Promise-test
  (is
   (=
    (tag-map (new js/Promise (fn [x] x)))
@@ -315,7 +326,7 @@
 
 
 (deftest
- js/Boolean-test
+ Boolean-test
  (is
   (=
    (tag-map true)
@@ -326,7 +337,7 @@
 
 
 (deftest
- js/Uint8Array-test
+ Uint8Array-test
  (is
   (=
    (tag-map (new js/Uint8Array (array 1 2 3)))
@@ -337,7 +348,7 @@
 
 
 (deftest
- js/WeakMap-test
+ WeakMap-test
  (is
   (=
    (tag-map (let [wm (js/WeakMap.) o (js-obj :a 1)] (.set wm o 100)))
@@ -348,7 +359,7 @@
 
 
 (deftest
- cljs.core/TransientHashMap-test
+ TransientHashMap-test
  (is
   (=
    (tag-map (transient (hash-map 1 2 3 4)))
@@ -359,7 +370,7 @@
 
 
 (deftest
- js/String-test
+ String-test
  (is
   (=
    (tag-map "foo")
@@ -370,7 +381,7 @@
 
 
 (deftest
- js/Intl.DisplayNames-test
+ Intl_DisplayNames-test
  (is
   (=
    (tag-map
@@ -385,7 +396,7 @@
 
 
 (deftest
- js/SyntaxError-test
+ SyntaxError-test
  (is
   (=
    (tag-map (new js/SyntaxError))
@@ -396,7 +407,7 @@
 
 
 (deftest
- cljs.core/PersistentVector-test
+ PersistentVector-test
  (is
   (=
    (tag-map [1 2 3])
@@ -409,7 +420,7 @@
 
 
 (deftest
- cljs.core/List-test
+ List-test
  (is
   (=
    (tag-map (list 1 2 3))
@@ -421,7 +432,7 @@
 
 
 (deftest
- cljs.core/Repeat-test
+ Repeat-test
  (is
   (=
    (tag-map (repeat 2 :a))
@@ -434,7 +445,7 @@
 
 
 (deftest
- js/Intl.DateTimeFormat-test
+ Intl_DateTimeFormat-test
  (is
   (=
    (tag-map (new js/Intl.DateTimeFormat "en-US"))
@@ -445,7 +456,7 @@
 
 
 (deftest
- js/Array-test
+ Array-test
  (is
   (=
    (tag-map (new js/Array 1 2 3))
@@ -457,7 +468,7 @@
 
 
 (deftest
- cljs.core/TransientArrayMap-test
+ TransientArrayMap-test
  (is
   (=
    (tag-map (transient (array-map 1 2 3 4)))
@@ -468,7 +479,7 @@
 
 
 (deftest
- js/Int32Array-test
+ Int32Array-test
  (is
   (=
    (tag-map (new js/Int32Array (array 1 2 3)))
@@ -479,7 +490,7 @@
 
 
 (deftest
- js/AggregateError-test
+ AggregateError-test
  (is
   (=
    (tag-map
@@ -494,7 +505,7 @@
 
 
 (deftest
- js/Uint16Array-test
+ Uint16Array-test
  (is
   (=
    (tag-map (new js/Uint16Array (array 1 2 3)))
@@ -505,10 +516,10 @@
 
 
 (deftest
- js/WeakSet-test
+ WeakSet-test
  (is
   (=
-   (tag-map (new js/Set (array 1 2)))
+   (tag-map (js/WeakSet. (array (js-obj :id 1)) (js-obj :id 2)))
    {:type js/WeakSet,
     :classname "js/WeakSet",
     :tag :set, 
@@ -516,7 +527,7 @@
 
 
 (deftest
- cljs.core/TransientHashSet-test
+ TransientHashSet-test
  (is
   (=
    (tag-map (transient #{1 2 3}))
@@ -527,7 +538,7 @@
 
 
 (deftest
- cljs.core/PersistentHashSet-test
+ PersistentHashSet-test
  (is
   (=
    (tag-map #{1 2 3})
@@ -539,7 +550,7 @@
 
 
 (deftest
- js/Intl.NumberFormat-test
+ Intl_NumberFormat-test
  (is
   (=
    (tag-map
@@ -554,7 +565,7 @@
 
 
 (deftest
- js/Intl.PluralRules-test
+ Intl_PluralRules-test
  (is
   (=
    (tag-map (new js/Intl.PluralRules "en-US"))
@@ -562,200 +573,3 @@
     :classname "js/Intl.PluralRules", 
     :tag :intl, 
     :all-tags #{:intl}})))
-
-
-(deftest
- cljs.core/PersistentTreeMap-test
- (is
-  (=
-   (tag-map (sorted-map 1 2 3 4))
-   {:type cljs.core/PersistentTreeMap,
-    :classname "cljs.core/PersistentTreeMap",
-    :tag :map,
-    :all-tags
-    #{:callable :seqable :associative :coll :array-map :coll-like
-      :sorted :map-like :map}})))
-
-
-(deftest
- js/Map-test
- (is
-  (=
-   (tag-map (new js/Map (array (array "a" 1) (array "b" 2))))
-   {:type js/Map,
-    :classname "js/Map",
-    :tag :map, 
-    :all-tags #{:map-like :coll-like :js :map}})))
-
-
-(deftest
- js/Set-test
- (is
-  (=
-   (tag-map (new js/Set (array 1 2)))
-   {:type js/Set,
-    :classname "js/Set",
-    :tag :set, 
-    :all-tags #{:set-like :coll-like :js :set}})))
-
-
-(deftest
- js/RangeError-test
- (is
-  (=
-   (tag-map (new js/RangeError))
-   {:type js/RangeError,
-    :classname "js/RangeError",
-    :tag :throwable, 
-    :all-tags #{:throwable :error}})))
-
-
-(deftest
- cljs.core/PersistentTreeSet-test
- (is
-  (=
-   (tag-map (sorted-set 1 2 3))
-   {:type cljs.core/PersistentTreeSet,
-    :classname "cljs.core/PersistentTreeSet",
-    :tag :set,
-    :all-tags
-    #{:callable :seqable :coll :sorted :set-like :coll-like :set}})))
-
-
-(deftest
- js/Intl.ListFormat-test
- (is
-  (=
-   (tag-map
-    (new
-     js/Intl.ListFormat
-     "en-GB"
-     (js-obj :style "long" :type "conjunction")))
-   {:type js/Intl.ListFormat,
-    :classname "js/Intl.ListFormat", 
-    :tag :intl, 
-    :all-tags #{:intl}})))
-
-
-(deftest
- js/Intl.Segmenter-test
- (is
-  (=
-   (tag-map (new js/Intl.Segmenter "fr" (js-obj :granularity "word")))
-   {:type js/Intl.Segmenter,
-    :classname "js/Intl.Segmenter", 
-    :tag :intl, 
-    :all-tags #{:intl}})))
-
-
-(deftest
- js/Uint32Array-test
- (is
-  (=
-   (tag-map (new js/Uint32Array (array 1 2 3)))
-   {:type js/Uint32Array,
-    :classname "js/Uint32Array",
-    :tag :array, 
-    :all-tags #{:typed-array :array-like :js :array}})))
-
-
-(deftest
- js/BigInt64Array-test
- (is
-  (=
-   (tag-map (new js/BigInt64Array 3))
-   {:type js/BigInt64Array,
-    :classname "js/BigInt64Array",
-    :tag :array, 
-    :all-tags #{:typed-array :array-like :js :array}})))
-
-
-(deftest
- nil-test
- (is
-  (=
-   (tag-map nil)
-   {:type nil,
-    :classname "nil", 
-    :tag :nil, 
-    :all-tags #{:scalar :seqable :nil}})))
-
-
-(deftest
- js/Number-test
- (is
-  (=
-   (tag-map 21)
-   {:type js/Number,
-    :classname "js/Number",
-    :tag :number,
-    :all-tags #{:scalar :real :double :float :int :number}})))
-
-
-(deftest
- cljs.core/UUID-test
- (is
-  (=
-   (tag-map (uuid "4fe5d828-6444-11e8-8222-720007e40350"))
-   {:type cljs.core/UUID,
-    :classname "cljs.core/UUID", 
-    :tag :uuid, 
-    :all-tags #{:uuid}})))
-
-
-(deftest
- js/Intl.RelativeTimeFormat-test
- (is
-  (=
-   (tag-map
-    (new js/Intl.RelativeTimeFormat "en" (js-obj :style "short")))
-   {:type js/Intl.RelativeTimeFormat,
-    :classname "js/Intl.RelativeTimeFormat",
-    :tag :intl, 
-    :all-tags #{:intl}})))
-
-
-(deftest
- js/BigUint64Array-test
- (is
-  (=
-   (tag-map (new js/BigUint64Array 3))
-   {:type js/BigUint64Array,
-    :classname "js/BigUint64Array",
-    :tag :array, 
-    :all-tags #{:typed-array :array-like :js :array}})))
-
-
-(deftest
- js/Error-test
- (is
-  (=
-   (tag-map (new js/Error))
-   {:type js/Error,
-    :classname "js/Error",
-    :tag :throwable, 
-    :all-tags #{:throwable :error}})))
-
-
-(deftest
- cljs.core/Range-test
- (is
-  (=
-   (tag-map (range 0 1 0.1))
-   {:type cljs.core/Range,
-    :classname "cljs.core/Range",
-    :tag :seq,
-    :all-tags
-    #{:iterable :seqable :sequential :coll :deferred :coll-like :lazy
-      :seq :list-like :range}})))
-
-
-(deftest
- js/Int8Array-test
- (is
-  (=
-   (tag-map (new js/Int8Array (array 1 2 3)))
-   {:type js/Int8Array,
-    :classname "js/Int8Array",
-    :tag :array, 
-    :all-tags #{:typed-array :array-like :js :array}})))

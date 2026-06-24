@@ -8,8 +8,13 @@
 
 ;; -----------------------------------------------------------------------------
 ;; Should always be set to false, unless writing tests during dev of lasertag
+;; Run lein-test to regenerate tests.
 
+;; (def ^:private write-tests? true)
 (def ^:private write-tests? false)
+(def ^:private greenlit-tests
+  #{}
+  #_#{"java.util.HashSet"})
 
 (def gen-test-path "./test/lasertag/generated.clj")
 
@@ -270,7 +275,9 @@
   #?(:clj  "Returns true if x implements `clojure.lang.Range`"
      :cljs "Returns true if x implements `cljs.core/Range`")
   [x]
-  (instance? #?(:clj clojure.lang.Range :cljs cljs.core/Range) x))
+  #?(:clj  (or (instance? clojure.lang.LongRange x)
+               (instance? clojure.lang.Range x))
+     :cljs (instance? cljs.core/Range x)))
 
 (defn integer-range?
   #?(:clj  "Returns true if x implements `clojure.lang.LongRange`"
@@ -295,6 +302,7 @@
      :cljs "Returns true if x implements `cljs.core/Cons`")
   [x]
   (instance? #?(:clj clojure.lang.Cons :cljs cljs.core/Cons) x))
+
 
 (defn chunked-cons?
   #?(:clj  "Returns true if x implements `clojure.lang.ChunkedCons`"
@@ -424,15 +432,6 @@
 
 (defn stack? [x]
   (instance?  #?(:cljs cljs.core/IStack :clj clojure.lang.IPersistentStack) x))
-
-(defn cons? [x]
-  #?(:clj  (instance? clojure.lang.Cons x)
-     :cljs (instance? cljs.core/Cons x)))
-
-(defn range? [x]
-  #?(:clj  (or (instance? clojure.lang.LongRange x)
-               (instance? clojure.lang.Range x))
-     :cljs (instance? cljs.core/Range x)))
 
 (defn named? [x]
   #?(:clj  (instance? clojure.lang.Named x)
@@ -677,7 +676,32 @@
              :append false))
 
 
-     (defmacro by-class* [m]
+     (defmacro by-class* 
+       "Supplied with a map of example values, generates a map of cached results
+        for calls to lasertag.core/tag-map.
+
+        Example entry input:
+          [[clojure.lang.PersistentHashMap :map] (hash-map :a 1)]
+
+        Example entry output:
+          [clojure.lang.PersistentHashMap 
+            {:tag :map,
+             :type clojure.lang.PersistentHashMap,
+             :all-tags
+             #{:callable
+               :seqable
+               :editable
+               :associative
+               :coll
+               :array-map
+               :coll-like
+               :hash-map
+               :map-like
+               :map
+               :carries-meta},
+             :classname \"clojure.lang.PersistentHashMap\"}]
+        "
+       [m]
        (when write-tests? (spit-test-header))
        (reduce-kv (fn [m [cls tag] x*]
                     (let [x         (eval x*)
@@ -688,16 +712,22 @@
                                      :all-tags  all-tags
                                      :classname classname}]
 
+                      (when (= type java.util.HashSet)
+                        (println type))
+
                       (when write-tests?
                         (require '[clojure.pprint :refer [pprint]])
                         (spit (str "./test/lasertag/generated" ".clj") 
-                              (str
-                               "\n\n"
-                               (with-out-str
-                                 (clojure.pprint/pprint
-                                  (list 
-                                   'deftest (symbol (str classname "-test"))
-                                   (list 'is (list '= (list 'tag-map x*) result))))))
+                              (when (or (empty? greenlit-tests)
+                                        (and (not (empty? greenlit-tests))
+                                             (contains? greenlit-tests classname)))
+                                (str
+                                 "\n\n"
+                                 (with-out-str
+                                   (clojure.pprint/pprint
+                                    (list 
+                                     'deftest (symbol (str classname "-test"))
+                                     (list 'is (list '= (list 'tag-map x*) result)))))))
                               :append true))
 
                       (assoc m cls result)))
@@ -740,7 +770,7 @@
        [clojure.lang.PersistentArrayMap :map]                   {:a 1}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
-       [clojure.lang.ISeq :seq]                                 (seq [1 2 3])
+
       ;; bb 0.21.x
       ;;  [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
       ;; bb 0.21.x

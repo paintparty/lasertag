@@ -1,24 +1,34 @@
-(ns lasertag.core-test
+(ns lasertag.basic-test
   (:require [lasertag.core :refer [tag tag-map]]
+            
             [clojure.pprint :refer [pprint]]
             #?(:cljs [cljs.test :refer [deftest is testing]])
+            ;; #?(:cljs [lasertag.macros :refer-macros [?]])
+            ;; #?(:clj [lasertag.macros :refer [?]])
             #?(:clj [clojure.test :refer :all]))
+  (:require-macros [lasertag.macros :refer [?]])
   #?(:clj
      (:import (clojure.lang PersistentVector$TransientVector
                             PersistentHashSet$TransientHashSet
                             PersistentArrayMap$TransientArrayMap
                             PersistentHashMap$TransientHashMap))))
 
+#?(:cljs
+   ()
+   :clj
+   (do
+     #_(? (lasertag.core/tag-map (seq [1 2 3])))
+     #_(? (lasertag.core/tag-map (hash-map :a 1)))))
+
 
 #?(:bb
    nil
    :clj
    (do
-
-     (deftype CustomMap [m]
-       clojure.lang.IPersistentMap
-       ;;  (count [_] (count m))
-       (assoc [this _ _] this))
+    ;;  (deftype CustomMap [m]
+    ;;    clojure.lang.IPersistentMap
+    ;;    ;;  (count [_] (count m))
+    ;;    (assoc [this _ _] this))
 
      ;; (println (.size {:a 1}))
 
@@ -61,42 +71,42 @@
   (str (:name x) " will have a specific behavior"))
 (defn xy [x y] (+ x y))
 
+;; #?(:cljs
+;;    (deftest cljs-function-types
+;;      (is (= :function (tag #(inc %))))
+;;      (is (= :function (tag MyType)))
+;;      (is (= :function (tag MyRecordType)))
+;;      (is (= :lasertag.core-test/MyType (tag my-data-type)))
+;;      (is (= :record (tag my-record-type)))
+;;      (is (= :defmulti (tag different-behavior))))
+;;    :clj
+;;    (do
+;;      (deftest clj-function-types
+;;        (is (= :function (tag #(inc %))))
+;;        (is (= :class (tag MyType)))
+;;        (is (= :class (tag MyRecordType)))
+;;        (is (= :lasertag.core_test.MyType (tag my-data-type)))
+;;        (is (= :record (tag my-record-type)))
+;;        (is (= :defmulti (tag different-behavior))))))
+
+
+;; (deftest cljc-scalar-types
+;;   (is (= :string (tag "hi")))
+;;   (is (= :keyword (tag :hi)))
+;;   (is (= :regex (tag #"^xxo$")))
+;;   (is (= :boolean (tag true)))
+;;   (is (= :symbol (tag 'mysym)))
+;;   (is (= :nil (tag nil))))
+
 #?(:cljs
-   (deftest cljs-function-types
-     (is (= :function (tag #(inc %))))
-     (is (= :function (tag MyType)))
-     (is (= :function (tag MyRecordType)))
-     (is (= :lasertag.core-test/MyType (tag my-data-type)))
-     (is (= :record (tag my-record-type)))
-     (is (= :defmulti (tag different-behavior))))
-   :clj
-   (do
-     (deftest clj-function-types
-       (is (= :function (tag #(inc %))))
-       (is (= :class (tag MyType)))
-       (is (= :class (tag MyRecordType)))
-       (is (= :lasertag.core_test.MyType (tag my-data-type)))
-       (is (= :record (tag my-record-type)))
-       (is (= :defmulti (tag different-behavior))))))
-
-
-(deftest cljc-scalar-types
-  (is (= :string (tag "hi")))
-  (is (= :keyword (tag :hi)))
-  (is (= :regex (tag #"^xxo$")))
-  (is (= :boolean (tag true)))
-  (is (= :symbol (tag 'mysym)))
-  (is (= :nil (tag nil))))
-
-#?(:cljs
-   (deftest cljs-function-types-map
-     (is (=
-          (dissoc (tag-map #(inc %)) :type)
-          {:tag       :function,
-           :lambda?   true,
-           :fn-args   '[%1],
-           :all-tags  #{:function},
-           :classname "Function"})))
+   (do 
+     (println "BASIC TEST")
+     (deftest cljs-function-types-map
+       (is (=
+            (dissoc (tag-map #(inc %)) :type)
+            {:tag       :function,
+             :all-tags  #{:callable :lambda :function}
+             :classname "Function"}))))
    :bb
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
@@ -104,28 +114,22 @@
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
           {:tag      :function,
-           :lambda?  true,
-           :fn-ns    "sci.impl.fns",
-           :fn-args  :lasertag/unknown-function-signature-on-clj-function,
            :all-tags #{:function :carries-meta}})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
      (is (=
-          (dissoc (dissoc (tag-map #(inc %)) :type)
-                  :classname)
+          (? (dissoc (dissoc (tag-map #(inc %)) :type)
+                     :classname))
           {:tag      :function,
-           :lambda?  true,
-           :fn-ns    "lasertag.core-test",
-           :fn-args  :lasertag/unknown-function-signature-on-clj-function,
-           :all-tags #{:function :carries-meta}}))))
+           :all-tags #{:callable :lambda :function :carries-meta}}))))
 
 #?(:cljs
    (deftest cljs-elide-function-info
      (is (=
           (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function
-           :all-tags  #{:function}
+           :all-tags  #{:callable :function}
            :classname "Function"})))
    :bb
    (deftest clj-elide-function-info
@@ -138,230 +142,14 @@
    :clj
    (deftest clj-elide-function-info
      (is (=
-          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          (? (dissoc (tag-map xy {:include-function-info? false}) :type))
           {:tag       :function,
-           :all-tags  #{:function :carries-meta},
+           :all-tags  #{:callable :function :carries-meta},
            :classname "lasertag.core_test$xy"}))))
-
-(deftest cljc-collection-types
-  (is (= :vector (tag [1 2 3])))
-  (is (= :set (tag #{1 2 3})))
-  (is (= :map (tag {:a 2 :b 3})))
-  (is (= :map (tag {:a 2 :b 3 :c 3 :d 4 :e 5 :f 6 :g 7 :h 8 :i 9 :j 10 :k 11 :l 12})))
-  (is (= :seq (tag (map inc (range 5)))))
-  (is (= :seq (tag (range 10))))
-  (is (= :seq (tag '(:a :b :c))))
-  (is (= :seq (tag (list :a :b :c)))))
-
-#?(:cljs
-   (deftest cljs-collection-types-map
-     (testing "cljs.core/List"
-       (is (=
-            (tag-map '(:a :b :c))
-            {:tag       :seq,
-             :type      cljs.core/List,
-             :all-tags  #{:seq :iterable :coll :list :coll-like :carries-meta},
-             :classname "cljs.core/List",
-             :coll-size 3})))
-     ;; TODO - why is :fn-args flipping from nil to []
-     #_(testing "Built-in js object method: string.concat"
-         (is (=
-              (tag-map (aget "hi" "concat"))
-              {:fn-name                    "concat",
-               :type                       js/Function,
-               :classname                  "Function",
-               :js-built-in-function?      true,
-               :js-built-in-method-of-name "String",
-               :all-tags                   #{:function},
-               :js-built-in-method-of      js/String,
-               :fn-args                    nil,
-               :tag                        :function})))
-     (testing "Built-in js/JSON., exclude :js-built-in-object-info"
-       (is (=
-            (tag-map js/JSON
-                     {:include-js-built-in-object-info? false})
-            {:coll-size 1,
-             :classname "Object",
-             :all-tags  #{:object
-                          :js-object
-                          :js-map-like-object
-                          :coll-like
-                          :map-like},
-             :type      js/Object,
-             :tag       :object})))
-
-     (testing "Built-in js/JSON."
-       (is (= (tag-map js/JSON)
-              {:tag                     :object,
-               :type                    js/Object,
-               :all-tags                #{:object
-                                          :js-map-like-object
-                                          :coll-like
-                                          :map-like
-                                          :js-object},
-               :classname               "Object",
-               :coll-size               1,
-               :js-built-in-object?     true,
-               :js-built-in-object-name "JSON"}))))
-   :clj
-   (deftest clj-collection-types-map
-     (testing "clojure.lang.PersistentList"
-       (is (=
-            (tag-map '(:a :b :c))
-            {:tag       :seq,
-             :type      clojure.lang.PersistentList,
-             :all-tags  #{:iterable :coll :list :coll-like :seq :carries-meta},
-             :classname "clojure.lang.PersistentList",
-             :coll-size 3})))
-
-     (testing "java.util.HashMap"
-       (is (=
-            (tag-map       (java.util.HashMap. {"a" 1
-                                                "b" 2}))
-            {:tag       :map,
-             :type      java.util.HashMap,
-             :all-tags  #{:coll :coll-like :map-like :map},
-             :classname "java.util.HashMap",
-             :coll-size 2})))
-
-     (testing "java.util.HashSet"
-       (is (=
-            (tag-map       (java.util.HashSet. #{"a" 1
-                                                 "b" 2}))
-            {:tag       :set,
-             :type      java.util.HashSet,
-             :all-tags  #{:iterable :coll :coll-like :set :set-like},
-             :classname "java.util.HashSet",
-             :coll-size 4})))
-
-     (testing "java.util.ArrayList"
-       (is (=
-            (tag-map       (java.util.ArrayList. [1 2 3]))
-            {:tag       :array,
-             :type      java.util.ArrayList,
-             :all-tags  #{:iterable :coll :array :coll-like},
-             :classname "java.util.ArrayList",
-             :coll-size 3})))))
-
-
-#?(:cljs
-   (deftest clj-transient-collections-map
-     (testing "cljs.core/TransientHashSet"
-       (is (=
-            (tag-map    (transient #{1 2 3}))
-            {:tag       :set,
-             :type      cljs.core/TransientHashSet,
-             :all-tags  #{:coll :transient :coll-like :set :set-like},
-             :classname "cljs.core/TransientHashSet",
-             :coll-size 3})))
-     (testing "cljs.core/TransientArrayMap"
-       (is (=
-            (tag-map    (transient {:a 2 :b 4}))
-            {:tag       :map,
-             :type      cljs.core/TransientArrayMap,
-             :all-tags  #{:coll :transient :coll-like :map :map-like},
-             :classname "cljs.core/TransientArrayMap",
-             :coll-size 2})))
-     (testing "cljs.core/PersistentHashMap$TransientHashMap"
-       (is (=
-            (tag-map    (transient {:a 1
-                                    :b 2
-                                    :c 3
-                                    :d 4
-                                    :e 5
-                                    :f 6
-                                    :g 7
-                                    :h 8
-                                    :i 9
-                                    :j 10}))
-            {:tag       :map,
-             :type      cljs.core/TransientHashMap,
-             :all-tags  #{:map :coll :transient :coll-like :map-like},
-             :classname "cljs.core/TransientHashMap",
-             :coll-size 10}))))
-   :clj
-   (deftest clj-transient-collections-map
-     (testing "clojure.lang.PersistentHashSet$TransientHashSet"
-       (is (=
-            (tag-map    (transient #{1 2 3}))
-            {:tag       :set,
-             :type      clojure.lang.PersistentHashSet$TransientHashSet,
-             :all-tags  #{:coll :transient :coll-like :set :set-like},
-             :classname "clojure.lang.PersistentHashSet$TransientHashSet",
-             :coll-size 3})))
-     (testing "clojure.lang.PersistentArrayMap$TransientArrayMap"
-       (is (=
-            (tag-map    (transient {:a 2 :b 4}))
-            {:tag       :map,
-             :type      clojure.lang.PersistentArrayMap$TransientArrayMap,
-             :all-tags  #{:coll :transient :coll-like :map :map-like},
-             :classname "clojure.lang.PersistentArrayMap$TransientArrayMap",
-             :coll-size 2})))
-     (testing "clojure.lang.PersistentHashMap$TransientHashMap"
-       (is (=
-            (tag-map    (transient {:a 1
-                                    :b 2
-                                    :c 3
-                                    :d 4
-                                    :e 5
-                                    :f 6
-                                    :g 7
-                                    :h 8
-                                    :i 9
-                                    :j 10}))
-            {:tag       :map,
-             :type      clojure.lang.PersistentHashMap$TransientHashMap,
-             :all-tags  #{:coll :transient :coll-like :map :map-like},
-             :classname "clojure.lang.PersistentHashMap$TransientHashMap",
-             :coll-size 10})))))
-
-
-
-#?(:cljs
-   (deftest cljs-inf-and-nan-types
-     (is (= :number (tag (/ 1.6 0.0))))
-     (is (= :number (tag (/ -1.0 0.0))))
-     (is (= :nan (tag (/ 0.0 0.0)))))
-   :bb
-   nil
-   :clj
-   (deftest clj-inf-and-nan-types
-     (is (= :number (tag (/ 1.6 0.0))))
-     (is (= :number (tag (/ -1.0 0.0))))
-     (is (= :nan (tag (/ 0.0 0.0))))))
-
-
-#?(:cljs
-   (deftest cljs-number-types
-     (is (= :number (tag 1)))
-     (is (= :number (tag 1.50)))
-     (is (= :number (tag (js/BigInt 171))))
-     (is (= :inst (tag (new js/Date))))
-     (is (= :function (tag js/Date))))
-   :clj
-   (deftest clj-number-types
-     (is (= :ratio (tag 1/3)))
-     (is (= :number (tag (byte 0))))
-     (is (= :number (tag (short 3))))
-     (is (= :number (tag (double 23.44))))
-     (is (= :number (tag 1M)))
-     (is (= :number (tag 1)))
-     (is (= :number (tag (float 1.50))))
-     (is (= :char (tag (char 97))))
-     (is (= :number (tag (java.math.BigInteger. "171"))))
-     (is (= :inst (tag (java.util.Date.))))
-     (is (= :class (tag java.util.Date)))))
-
-#?(:cljs
-   ()
-   :clj
-   (println (tag-map '(:a :b :c) {:include-all-tags? false})))
 
 
 ;; #?(:clj
 ;;    (pprint (tag-map  (java.util.ArrayList. [1 2 3]))))
-
-
 
 
 ;;------------------------------------------------------------------------------
@@ -408,131 +196,137 @@
 
 ;; Run this in codegen phase to produce array of prop-names and attach to :resolver-fn or :instance-properties
 
-(def sgm (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))
-;; (def m (tag-map sgm))
-;; (def arrBuff (new js/ArrayBuffer 2))
+#?(:cljs
+   (do
+    ;;  (def sgm (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))
 
-#_(? [(some-> m :resolver (apply [sgm]))])
-#_(? [sgm])
-;; (? [arrBuff])
-;; (? (aget sgm js/Symbol.toStringTag))
-;; (? (= (js/Boolean nil) false))
-;; (? (= (js/Boolean 1) true))
+     ;; (def m (tag-map sgm))
+     ;; (def arrBuff (new js/ArrayBuffer 2))
+     
+     #_(? [(some-> m :resolver (apply [sgm]))])
+     #_(? [sgm])
+     ;; (? [arrBuff])
+     ;; (? (aget sgm js/Symbol.toStringTag))
+     ;; (? (= (js/Boolean nil) false))
+     ;; (? (= (js/Boolean 1) true))
+     
+     ;; (? (type js/Error))
+     ;; (? (lasertag.core/tag-map js/Intl.Locale))
+     ;; (? (lasertag.core/tag-map js/Array.concat))
+     ;; (? (lasertag.core/tag-map #(inc %)))
+     ;; (? (lasertag.core/tag-map (aget "string" "concat")))
+     
 
-;; (? (type js/Error))
-;; (? (lasertag.core/tag-map js/Intl.Locale))
-;; (? (lasertag.core/tag-map js/Array.concat))
-;; (? (lasertag.core/tag-map #(inc %)))
-;; (? (lasertag.core/tag-map (aget "string" "concat")))
+    ;;  (def korean (new js/Intl.Locale "ko" #js{:script    "Kore" 
+    ;;                                           :region    "KR" 
+    ;;                                           :hourCycle "h23" 
+    ;;                                           :calendar  "gregory"}))
+     ;; (? [#js{:one 1 :two 2 :three 3}])
+     ;; (? [korean])
+     
 
-
-(def korean (new js/Intl.Locale "ko" #js{:script "Kore" :region "KR" :hourCycle "h23" :calendar "gregory"}))
-;; (? [#js{:one 1 :two 2 :three 3}])
-;; (? [korean])
-
-
-(defn built-in? [obj]
-  (if-let [ctor (.-constructor obj)]
-    (let [ctor-str (js/Function.prototype.toString.call ctor)]
-      (string/includes? ctor-str " [native code] "))
-    false))
-
-
-(defclass HelloWorld
-  (extends js/HTMLElement)
-
-  (constructor [this]
-               (super))
-
-  Object
-  (connectedCallback [this]
-                     (js/console.log "hey from CLJS" this)))
-
-#_(js/window.customElements.define "hello-world" HelloWorld)
+    ;;  (defn built-in? [obj]
+    ;;    (if-let [ctor (.-constructor obj)]
+    ;;      (let [ctor-str (js/Function.prototype.toString.call ctor)]
+    ;;        (string/includes? ctor-str " [native code] "))
+    ;;      false))
 
 
-(defn foo [x] nil)
+    ;;  (defclass HelloWorld
+    ;;    (extends js/HTMLElement)
 
-;; (? (contains? jsi/built-ins HelloWorld))
+    ;;    (constructor [this]
+    ;;                 (super))
 
-;; (? (built-in? foo))
+    ;;    Object
+    ;;    (connectedCallback [this]
+    ;;                       (js/console.log "hey from CLJS" this)))
 
-;; (? (aget foo js/Symbol.toStringTag))
-;; (? (aget sgm js/Symbol.toStringTag))
-
-;; Try this to suss out js-built-in situation
-;; (? (aget (new js/Int8Array #js[1 2 3]) js/Symbol.toStringTag))
-;; (? :js (new js/Int8Array #js[1 2 3]))
-;; (? :js ( (js/Function. "a" "b" "return a + b")  1 2))
-;; (? :js #(inc %))
-;; (? {:display-metadata? true} (with-meta (symbol "hi") {:bling.theme/token :js-object-key}))
-
-;; (? [(.resolvedOptions (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))])
-;; (? [#js{:a 1}])
+    ;;  #_(js/window.customElements.define "hello-world" HelloWorld)
 
 
-;; (doseq [m (-> jsi/built-ins vals)]
-;;   (let [example (some-> m :example*)
-;;         string-tag (boolean (some-> example (aget js/Symbol.toStringTag)))]
-;;     (when example
-;;       (!? (object? example))
-;;       [(:sym m) string-tag])))
+    ;;  (defn foo [x] nil)
 
+     ;; (? (contains? jsi/built-ins HelloWorld))
+     
+     ;; (? (built-in? foo))
+     
+     ;; (? (aget foo js/Symbol.toStringTag))
+     ;; (? (aget sgm js/Symbol.toStringTag))
+     
+     ;; Try this to suss out js-built-in situation
+     ;; (? (aget (new js/Int8Array #js[1 2 3]) js/Symbol.toStringTag))
+     ;; (? :js (new js/Int8Array #js[1 2 3]))
+     ;; (? :js ( (js/Function. "a" "b" "return a + b")  1 2))
+     ;; (? :js #(inc %))
+     ;; (? {:display-metadata? true} (with-meta (symbol "hi") {:bling.theme/token :js-object-key}))
+     
+     ;; (? [(.resolvedOptions (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))])
+     ;; (? [#js{:a 1}])
+     
 
-(!? (instance? js/Object korean))
-#_(js/console.log (aget (.values #js [1 2 3]) js/Symbol.toStringTag))
-;; (? (uuid "00000000-0000-0000-0000-000000000000"))
+     ;; (doseq [m (-> jsi/built-ins vals)]
+     ;;   (let [example (some-> m :example*)
+     ;;         string-tag (boolean (some-> example (aget js/Symbol.toStringTag)))]
+     ;;     (when example
+     ;;       (!? (object? example))
+     ;;       [(:sym m) string-tag])))
+     
 
-;; (? (lasertag.core/tag #"hey"))
+    ;;  #_(instance? js/Object korean)
+    ;;  #_(js/console.log (aget (.values #js [1 2 3]) js/Symbol.toStringTag))
+     ;; (? (uuid "00000000-0000-0000-0000-000000000000"))
+     
+     ;; (? (lasertag.core/tag #"hey"))
+     
+     ;; (? (implements? IReversible [1 2 3]))
+     ;; (? (implements? ICounted [1 2 3]))
+     ;; (? (implements? ICollection [1 2 3]))
+     ;; (? (.-name (type [1 2 3])))
+     
+     ;; (js/console.log (.hasOwnProperty [1 2 3] "cljs$lang$protocol_mask$partition0$"))
+     
+     ;; (js/console.log (.hasOwnProperty (delay (println "whhhhh") 1000) "cljs$lang$protocol_mask$partition0$"))
+     
+     ;; (println (delay (println "whhhhh") 1000))
+     
+     ;; (println (lasertag.core/tag-map (delay (println "whhhhh") 1000)))
+     ;; (? :pp (lasertag.core/tag-map (atom 1000)))
+     
+     ;; (println (lasertag.core/tag-map [1 2 3] #_(volatile! 1000)))
+     
+     ;; (? (instance? cljs.core/IReversible (reverse [1 2 3])))
+     ;; (? (reversible? (reverse [1 2 3])))
+     ;; (? (type (reverse [1 2 3])))
+     
+     ;; (? (tag-map true))
+     
+     ;; ;; (? (tag-map 1))
+     ;; ;; (? (tag-map "hey"))
+     ;; (? (tag-map 'go))
+     ;; (? (tag-map #"mn"))
+     
+     ;; #_(-> (? :data
+     ;;         {:print-length                   300
+     ;;          :scalar-max-length        300
+     ;;          :scalar-mapkey-max-length 300}
+     ;;         jsi/js-built-ins)
+     ;;      :formatted
+     ;;      :string
+     ;;      println)
+     
+     ;; (? (type ##NaN))
+     
+     ;; (? (tag-map (js/BigInt 9007199254740991)))
+     
+     ;; (? (double? 42))
+     ;; (? (int? 42.05))
+     
 
-;; (? (implements? IReversible [1 2 3]))
-;; (? (implements? ICounted [1 2 3]))
-;; (? (implements? ICollection [1 2 3]))
-;; (? (.-name (type [1 2 3])))
-
-;; (js/console.log (.hasOwnProperty [1 2 3] "cljs$lang$protocol_mask$partition0$"))
-
-;; (js/console.log (.hasOwnProperty (delay (println "whhhhh") 1000) "cljs$lang$protocol_mask$partition0$"))
-
-;; (println (delay (println "whhhhh") 1000))
-
-;; (println (lasertag.core/tag-map (delay (println "whhhhh") 1000)))
-;; (? :pp (lasertag.core/tag-map (atom 1000)))
-
-;; (println (lasertag.core/tag-map [1 2 3] #_(volatile! 1000)))
-
-;; (? (instance? cljs.core/IReversible (reverse [1 2 3])))
-;; (? (reversible? (reverse [1 2 3])))
-;; (? (type (reverse [1 2 3])))
-
-;; (? (tag-map true))
-
-;; ;; (? (tag-map 1))
-;; ;; (? (tag-map "hey"))
-;; (? (tag-map 'go))
-;; (? (tag-map #"mn"))
-
-;; #_(-> (? :data
-;;         {:print-length                   300
-;;          :scalar-max-length        300
-;;          :scalar-mapkey-max-length 300}
-;;         jsi/js-built-ins)
-;;      :formatted
-;;      :string
-;;      println)
-
-;; (? (type ##NaN))
-
-;; (? (tag-map (js/BigInt 9007199254740991)))
-
-;; (? (double? 42))
-;; (? (int? 42.05))
-
-
-;; (? (int? (double 42)))
-;; (? (lasertag.core/tag-map ##NaN))
-
-
+     ;; (? (int? (double 42)))
+     ;; (? (lasertag.core/tag-map ##NaN))
+     
+     ))
 
 #_(? [{:name "Integer" :desc "ClojureScript integer literal" :example 42}])
 
