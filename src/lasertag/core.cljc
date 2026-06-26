@@ -6,6 +6,7 @@
    #?(:cljs [lasertag.jsi.native-plus :as jsi])
    #?(:cljs [lasertag.jsi.tag])
    #?(:cljs [lasertag.jsi.native :as jsi.native])
+   #?(:bb [clojure.reflect :as r])
   ;;  #?(:cljs [lasertag.macros :refer-macros [? !?]])
   ;;  #?(:clj [lasertag.macros :refer [? !?]])
    [clojure.set :as set]))
@@ -47,7 +48,7 @@
   [obj]
   (if (nil? obj)
     false
-    #?(:bb   (let [members (:members (clojure.reflect/reflect obj))]
+    #?(:bb   (let [members (:members (r/reflect obj))]
                ;; Filter for members that represent the fields
                (->> members
                     (filter :flags)
