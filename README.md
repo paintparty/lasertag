@@ -365,27 +365,28 @@ bb test:bb
 ## Developing
 Most of the tests are auto-generated.
 
+### CLJ, bb testing
 To regenerate tests for JVM Clojure, look at source of `lasertag.cached`.
 
-The cljs tests can also be regenerated. Additionally, the data structure
-that serves most of the results for `lasertag.core/tag` & `lasertag.core/tag-map`
-in cljs needs to be pre-generated. For both of these:
+### CLJS testing
+The cljs tests can also be regenerated.
 
-1)
-Toggle `lasertag.cljs.codegen/write-tests?` and 
+Additionally, the data structure that serves most of the results for
+`lasertag.core/tag` & `lasertag.core/tag-map` in cljs needs to be pre-generated.
+
+For both of these:
+
+1) Toggle `lasertag.cljs.codegen/write-tests?` and 
 `lasertag.cljs.codegen/write-classes?` to `true` in `lasertag.cljs.codegen`.
 
-2)
-In one terminal: `npm run codegen`
+2) In one terminal: `npm run codegen`
 
-3)
-In another terminal: `npm run codegen-watch`
+3) In another terminal: `npm run codegen-watch`
 
-4)
+4) The test and classes should immediately get generated and written to disc.
 Kill the `npm run codegen-watch` process.
 
-5)
-Toggle the defs from step 1 back to `false`
+5) Toggle the defs from step 1 back to `false`
 
 
 <br>
