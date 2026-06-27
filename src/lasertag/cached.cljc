@@ -1,10 +1,9 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
             [clojure.string :as string]
-            #?(:clj  [lasertag.macros :refer [?]])
+            [lasertag.macros :refer [?]]
             #?(:cljs [lasertag.jsi.native :as jsi.native])
-            #?(:cljs [lasertag.jsi.classes]))
-  #_(:require-macros [lasertag.macros :refer [?]]))
+            #?(:cljs [lasertag.jsi.classes])))
 
 
 ;; -----------------------------------------------------------------------------
@@ -328,10 +327,9 @@
    (chunked-cons? x)))
 
 (defn deferred? [x]
-  (or #?(:cljs (delay? x) :clj (delay? x))
-      #?(:cljs false :clj (future? x))
-      #?(:cljs (js-promise? x) :clj (instance? clojure.lang.IPending x))))
-
+  (or (delay? x)
+      #?(:clj  (or (future? x) (instance? clojure.lang.IPending x))
+         :cljs (js-promise? x))))
 
 (defn java-util-class? [s]
   (boolean (some-> s (string/starts-with? "java.util"))))
@@ -348,7 +346,7 @@
 (defn derefable? [x]
   (or (volatile? x)
       #?(:clj  (instance? clojure.lang.IDeref x)
-         :cljs (instance? cljs.core/IDeref x))))
+         :cljs (satisfies? cljs.core/IDeref x))))
 
 (defn reference? 
   "Returns true if x is a reference type."
@@ -359,7 +357,7 @@
 
 (defn carries-meta? [x]
   #?(:clj  (instance? clojure.lang.IObj x)
-     :cljs (instance? IWithMeta x)))
+     :cljs (satisfies? cljs.core/IWithMeta x)))
 
 (defn callable? [v]
   (or (ifn? v)
@@ -421,23 +419,27 @@
 ;;   #?(:clj  (instance? clojure.lang.Sorted x)
 ;;      :cljs (instance? cljs.core/ISorted x)))
 
+
 (defn editable? [x]
-  (instance?  #?(:cljs cljs.core/IEditableCollection :clj clojure.lang.IEditableCollection) x))
+  #?(:clj  (instance? clojure.lang.IEditableCollection x)
+     :cljs (satisfies? cljs.core/IEditableCollection x)))
 
 (defn temporal? [x]
   (or (inst? x)
-      #?(:clj (instance? java.time.temporal.TemporalAccessor x))))
+      #?(:clj (instance? java.time.temporal.TemporalAccessor x)
+         :cljs false))) ;; catch-all for clarity if it isn't an inst
 
 (defn transient? [v]
   #?(:clj  (instance? clojure.lang.ITransientCollection v)
-     :cljs (instance? cljs.core/ITransientCollection v)))
+     :cljs (satisfies? cljs.core/ITransientCollection v)))
 
 (defn stack? [x]
-  (instance?  #?(:cljs cljs.core/IStack :clj clojure.lang.IPersistentStack) x))
+  #?(:clj  (instance? clojure.lang.IPersistentStack x)
+     :cljs (satisfies? cljs.core/IStack x)))
 
 (defn named? [x]
   #?(:clj  (instance? clojure.lang.Named x)
-     :cljs (instance? cljs.core/INamed x)))
+     :cljs (satisfies? cljs.core/INamed x)))
 
 (defn multi-function? [x]
   #?(:clj  (instance? clojure.lang.MultiFn x)
@@ -514,7 +516,8 @@
      (tag! seqable? :seqable)
      (tag! char-sequence? :char-sequence)
      (tag! carries-meta? :carries-meta)
-     (tag! named? :named)
+     (do (? x)
+         (tag! named? :named))
 
      (when x-is-real-number?
        (vswap! vol conj :real)
