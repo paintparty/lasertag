@@ -6,10 +6,17 @@
    #?(:cljs [lasertag.jsi.native-plus :as jsi])
    #?(:cljs [lasertag.jsi.tag])
    #?(:cljs [lasertag.jsi.native :as jsi.native])
+   #?(:cljs [lasertag.jsi.native :as jsi.native])
    #?(:bb [clojure.reflect :as r])
-  ;;  #?(:cljs [lasertag.macros :refer-macros [? !?]])
-  ;;  #?(:clj [lasertag.macros :refer [? !?]])
-   [clojure.set :as set]))
+   [clojure.set :as set]
+
+   [lasertag.macros :refer [? !?]]
+   #?(:cljs
+      [cljs.pprint :refer [pprint]]
+      :clj
+      [clojure.pprint :refer [pprint]])
+
+   ))
 
 #?(:clj
    (do
@@ -117,11 +124,12 @@
 
 (defn- anonymous-fn? [f]
   (boolean
-   (when fn? 
+   (when (fn? f)  
      #?(:cljs
-        (let [n (.-name f)]
-          (or (empty? n)
-              (re-find #"fn__\d+" n)))
+        (when-not (.-cljs$lang$type f)
+          (let [n (.-name f)]
+            (or (empty? n)
+                (re-find #"fn__\d+" n))))
         :clj
         (re-find #"fn__\d+" (some-> f class .getName))))))
 
