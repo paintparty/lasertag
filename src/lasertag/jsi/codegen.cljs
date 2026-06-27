@@ -16,15 +16,13 @@
 ;; for `lasertag.core/tag` & `lasertag.core/tag-map` in cljs.
 ;; Generated ns is `lasertag.jsi.classes`
 
-;; (def ^:private write-classes? false)
-(def ^:private write-classes? true)
+(def ^:private write-classes? false)
 
 
 ;; Toggle this to regenerate the cljs tests
 ;; Generated ns is `lasertag.generated`
 
-;; (def ^:private write-tests? false)
-(def ^:private write-tests? true)
+(def ^:private write-tests? false)
 ;; -----------------------------------------------------------------------------
 
 
@@ -41,7 +39,8 @@
      ;; ---------------------------------------------------------------------
      ["cljs.core/Keyword" :keyword]           ":foo"
      ["js/String" :string]                    "\"foo\""
-     ;; ["cljs.core/Symbol" :symbol]           "(symbol foo)"
+     ;; Shadow chokes on this, leave it out
+     ;; ["cljs.core/Symbol" :symbol]             "(symbol foo)"
      ["js/Boolean" :boolean]                  "true"
      ["js/Number" :number]                    "21"
      ["nil" :nil]                             "nil"
