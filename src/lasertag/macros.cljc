@@ -1,7 +1,12 @@
 (ns lasertag.macros
- (:require  
-  [clojure.pprint :refer [pprint]]
-  [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            #?(:cljs
+               [cljs.pprint :refer [pprint]]
+               :clj
+               [clojure.pprint :refer [pprint]]))
+  #?(:cljs (:require-macros [lasertag.macros :refer [?]])))
+
+(def pp pprint)
 
 (defn- regex? [v]
   (-> v type str (= "class java.util.regex.Pattern")))
@@ -65,7 +70,7 @@
            (str "\n"
                 (str ~ns-str "\n")
                 (str (shortened (quote ~x) 25) "\n")
-                (with-out-str (pprint ~x))))
+                (with-out-str (lasertag.macros/pp ~x))))
           ~x)))
     ([label x]
      (let [label  (accented (or (:label label) label))
@@ -75,7 +80,7 @@
            (str "\n"
                 (str ~ns-str "\n")
                 (str ~label "\n")
-                (with-out-str (pprint ~x))))
+                (with-out-str (lasertag.macros/pp ~x))))
           ~x))))
 
 (defmacro ?> 
