@@ -184,6 +184,8 @@
    lasertag.cached/* maps."
   [x t]
   (or
+   (when (symbol? x) :symbol)
+
    (cached/cljc-coll-type x)
 
    (when (cached/js-generator? x) :generator)
