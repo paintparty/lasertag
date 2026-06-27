@@ -573,3 +573,200 @@
     :classname "js/Intl.PluralRules", 
     :tag :intl, 
     :all-tags #{:intl}})))
+
+
+(deftest
+ PersistentTreeMap-test
+ (is
+  (=
+   (tag-map (sorted-map 1 2 3 4))
+   {:type cljs.core/PersistentTreeMap,
+    :classname "cljs.core/PersistentTreeMap",
+    :tag :map,
+    :all-tags
+    #{:callable :seqable :associative :coll :array-map :coll-like
+      :sorted :map-like :map}})))
+
+
+(deftest
+ Map-test
+ (is
+  (=
+   (tag-map (new js/Map (array (array "a" 1) (array "b" 2))))
+   {:type js/Map,
+    :classname "js/Map",
+    :tag :map, 
+    :all-tags #{:map-like :coll-like :js :map}})))
+
+
+(deftest
+ Set-test
+ (is
+  (=
+   (tag-map (new js/Set (array 1 2)))
+   {:type js/Set,
+    :classname "js/Set",
+    :tag :set, 
+    :all-tags #{:set-like :coll-like :js :set}})))
+
+
+(deftest
+ RangeError-test
+ (is
+  (=
+   (tag-map (new js/RangeError))
+   {:type js/RangeError,
+    :classname "js/RangeError",
+    :tag :throwable, 
+    :all-tags #{:throwable :error}})))
+
+
+(deftest
+ PersistentTreeSet-test
+ (is
+  (=
+   (tag-map (sorted-set 1 2 3))
+   {:type cljs.core/PersistentTreeSet,
+    :classname "cljs.core/PersistentTreeSet",
+    :tag :set,
+    :all-tags
+    #{:callable :seqable :coll :sorted :set-like :coll-like :set}})))
+
+
+(deftest
+ Intl_ListFormat-test
+ (is
+  (=
+   (tag-map
+    (new
+     js/Intl.ListFormat
+     "en-GB"
+     (js-obj :style "long" :type "conjunction")))
+   {:type js/Intl.ListFormat,
+    :classname "js/Intl.ListFormat", 
+    :tag :intl, 
+    :all-tags #{:intl}})))
+
+
+(deftest
+ Intl_Segmenter-test
+ (is
+  (=
+   (tag-map (new js/Intl.Segmenter "fr" (js-obj :granularity "word")))
+   {:type js/Intl.Segmenter,
+    :classname "js/Intl.Segmenter", 
+    :tag :intl, 
+    :all-tags #{:intl}})))
+
+
+(deftest
+ Uint32Array-test
+ (is
+  (=
+   (tag-map (new js/Uint32Array (array 1 2 3)))
+   {:type js/Uint32Array,
+    :classname "js/Uint32Array",
+    :tag :array, 
+    :all-tags #{:typed-array :array-like :js :array}})))
+
+
+(deftest
+ BigInt64Array-test
+ (is
+  (=
+   (tag-map (new js/BigInt64Array 3))
+   {:type js/BigInt64Array,
+    :classname "js/BigInt64Array",
+    :tag :array, 
+    :all-tags #{:typed-array :array-like :js :array}})))
+
+
+(deftest
+ nil-test
+ (is
+  (=
+   (tag-map nil)
+   {:type nil,
+    :classname "nil", 
+    :tag :nil, 
+    :all-tags #{:scalar :seqable :nil}})))
+
+
+(deftest
+ Number-test
+ (is
+  (=
+   (tag-map 21)
+   {:type js/Number,
+    :classname "js/Number",
+    :tag :number,
+    :all-tags #{:scalar :real :double :float :int :number}})))
+
+
+(deftest
+ UUID-test
+ (is
+  (=
+   (tag-map (uuid "4fe5d828-6444-11e8-8222-720007e40350"))
+   {:type cljs.core/UUID,
+    :classname "cljs.core/UUID", 
+    :tag :uuid, 
+    :all-tags #{:uuid}})))
+
+
+(deftest
+ Intl_RelativeTimeFormat-test
+ (is
+  (=
+   (tag-map
+    (new js/Intl.RelativeTimeFormat "en" (js-obj :style "short")))
+   {:type js/Intl.RelativeTimeFormat,
+    :classname "js/Intl.RelativeTimeFormat",
+    :tag :intl, 
+    :all-tags #{:intl}})))
+
+
+(deftest
+ BigUint64Array-test
+ (is
+  (=
+   (tag-map (new js/BigUint64Array 3))
+   {:type js/BigUint64Array,
+    :classname "js/BigUint64Array",
+    :tag :array, 
+    :all-tags #{:typed-array :array-like :js :array}})))
+
+
+(deftest
+ Error-test
+ (is
+  (=
+   (tag-map (new js/Error))
+   {:type js/Error,
+    :classname "js/Error",
+    :tag :throwable, 
+    :all-tags #{:throwable :error}})))
+
+
+(deftest
+ Range-test
+ (is
+  (=
+   (tag-map (range 0 1 0.1))
+   {:type cljs.core/Range,
+    :classname "cljs.core/Range",
+    :tag :seq,
+    :all-tags
+    #{:iterable :seqable :sequential :coll :deferred :coll-like :lazy
+      :seq :list-like :range}})))
+
+
+(deftest
+ Int8Array-test
+ (is
+  (=
+   (tag-map (new js/Int8Array (array 1 2 3)))
+   {:type js/Int8Array,
+    :classname "js/Int8Array",
+    :tag :array, 
+    :all-tags #{:typed-array :array-like :js :array}})))

@@ -377,7 +377,7 @@ Additionally, the data structure that serves most of the results for
 For both of these:
 
 1) Toggle `lasertag.cljs.codegen/write-tests?` and 
-`lasertag.cljs.codegen/write-classes?` to `true` in `lasertag.cljs.codegen`.
+`lasertag.jsi.codegen/write-classes?` to `true`.
 
 2) In one terminal: `npm run codegen`
 

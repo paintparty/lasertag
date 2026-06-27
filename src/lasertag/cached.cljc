@@ -516,8 +516,7 @@
      (tag! seqable? :seqable)
      (tag! char-sequence? :char-sequence)
      (tag! carries-meta? :carries-meta)
-     (do (? x)
-         (tag! named? :named))
+     (tag! named? :named)
 
      (when x-is-real-number?
        (vswap! vol conj :real)
