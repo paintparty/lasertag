@@ -412,7 +412,8 @@
             (not (cached/java-util-class? classname)))
        (alength x)
 
-       (and (contains? all-tags :datatype)
+       (and (not record?)
+            (contains? all-tags :datatype)
             (contains? all-tags :map-like))
        (object-field-count x)
 
