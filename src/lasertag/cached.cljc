@@ -15,8 +15,10 @@
 (def ^:private greenlit-tests
   #{}
   #_#{"java.util.HashSet"})
-
-(def gen-test-path "./test/lasertag/generated.clj")
+(def gen-test-ns-name "core-test")
+(def gen-test-path (str "./test/lasertag/" 
+                        (string/replace gen-test-ns-name #"-" "_")
+                        ".clj"))
 
 ;; -----------------------------------------------------------------------------
 
@@ -502,7 +504,7 @@
 
 
 (defn all-tags*
-  "All tags, for values at macroexansion."
+  "All tags, for values at macroexpansion."
   ([x]
    (all-tags* x nil))
   ([x {:keys [runtime?]}]
@@ -671,11 +673,12 @@
               "\n\n"
               (with-out-str 
                 (clojure.pprint/pprint
-                 '(ns lasertag.generated
-                    (:require
-                     [clojure.test :refer [deftest is]]
-                     [lasertag.core :refer [tag-map]]
-                     [clojure.string :as string]))))
+                 (list 'ns
+                       (symbol (str "lasertag." gen-test-ns-name))
+                       (list :require
+                             '[clojure.test :refer [deftest is]]
+                             '[lasertag.core :refer [tag-map]]
+                             '[clojure.string :as string]))))
               "\n")
              :append false))
 
@@ -721,7 +724,7 @@
 
                       (when write-tests?
                         (require '[clojure.pprint :refer [pprint]])
-                        (spit (str "./test/lasertag/generated" ".clj") 
+                        (spit (str "./test/lasertag/core_test" ".clj") 
                               (when (or (empty? greenlit-tests)
                                         (and (not (empty? greenlit-tests))
                                              (contains? greenlit-tests classname)))
@@ -731,13 +734,24 @@
                                    (clojure.pprint/pprint
                                     (list 
                                      'deftest (symbol (str classname "-test"))
-                                     (list 'is (list '= (list 'tag-map x*) result)))))))
+                                     (list 'is
+                                           (list '=
+                                                 result
+                                                 (list 'tag-map
+                                                       x*
+                                                       ; This check needs to match check in lasertag.core/tag-map
+                                                       ; if we need to get more tags at runtime. If it 
+                                                       ; matches, we will skip adding the secondary tags
+                                                       ; (like would happen at runtime), in order to match
+                                                       ; the result of lookup by classe from the map of 
+                                                       ; cached tag-maps. 
+                                                       (when (number? x)
+                                                         {:skip-dynamic-secondary-tags? true})))))))))
                               :append true))
 
                       (assoc m cls result)))
                   {}
                   m))))
-
 
 
 ;; TODO - describe what this is and how it works
@@ -895,25 +909,3 @@
        clojure.lang.BigInt
        java.math.BigInteger
        java.math.BigDecimal])))
-
-(def by-priority-class
-  (select-keys 
-   #?(:cljs lasertag.jsi.classes/by-class :clj by-class)
-   #?(:cljs
-      [cljs.core/Keyword            
-       js/String            
-       js/Boolean 
-       cljs.core/LazySeq  
-       cljs.core/PersistentVector  
-       cljs.core/PersistentArrayMap   
-       cljs.core/PersistentHashMap                   
-       cljs.core/PersistentHashSet]
-      :clj
-      [clojure.lang.Keyword
-       java.lang.String
-       java.lang.Boolean
-       clojure.lang.LazySeq
-       clojure.lang.PersistentVector
-       clojure.lang.PersistentArrayMap
-       clojure.lang.PersistentHashMap
-       clojure.lang.PersistentHashSet])))
