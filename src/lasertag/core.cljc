@@ -1,15 +1,12 @@
 (ns lasertag.core
   (:require
-   [clojure.string :as string]
    [lasertag.messaging :as messaging]
    [lasertag.cached :as cached]
-   #?(:cljs [lasertag.jsi.native-plus :as jsi])
-   #?(:cljs [lasertag.jsi.tag])
-   #?(:cljs [lasertag.jsi.native :as jsi.native])
-   #?(:cljs [lasertag.jsi.native :as jsi.native])
-   #?(:bb [clojure.reflect :as r])
-   [clojure.set :as set]
-   [lasertag.macros :refer [? !?]]))
+   #?@(:clj  [[clojure.string :as str]]
+       :cljs [[lasertag.jsi.native-plus :as jsi]
+              [lasertag.jsi.tag]
+              [lasertag.jsi.native :as jsi.native]])
+   [clojure.set :as set] ))
 
 #?(:clj
    (do
@@ -25,7 +22,7 @@
               (remove nil?)
               (cons k)
               (into #{}))))
-     
+
      (defn- java-class-name [x]
        ;; TODO - Consider using clojure.lang.Compiler/demunge here: 
        ;; (some-> x type .getName Compiler/demunge)
@@ -34,40 +31,33 @@
                    (some-> x
                            type
                            str
-                           (string/replace #"^class (.*)$" "")))
+                           (str/replace #"^class (.*)$" "")))
 
                ;; Example of what these last 2 do:
                ;; "[Ljava.lang.Object;" -> "Ljava.lang.Object"
-               (string/replace #"^\[" "")
-               (string/replace #";$" "")))))
+               (str/replace #"^\[" "")
+               (str/replace #";$" "")))))
 
-
-(defn- object-fields 
-  "Returns true if the given object instance has one or more named fields 
-   declared in its underlying structure across JVM, CLJS, and Babashka."
+(defn object-fields 
+  "If the given object instance has one or more named fields declared in its
+   underlying structure (across JVM, CLJS, and Babashka), returns a list of
+   those names."
   [obj]
   (if (nil? obj)
     false
-    #?(:bb   (let [members (:members (r/reflect obj))]
-               ;; Filter for members that represent the fields
-               (->> members
-                    (filter :flags)
-                    (map :name)
-                    vec  ; isolates names
-                    ))
+    #?(:bb   nil
        :clj  (.getDeclaredFields (.getClass obj))
-       :cljs (js/Object.keys obj))))
+       :cljs (when (seq (.getBasis (.-constructor obj)))
+               (keys (into {} obj))))))
 
-(defn- object-field-count
+(defn object-field-count
   "Returns true if the given object instance has one or more named fields 
    declared in its underlying structure across JVM, CLJS, and Babashka."
   [obj]
   (if (nil? obj)
     false
-    #?(:bb   (->> (object-fields obj) count)
-       :clj  (alength (object-fields obj))
+    #?(:clj  (some-> obj object-fields alength)
        :cljs (alength (object-fields obj)))))
-
 
 (defn- map-like?* [x k all-tags]
   (or (contains? #{:map :js-object :js-map :js-data-view} k)
@@ -77,18 +67,16 @@
       #?(:clj (instance? java.util.AbstractMap x))
       (and (= k :datatype) (pos? (object-field-count x)))))
 
-
 (defn- classname* [x]
   #?(:cljs
      (lasertag.jsi.tag/cljs-class-name x)
      :bb
      (let [nm (java-class-name x)]
-       (if (some-> nm (string/starts-with? "sci.impl.fns"))
+       (if (some-> nm (str/starts-with? "sci.impl.fns"))
          "sci.impl.fns"
          nm))
      :clj
      (java-class-name x)))
-
 
 (defn- all-tags* [{:keys [x k] :as m}]
   (let [all-tags   #?(:cljs (lasertag.jsi.tag/cljs-all-value-types m)
@@ -117,7 +105,7 @@
 
 (defn- anonymous-fn? [f]
   (boolean
-   (when (fn? f)  
+   (when (fn? f)
      #?(:cljs
         (when-not (.-cljs$lang$type f)
           (let [n (.-name f)]
@@ -138,8 +126,6 @@
         all-tags
         (apply conj all-tags (remove nil? more-tags))]
     {:all-tags all-tags :classname classname}))
-
-
 
 ;;                                                                   
 ;; TTTTTTTTTTTTTTTTTTTTTTT         AAA                  GGGGGGGGGGGGG
@@ -188,7 +174,6 @@
               {:js-built-in-object?     true
                :js-built-in-object-name (str sym)})))))))
 
-
 (defn- tag-map*
   [x k opts]
   (merge
@@ -205,7 +190,6 @@
       :clj  (all-tags {:x    x
                        :k    k
                        :opts opts}))))
-
 
 ;; (defn- find-classname [x]
 ;;   ;; For custom datatypes, ^class prefix is not present in str'd babashka classname
@@ -226,22 +210,20 @@
 ;;                 k (get clj-names k k)]
 ;;             k))))))
 
-
 (defn vanilla-class? [x]
   #?(:bb
      (instance? sci.lang.Type x)
      :clj
      (instance? java.lang.Class x)))
 
-
-(defn- k* 
+(defn- k*
   "Assigns a primary tag for values that cannot be found in any of the public
    lasertag.cached/* maps."
   [x t]
   #?(:cljs
      (lasertag.jsi.tag/k* x t)
      :clj
-     (or 
+     (or
       (cached/cljc-coll-type x)
       (when (fn? x) :function)
       (when (cached/throwable? x) :throwable)
@@ -256,13 +238,11 @@
       (when (instance? java.util.AbstractList x) :list)
       (when (vanilla-class? x) :class))))
 
-
 (defn merged-with-runtime-tags [x m]
   (let [number-tags  (when (cached/real-number? x) (cached/number-tags x))
         all-tags2    (cached/all-tags* x)
-        all-tags-new (set/union (:all-tags m) (!? number-tags) (!? all-tags2))]
+        all-tags-new (set/union (:all-tags m) number-tags all-tags2)]
     (assoc m :all-tags all-tags-new)))
-
 
 (defn ^:public tag* [{:keys [x extras? opts]}]
   (let [k (k* x (cached/cljc-type x))]
@@ -271,22 +251,20 @@
         (merged-with-runtime-tags x m))
       k)))
 
-
 (defn cached-tag-map [x]
   (when-let [cached (let [x-type (cached/cljc-type x)]
 
                       #_(when (= (str x-type) "class fireworks.sample.MyType")
-                        #_(= x-type clojure.lang.PersistentVector$ChunkedSeq)
-                        (println (if (get cached/by-class x-type)
-                                   "by-class"
-                                   "by-tag-map*")))
+                          #_(= x-type clojure.lang.PersistentVector$ChunkedSeq)
+                          (println (if (get cached/by-class x-type)
+                                     "by-class"
+                                     "by-tag-map*")))
 
                       (or (get cached/by-class x-type)
                           (when (number? x)
                             (or (get cached/non-finite-numbers-by-class x)
                                 (get cached/by-number-class x-type)))))]
     cached))
-
 
 (defn tag
   "Given a value, returns a tag representing the value's type."
@@ -300,12 +278,11 @@
                    :extras? false
                    :opts    opts}))
         (catch #?(:cljs js/Object :clj Throwable)  e
-          (messaging/print-warning! 
+          (messaging/print-warning!
            e
            {:fqns-fn "fireworks.core/tag"
             :desc    "Unable to produce tag"})
           :lasertag.core/error))))
-
 
 (defn tag-map
   "Given a value, returns a map with information about the value's type.
@@ -322,12 +299,12 @@
    (try (or (cond->> (cached-tag-map x)
               (and (number? x) ;<- check if we need to get more tags at runtime 
                    (not (:skip-dynamic-secondary-tags? opts)))
-              (merged-with-runtime-tags x)) 
+              (merged-with-runtime-tags x))
             (tag* {:x       x
                    :extras? true
                    :opts    opts}))
         (catch #?(:cljs js/Object :clj Throwable)  e
-          (messaging/print-warning! 
+          (messaging/print-warning!
            e
            (cond-> {:fqns-fn        "fireworks.core/tag-map"
                     :desc           "Unable to produce tag map"
@@ -336,13 +313,10 @@
              (assoc :supplied-opts opts)))
           {:tag :lasertag.core/error}))))
 
-
 ;; TODO
 ;; Figure out best abstraction for inheritance model for custom datatypes,
 ;; Maybe return :namespace and :name for anything named
 ;; should clj Promise go in map?
-
-
 
 ;;                                                                       
 ;;    SSSSSSSSSSSSSSS IIIIIIIIIIZZZZZZZZZZZZZZZZZZZEEEEEEEEEEEEEEEEEEEEEE
@@ -376,7 +350,6 @@
      :cljs
      nil))
 
-
 #?(:cljs
    (defn- cljs-coll-size-try
      [{:keys [x tag all-tags]}]
@@ -399,7 +372,6 @@
 
        :else
        (count x))))
-
 
 #?(:clj
    (defn- clj-coll-size-try
@@ -429,7 +401,6 @@
          (when (:suppress-coll-size-warning? (:opts m))
            (messaging/print-unknown-coll-size-warning! e))
          :lasertag.core/unknown-coll-size)))
-
 
 (defn ^:public coll-size* [{:keys [x all-tags] :as m}]
   (when (:coll-like all-tags)
@@ -461,7 +432,6 @@
 ;; vanilla classes
 
 ;; Same, or similar thing for js test generation
-
 
 ;; run test suites
 ;; bb test suite
