@@ -11,11 +11,10 @@
 
 (ns
  lasertag.core-test
-  (:require
-   [clojure.test :refer [deftest is]]
-   [lasertag.core :refer [tag-map]]
-   [lasertag.macros :refer [?]]
-   [clojure.string :as string]))
+ (:require
+  [clojure.test :refer [deftest is]]
+  [lasertag.core :refer [tag-map]]
+  [clojure.string :as string]))
 
 
 
@@ -23,7 +22,6 @@
  clojure.lang.PersistentArrayMap-test
  (is
   (=
-   (tag-map {:a 1})
    {:tag :map,
     :type clojure.lang.PersistentArrayMap,
     :all-tags
@@ -37,14 +35,14 @@
       :map-like
       :map
       :carries-meta},
-    :classname "clojure.lang.PersistentArrayMap"})))
+    :classname "clojure.lang.PersistentArrayMap"}
+   (tag-map {:a 1} nil))))
 
 
 (deftest
  clojure.lang.Repeat-test
  (is
   (=
-   (tag-map (repeat 2 "a"))
    {:tag :seq,
     :type clojure.lang.Repeat,
     :all-tags
@@ -57,36 +55,36 @@
       :seq
       :list-like
       :carries-meta},
-    :classname "clojure.lang.Repeat"})))
+    :classname "clojure.lang.Repeat"}
+   (tag-map (repeat 2 "a") nil))))
 
 
 (deftest
  clojure.lang.PersistentVector$TransientVector-test
  (is
   (=
-   (tag-map (transient [1 2 3]))
    {:tag :map,
     :type clojure.lang.PersistentVector$TransientVector,
     :all-tags #{:callable :coll-like :transient :map :list-like},
-    :classname "clojure.lang.PersistentVector$TransientVector"})))
+    :classname "clojure.lang.PersistentVector$TransientVector"}
+   (tag-map (transient [1 2 3]) nil))))
 
 
 (deftest
  nil-test
  (is
   (=
-   (tag-map nil)
    {:tag :nil,
     :type nil,
     :all-tags #{:seqable :scalar :nil},
-    :classname "nil"})))
+    :classname "nil"}
+   (tag-map nil nil))))
 
 
 (deftest
  clojure.lang.PersistentHashSet-test
  (is
   (=
-   (tag-map #{1 3 2})
    {:tag :set,
     :type clojure.lang.PersistentHashSet,
     :all-tags
@@ -98,14 +96,14 @@
       :set
       :carries-meta
       :set-like},
-    :classname "clojure.lang.PersistentHashSet"})))
+    :classname "clojure.lang.PersistentHashSet"}
+   (tag-map #{1 3 2} nil))))
 
 
 (deftest
  clojure.lang.LazySeq-test
  (is
   (=
-   (tag-map (map inc [1 2 3]))
    {:tag :seq,
     :type clojure.lang.LazySeq,
     :all-tags
@@ -118,47 +116,47 @@
       :seq
       :list-like
       :carries-meta},
-    :classname "clojure.lang.LazySeq"})))
+    :classname "clojure.lang.LazySeq"}
+   (tag-map (map inc [1 2 3]) nil))))
 
 
 (deftest
  clojure.lang.Keyword-test
  (is
   (=
-   (tag-map :foo)
    {:tag :keyword,
     :type clojure.lang.Keyword,
     :all-tags #{:callable :scalar :keyword :named},
-    :classname "clojure.lang.Keyword"})))
+    :classname "clojure.lang.Keyword"}
+   (tag-map :foo nil))))
 
 
 (deftest
  java.util.HashSet-test
  (is
   (=
-   (tag-map (java.util.HashSet. #{1 "a" 2 "b"}))
    {:tag :set,
     :type java.util.HashSet,
     :all-tags #{:seqable :coll-like :set :set-like},
-    :classname "java.util.HashSet"})))
+    :classname "java.util.HashSet"}
+   (tag-map (java.util.HashSet. #{1 "a" 2 "b"}) nil))))
 
 
 (deftest
  java.lang.ClassCastException-test
  (is
   (=
-   (tag-map (java.lang.ClassCastException. "foo"))
    {:tag :throwable,
     :type java.lang.ClassCastException,
     :all-tags #{:exception :throwable},
-    :classname "java.lang.ClassCastException"})))
+    :classname "java.lang.ClassCastException"}
+   (tag-map (java.lang.ClassCastException. "foo") nil))))
 
 
 (deftest
  clojure.lang.PersistentHashMap-test
  (is
   (=
-   (tag-map (hash-map :a 1))
    {:tag :map,
     :type clojure.lang.PersistentHashMap,
     :all-tags
@@ -173,14 +171,14 @@
       :map-like
       :map
       :carries-meta},
-    :classname "clojure.lang.PersistentHashMap"})))
+    :classname "clojure.lang.PersistentHashMap"}
+   (tag-map (hash-map :a 1) nil))))
 
 
 (deftest
  clojure.lang.PersistentVector-test
  (is
   (=
-   (tag-map [1 2 3])
    {:tag :vector,
     :type clojure.lang.PersistentVector,
     :all-tags
@@ -195,50 +193,51 @@
       :stack
       :list-like
       :carries-meta},
-    :classname "clojure.lang.PersistentVector"})))
+    :classname "clojure.lang.PersistentVector"}
+   (tag-map [1 2 3] nil))))
 
 
 (deftest
  clojure.lang.Ratio-test
  (is
   (=
-   (tag-map 2/3)
    {:tag :number,
     :type clojure.lang.Ratio,
     :all-tags #{:number :real :scalar :ratio},
-    :classname "clojure.lang.Ratio"})))
+    :classname "clojure.lang.Ratio"}
+   (tag-map 2/3 {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  clojure.lang.MultiFn-test
  (is
   (=
-   (tag-map
-    (do
-     (defmulti different-behavior (fn [x] (:x-type x)))
-     different-behavior))
    {:tag :function,
     :type clojure.lang.MultiFn,
     :all-tags #{:callable :multi-function :function},
-    :classname "clojure.lang.MultiFn"})))
+    :classname "clojure.lang.MultiFn"}
+   (tag-map
+    (do
+     (defmulti different-behavior (fn [x] (:x-type x)))
+     different-behavior)
+    nil))))
 
 
 (deftest
  java.util.HashMap-test
  (is
   (=
-   (tag-map (java.util.HashMap. (hash-map "a" 1 "b" 2)))
    {:tag :map,
     :type java.util.HashMap,
     :all-tags #{:seqable :coll-like :map-like :map},
-    :classname "java.util.HashMap"})))
+    :classname "java.util.HashMap"}
+   (tag-map (java.util.HashMap. (hash-map "a" 1 "b" 2)) nil))))
 
 
 (deftest
  clojure.lang.PersistentList-test
  (is
   (=
-   (tag-map (list 1 2 3))
    {:tag :list,
     :type clojure.lang.PersistentList,
     :all-tags
@@ -251,58 +250,58 @@
       :seq
       :list-like
       :carries-meta},
-    :classname "clojure.lang.PersistentList"})))
+    :classname "clojure.lang.PersistentList"}
+   (tag-map (list 1 2 3) nil))))
 
 
 (deftest
  clojure.lang.ArityException-test
  (is
   (=
-   (tag-map (clojure.lang.ArityException. 3 "foo"))
    {:tag :throwable,
     :type clojure.lang.ArityException,
     :all-tags #{:exception :throwable},
-    :classname "clojure.lang.ArityException"})))
+    :classname "clojure.lang.ArityException"}
+   (tag-map (clojure.lang.ArityException. 3 "foo") nil))))
 
 
 (deftest
  clojure.lang.BigInt-test
  (is
   (=
-   (tag-map 21N)
    {:tag :number,
     :type clojure.lang.BigInt,
     :all-tags #{:big-int :number :real :scalar},
-    :classname "clojure.lang.BigInt"})))
+    :classname "clojure.lang.BigInt"}
+   (tag-map 21N {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  java.math.BigDecimal-test
  (is
   (=
-   (tag-map 21M)
    {:tag :number,
     :type java.math.BigDecimal,
     :all-tags #{:number :real :scalar :big-decimal},
-    :classname "java.math.BigDecimal"})))
+    :classname "java.math.BigDecimal"}
+   (tag-map 21M {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  java.lang.String-test
  (is
   (=
-   (tag-map "foo")
    {:tag :string,
     :type java.lang.String,
     :all-tags #{:seqable :string :scalar :char-sequence},
-    :classname "java.lang.String"})))
+    :classname "java.lang.String"}
+   (tag-map "foo" nil))))
 
 
 (deftest
  clojure.lang.Cons-test
  (is
   (=
-   (tag-map (cons 1 '(2 3)))
    {:tag :seq,
     :type clojure.lang.Cons,
     :all-tags
@@ -316,25 +315,25 @@
       :list-like
       :carries-meta
       :cons},
-    :classname "clojure.lang.Cons"})))
+    :classname "clojure.lang.Cons"}
+   (tag-map (cons 1 '(2 3)) nil))))
 
 
 (deftest
  clojure.lang.PersistentHashSet$TransientHashSet-test
  (is
   (=
-   (tag-map (transient #{1 3 2}))
    {:tag :set,
     :type clojure.lang.PersistentHashSet$TransientHashSet,
     :all-tags #{:callable :transient :set},
-    :classname "clojure.lang.PersistentHashSet$TransientHashSet"})))
+    :classname "clojure.lang.PersistentHashSet$TransientHashSet"}
+   (tag-map (transient #{1 3 2}) nil))))
 
 
 (deftest
  clojure.lang.LongRange-test
  (is
   (=
-   (tag-map (range 3))
    {:tag :seq,
     :type clojure.lang.LongRange,
     :all-tags
@@ -348,47 +347,47 @@
       :list-like
       :carries-meta
       :range},
-    :classname "clojure.lang.LongRange"})))
+    :classname "clojure.lang.LongRange"}
+   (tag-map (range 3) nil))))
 
 
 (deftest
  clojure.lang.Agent-test
  (is
   (=
-   (tag-map (agent :foo))
    {:tag :agent,
     :type clojure.lang.Agent,
     :all-tags #{:derefable :agent :reference},
-    :classname "clojure.lang.Agent"})))
+    :classname "clojure.lang.Agent"}
+   (tag-map (agent :foo) nil))))
 
 
 (deftest
  java.util.Date-test
  (is
   (=
-   (tag-map (java.util.Date.))
    {:tag :datetime,
     :type java.util.Date,
     :all-tags #{:inst :datetime},
-    :classname "java.util.Date"})))
+    :classname "java.util.Date"}
+   (tag-map (java.util.Date.) nil))))
 
 
 (deftest
  java.lang.Float-test
  (is
   (=
-   (tag-map (float 21.42))
    {:tag :number,
     :type java.lang.Float,
     :all-tags #{:number :float :real :scalar},
-    :classname "java.lang.Float"})))
+    :classname "java.lang.Float"}
+   (tag-map (float 21.42) {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  clojure.lang.MapEntry-test
  (is
   (=
-   (tag-map (-> {:a 1} first))
    {:tag :vector,
     :type clojure.lang.MapEntry,
     :all-tags
@@ -402,128 +401,129 @@
       :stack
       :map-entry
       :list-like},
-    :classname "clojure.lang.MapEntry"})))
+    :classname "clojure.lang.MapEntry"}
+   (tag-map (-> {:a 1} first) nil))))
 
 
 (deftest
  java.lang.Short-test
  (is
   (=
-   (tag-map (short 21))
    {:tag :number,
     :type java.lang.Short,
     :all-tags #{:short :int :number :real :scalar},
-    :classname "java.lang.Short"})))
+    :classname "java.lang.Short"}
+   (tag-map (short 21) {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  clojure.lang.ExceptionInfo-test
  (is
   (=
-   (tag-map (ex-info "foo" {}))
    {:tag :throwable,
     :type clojure.lang.ExceptionInfo,
     :all-tags #{:exception :throwable},
-    :classname "clojure.lang.ExceptionInfo"})))
+    :classname "clojure.lang.ExceptionInfo"}
+   (tag-map (ex-info "foo" {}) nil))))
 
 
 (deftest
  java.util.ArrayList-test
  (is
   (=
-   (tag-map (java.util.ArrayList. (range 6)))
    {:tag :array,
     :type java.util.ArrayList,
     :all-tags #{:seqable :array :coll-like :list-like},
-    :classname "java.util.ArrayList"})))
+    :classname "java.util.ArrayList"}
+   (tag-map (java.util.ArrayList. (range 6)) nil))))
 
 
 (deftest
  java.lang.Double-test
  (is
   (=
-   (tag-map 21.42)
    {:tag :number,
     :type java.lang.Double,
     :all-tags #{:double :number :float :real :scalar},
-    :classname "java.lang.Double"})))
+    :classname "java.lang.Double"}
+   (tag-map 21.42 {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  java.time.LocalDate-test
  (is
   (=
-   (tag-map (java.time.LocalDate/now))
    {:tag :datetime,
     :type java.time.LocalDate,
     :all-tags #{:datetime},
-    :classname "java.time.LocalDate"})))
+    :classname "java.time.LocalDate"}
+   (tag-map (java.time.LocalDate/now) nil))))
 
 
 (deftest
  clojure.lang.PersistentArrayMap$TransientArrayMap-test
  (is
   (=
-   (tag-map (transient (array-map 1 2 3 4)))
    {:tag :map,
     :type clojure.lang.PersistentArrayMap$TransientArrayMap,
     :all-tags
     #{:callable :array-map :coll-like :transient :map-like :map},
-    :classname "clojure.lang.PersistentArrayMap$TransientArrayMap"})))
+    :classname "clojure.lang.PersistentArrayMap$TransientArrayMap"}
+   (tag-map (transient (array-map 1 2 3 4)) nil))))
 
 
 (deftest
  java.lang.Long-test
  (is
   (=
-   (tag-map 21)
    {:tag :number,
     :type java.lang.Long,
     :all-tags #{:long :int :number :real :scalar},
-    :classname "java.lang.Long"})))
+    :classname "java.lang.Long"}
+   (tag-map 21 {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  java.lang.Boolean-test
  (is
   (=
-   (tag-map true)
    {:tag :boolean,
     :type java.lang.Boolean,
     :all-tags #{:scalar :boolean},
-    :classname "java.lang.Boolean"})))
+    :classname "java.lang.Boolean"}
+   (tag-map true nil))))
 
 
 (deftest
  java.time.Instant-test
  (is
   (=
-   (tag-map (java.time.Instant/now))
    {:tag :datetime,
     :type java.time.Instant,
     :all-tags #{:inst :datetime},
-    :classname "java.time.Instant"})))
+    :classname "java.time.Instant"}
+   (tag-map (java.time.Instant/now) nil))))
 
 
 (deftest
  clojure.lang.ReaderConditional-test
  (is
   (=
-   (tag-map
-    (reader-conditional
-     '(:clj (System/getProperty "os.name") :cljs "JS")
-     false))
    {:tag :reader-conditional,
     :type clojure.lang.ReaderConditional,
     :all-tags #{:reader-conditional},
-    :classname "clojure.lang.ReaderConditional"})))
+    :classname "clojure.lang.ReaderConditional"}
+   (tag-map
+    (reader-conditional
+     '(:clj (System/getProperty "os.name") :cljs "JS")
+     false)
+    nil))))
 
 
 (deftest
  clojure.lang.PersistentList$EmptyList-test
  (is
   (=
-   (tag-map (list))
    {:tag :list,
     :type clojure.lang.PersistentList$EmptyList,
     :all-tags
@@ -536,25 +536,25 @@
       :seq
       :list-like
       :carries-meta},
-    :classname "clojure.lang.PersistentList$EmptyList"})))
+    :classname "clojure.lang.PersistentList$EmptyList"}
+   (tag-map (list) nil))))
 
 
 (deftest
  java.util.ArrayDeque-test
  (is
   (=
-   (tag-map (java.util.ArrayDeque. [1 2 3]))
    {:tag :array,
     :type java.util.ArrayDeque,
     :all-tags #{:seqable :array :coll-like :list-like},
-    :classname "java.util.ArrayDeque"})))
+    :classname "java.util.ArrayDeque"}
+   (tag-map (java.util.ArrayDeque. [1 2 3]) nil))))
 
 
 (deftest
  clojure.lang.PersistentTreeMap-test
  (is
   (=
-   (tag-map (sorted-map :a 1 :b 2))
    {:tag :map,
     :type clojure.lang.PersistentTreeMap,
     :all-tags
@@ -568,70 +568,70 @@
       :map-like
       :map
       :carries-meta},
-    :classname "clojure.lang.PersistentTreeMap"})))
+    :classname "clojure.lang.PersistentTreeMap"}
+   (tag-map (sorted-map :a 1 :b 2) nil))))
 
 
 (deftest
  java.time.ZonedDateTime-test
  (is
   (=
-   (tag-map (java.time.ZonedDateTime/now))
    {:tag :datetime,
     :type java.time.ZonedDateTime,
     :all-tags #{:datetime},
-    :classname "java.time.ZonedDateTime"})))
+    :classname "java.time.ZonedDateTime"}
+   (tag-map (java.time.ZonedDateTime/now) nil))))
 
 
 (deftest
  java.util.UUID-test
  (is
   (=
-   (tag-map #uuid "4fe5d828-6444-11e8-8222-720007e40350")
    {:tag :uuid,
     :type java.util.UUID,
     :all-tags #{:uuid},
-    :classname "java.util.UUID"})))
+    :classname "java.util.UUID"}
+   (tag-map #uuid "4fe5d828-6444-11e8-8222-720007e40350" nil))))
 
 
 (deftest
  clojure.lang.PersistentHashMap$TransientHashMap-test
  (is
   (=
-   (tag-map (transient (hash-map 1 2 3 4)))
    {:tag :map,
     :type clojure.lang.PersistentHashMap$TransientHashMap,
     :all-tags
     #{:callable :coll-like :hash-map :transient :map-like :map},
-    :classname "clojure.lang.PersistentHashMap$TransientHashMap"})))
+    :classname "clojure.lang.PersistentHashMap$TransientHashMap"}
+   (tag-map (transient (hash-map 1 2 3 4)) nil))))
 
 
 (deftest
  clojure.lang.Ref-test
  (is
   (=
-   (tag-map (ref 0))
    {:tag :ref,
     :type clojure.lang.Ref,
     :all-tags #{:callable :ref :derefable :reference},
-    :classname "clojure.lang.Ref"})))
+    :classname "clojure.lang.Ref"}
+   (tag-map (ref 0) nil))))
 
 
 (deftest
  clojure.lang.Volatile-test
  (is
   (=
-   (tag-map (volatile! 1))
    {:tag :volatile,
     :type clojure.lang.Volatile,
     :all-tags #{:derefable :volatile},
-    :classname "clojure.lang.Volatile"})))
+    :classname "clojure.lang.Volatile"}
+   (tag-map (volatile! 1) nil))))
 
 
 (deftest
  clojure.lang.PersistentQueue-test
  (is
   (=
-   (tag-map clojure.lang.PersistentQueue/EMPTY)
    {:tag :queue,
     :type clojure.lang.PersistentQueue,
     :all-tags
@@ -643,14 +643,14 @@
       :stack
       :list-like
       :carries-meta},
-    :classname "clojure.lang.PersistentQueue"})))
+    :classname "clojure.lang.PersistentQueue"}
+   (tag-map clojure.lang.PersistentQueue/EMPTY nil))))
 
 
 (deftest
  clojure.lang.PersistentTreeSet-test
  (is
   (=
-   (tag-map (sorted-set 3 1 2))
    {:tag :set,
     :type clojure.lang.PersistentTreeSet,
     :all-tags
@@ -662,58 +662,58 @@
       :set
       :carries-meta
       :set-like},
-    :classname "clojure.lang.PersistentTreeSet"})))
+    :classname "clojure.lang.PersistentTreeSet"}
+   (tag-map (sorted-set 3 1 2) nil))))
 
 
 (deftest
  java.lang.Byte-test
  (is
   (=
-   (tag-map (byte 1))
    {:tag :number,
     :type java.lang.Byte,
     :all-tags #{:int :number :real :scalar :byte},
-    :classname "java.lang.Byte"})))
+    :classname "java.lang.Byte"}
+   (tag-map (byte 1) {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  java.util.regex.Pattern-test
  (is
   (=
-   (tag-map #"^abc$")
    {:tag :regex,
     :type java.util.regex.Pattern,
     :all-tags #{:regex},
-    :classname "java.util.regex.Pattern"})))
+    :classname "java.util.regex.Pattern"}
+   (tag-map #"^abc$" nil))))
 
 
 (deftest
  clojure.lang.Delay-test
  (is
   (=
-   (tag-map (delay 21))
    {:tag :delay,
     :type clojure.lang.Delay,
     :all-tags #{:derefable :deferred :delay},
-    :classname "clojure.lang.Delay"})))
+    :classname "clojure.lang.Delay"}
+   (tag-map (delay 21) nil))))
 
 
 (deftest
  java.lang.Integer-test
  (is
   (=
-   (tag-map (int 21))
    {:tag :number,
     :type java.lang.Integer,
     :all-tags #{:int :number :real :scalar},
-    :classname "java.lang.Integer"})))
+    :classname "java.lang.Integer"}
+   (tag-map (int 21) {:skip-dynamic-secondary-tags? true}))))
 
 
 (deftest
  clojure.lang.Range-test
  (is
   (=
-   (tag-map (range 0 1.0 0.1))
    {:tag :seq,
     :type clojure.lang.Range,
     :all-tags
@@ -727,60 +727,62 @@
       :list-like
       :carries-meta
       :range},
-    :classname "clojure.lang.Range"})))
+    :classname "clojure.lang.Range"}
+   (tag-map (range 0 1.0 0.1) nil))))
 
 
 (deftest
  clojure.lang.Var-test
  (is
   (=
-   (tag-map (do (def my-var 42) #'my-var))
    {:tag :var,
     :type clojure.lang.Var,
     :all-tags #{:callable :derefable :reference :var},
-    :classname "clojure.lang.Var"})))
+    :classname "clojure.lang.Var"}
+   (tag-map (do (def my-var 42) #'my-var) nil))))
 
 
 (deftest
  java.lang.Character-test
  (is
   (=
-   (tag-map \a)
    {:tag :char,
     :type java.lang.Character,
     :all-tags #{:scalar :char},
-    :classname "java.lang.Character"})))
+    :classname "java.lang.Character"}
+   (tag-map \a nil))))
 
 
 (deftest
  clojure.lang.Atom-test
  (is
   (=
-   (tag-map (atom :foo))
    {:tag :atom,
     :type clojure.lang.Atom,
     :all-tags #{:derefable :reference :atom},
-    :classname "clojure.lang.Atom"})))
+    :classname "clojure.lang.Atom"}
+   (tag-map (atom :foo) nil))))
 
 
 (deftest
  clojure.lang.Symbol-test
  (is
   (=
-   (tag-map (symbol "foo"))
    {:tag :symbol,
     :type clojure.lang.Symbol,
     :all-tags #{:callable :symbol :scalar :named :carries-meta},
-    :classname "clojure.lang.Symbol"})))
+    :classname "clojure.lang.Symbol"}
+   (tag-map (symbol "foo") nil))))
 
 
 (deftest
  java.math.BigInteger-test
  (is
   (=
-   (tag-map (java.math.BigInteger. "21"))
    {:tag :number,
     :type java.math.BigInteger,
     :all-tags #{:big-int :number :real :scalar},
-    :classname "java.math.BigInteger"})))
-
+    :classname "java.math.BigInteger"}
+   (tag-map
+    (java.math.BigInteger. "21")
+    {:skip-dynamic-secondary-tags? true}))))

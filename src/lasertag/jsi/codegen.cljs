@@ -16,13 +16,13 @@
 ;; for `lasertag.core/tag` & `lasertag.core/tag-map` in cljs.
 ;; Generated ns is `lasertag.jsi.classes`
 
-(def ^:private write-classes? false)
+(def ^:private write-classes? true)
 
 
 ;; Toggle this to regenerate the cljs tests
 ;; Generated ns is `lasertag.generated`
 
-(def ^:private write-tests? false)
+(def ^:private write-tests? true)
 ;; -----------------------------------------------------------------------------
 
 
@@ -199,10 +199,10 @@
                          [clojure.test :refer [deftest is]]
                          [lasertag.core :refer [tag-map]]
                          [clojure.string :as string]))))
-  
-
-  (doseq [[sym {:keys [classname demo]
-                :as   m}] by-class] 
+  (doseq [[sym {:keys       [classname demo]
+                :as         m}] 
+          by-class
+          :let [demo-value (reader/read-string demo)]] 
     (write-file-sync! 
      test-path
      (str
@@ -215,8 +215,17 @@
                                (str/replace #"\." "_")))
           (list 'is
                 (list '=
-                      (list 'tag-map (reader/read-string demo))
-                      (dissoc m :demo)))))))
+                      (dissoc m :demo)
+                      (list 'tag-map
+                            demo-value
+                             ; This check needs to match check in lasertag.core/tag-map
+                             ; if we need to get more tags at runtime. If it 
+                             ; matches, we will skip adding the secondary tags
+                             ; (like would happen at runtime), in order to match
+                             ; the result of lookup by classe from the map of 
+                             ; cached tag-maps. 
+                            (when (number? demo-value) 
+                              {:skip-dynamic-secondary-tags? true}))))))))
      ;; flag for appending
      #js{:flag "a"})))
 
