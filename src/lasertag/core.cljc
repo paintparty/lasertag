@@ -9,14 +9,7 @@
    #?(:cljs [lasertag.jsi.native :as jsi.native])
    #?(:bb [clojure.reflect :as r])
    [clojure.set :as set]
-
-   [lasertag.macros :refer [? !?]]
-   #?(:cljs
-      [cljs.pprint :refer [pprint]]
-      :clj
-      [clojure.pprint :refer [pprint]])
-
-   ))
+   [lasertag.macros :refer [? !?]]))
 
 #?(:clj
    (do
@@ -267,11 +260,11 @@
 (defn merged-with-runtime-tags [x m]
   (let [number-tags  (when (cached/real-number? x) (cached/number-tags x))
         all-tags2    (cached/all-tags* x)
-        all-tags-new (set/union (:all-tags m) number-tags all-tags2)]
+        all-tags-new (set/union (:all-tags m) (!? number-tags) (!? all-tags2))]
     (assoc m :all-tags all-tags-new)))
 
 
-(defn- tag* [{:keys [x extras? opts]}]
+(defn ^:public tag* [{:keys [x extras? opts]}]
   (let [k (k* x (cached/cljc-type x))]
     (if extras?
       (let [m  (tag-map* x k opts)]
@@ -299,6 +292,8 @@
   "Given a value, returns a tag representing the value's type."
   ([x]
    (tag x nil))
+  ;; TODO - document opts such as :include-built-in-js-object-info
+  ;; maybe we want to eliminate opts
   ([x opts]
    (try (or (some-> x cached-tag-map :tag)
             (tag* {:x       x
@@ -313,15 +308,21 @@
 
 
 (defn tag-map
-  "Given a value, returns a map with information about the value's type."
+  "Given a value, returns a map with information about the value's type.
+
+   Options:
+   * **:skip-dynamic-secondary-tags?**
+     - Desc:    For values such as numbers, additional secondary tags such as
+                `:neg`, `:whole`, etc. need to be resolved at runtime. You can
+                skip these for perf reasons.
+     - Default: false"
   ([x]
    (tag-map x nil))
   ([x opts]
-   (try (or #?(:cljs
-               (some->> (cached-tag-map x)
-                        (merged-with-runtime-tags x))
-               :clj
-               (cached-tag-map x)) 
+   (try (or (cond->> (cached-tag-map x)
+              (and (number? x) ;<- check if we need to get more tags at runtime 
+                   (not (:skip-dynamic-secondary-tags? opts)))
+              (merged-with-runtime-tags x)) 
             (tag* {:x       x
                    :extras? true
                    :opts    opts}))
@@ -337,7 +338,6 @@
 
 
 ;; TODO
-
 ;; Figure out best abstraction for inheritance model for custom datatypes,
 ;; Maybe return :namespace and :name for anything named
 ;; should clj Promise go in map?
