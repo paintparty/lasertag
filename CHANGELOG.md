@@ -3,7 +3,7 @@
 
 
 ## 0.13.0
-2026-03-14
+2026-06-29
 
 Significant progress in performance. Results for common value types should now return in nanoseconds.
 
