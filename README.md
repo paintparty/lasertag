@@ -42,7 +42,16 @@ The function `lasertag.core/tag` will return a descriptive tag:
 =>
 {:tag       :seq
  :type      clojure.lang.LongRange
- :all-tags  #{:iterable :coll :seq :carries-meta :lazy}
+ :all-tags  #{:seqable
+              :sequential
+              :coll
+              :deferred
+              :coll-like
+              :lazy
+              :seq
+              :list-like
+              :carries-meta
+              :range}
  :classname "clojure.lang.LongRange"}
 ```
 
@@ -77,7 +86,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 |                   `(float 1.5)` |               `:number` |       `java.lang.Float`           |
 |                      `(char a)` |                 `:char` |   `java.lang.Character`           |
 | `(java.math.BigInteger. "171")` |               `:number` |  `java.math.BigInteger`           |
-|             `(java.util.Date.)` |                 `:inst` |        `java.util.Date`           |
+|             `(java.util.Date.)` |             `:datetime` |        `java.util.Date`           |
 |                `java.util.Date` |                `:class` |       `java.lang.Class`           |
 
 
@@ -104,7 +113,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 | `Infinity`                         | `:number`          | `#object[Boolean]`             |
 | `-Infinity`                        | `:number`          | `#object[Boolean]`             |
 | `js/parseInt`                      | `:function`        | `#object[Function]`            |
-| `(new js/Date.)`                   | `:inst`            | `#object[Date]`                |
+| `(new js/Date.)`                   | `:datetime`            | `#object[Date]`                |
 | `(.values #js [1 2 3])`            | `:iterable`        | `#object[Object]`              |
 | `(array "a" "b")`                  | `:array`           | `#object[Array]`               |
 | `(new js/Int8Array #js ["a" "b"])` | `:array`           | `#object[Int8Array]`           |
@@ -128,13 +137,13 @@ Add as a dependency to your project:
 
 Deps:
 ```clojure
-io.github.paintparty/lasertag {:mvn/version "0.12.0"}
+io.github.paintparty/lasertag {:mvn/version "0.13.0"}
 ```
 <br>
 
 Leiningen:
 ```clojure
-[io.github.paintparty/lasertag "0.12.0"]
+[io.github.paintparty/lasertag "0.13.0"]
 ```
 <br>
 
@@ -181,7 +190,11 @@ Or import into your namespace:
 =>
 {:tag       :map
  :type      clojure.lang.PersistentArrayMap
- :all-tags  #{:coll
+ :all-tags  #{:callable
+              :seqable
+              :editable
+              :associative
+              :coll
               :array-map
               :coll-like
               :map-like
@@ -193,17 +206,20 @@ Or import into your namespace:
 
 ;; range 
 
-(tag-map (range 10))
+(tag-map (range 3))
 =>
 {:tag       :seq
  :type      clojure.lang.LongRange
- :all-tags  #{:iterable
+ :all-tags  #{:seqable
+              :sequential
               :coll
               :deferred
               :coll-like
               :lazy
               :seq
-              :carries-meta}
+              :list-like
+              :carries-meta
+              :range}
  :classname "clojure.lang.LongRange"}
 
 
@@ -232,7 +248,7 @@ Or import into your namespace:
 =>
 {:tag       :delay
  :type      clojure.lang.Delay
- :all-tags  #{:deferred :delay}
+ :all-tags  #{:deferred :delay :derefable}
  :classname "clojure.lang.Delay"}
 
 
@@ -242,9 +258,9 @@ Or import into your namespace:
 (defmulti different-behavior (fn [x] (:x-type x)))
 (tag-map different-behavior)
 =>
-{:tag       :defmulti
+{:tag       :function
  :type      clojure.lang.MultiFn
- :all-tags  #{:defmulti}
+ :all-tags  #{:multi-function :function :callable}
  :classname "clojure.lang.MultiFn"}
 
 
@@ -256,7 +272,7 @@ Or import into your namespace:
 =>
 {:tag       :var
  :type      clojure.lang.Var
- :all-tags  #{:reference :var}
+ :all-tags  #{:reference :var :callable :derefable}
  :classname "clojure.lang.Var"}
 
 
@@ -327,7 +343,8 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 <br>
 
 ## Test
- The JVM tests require [leiningen](https://leiningen.org/) to be installed.
+The JVM tests require [leiningen](https://leiningen.org/) to be installed.
+
 
 ```Clojure
 lein test
@@ -344,6 +361,33 @@ Babashka tests:
 ```Clojure
 bb test:bb
 ```
+
+## Developing
+Most of the tests are auto-generated.
+
+### CLJ, bb testing
+To regenerate tests for JVM Clojure, look at source of `lasertag.cached`.
+
+### CLJS testing
+The cljs tests can also be regenerated.
+
+Additionally, the data structure that serves most of the results for
+`lasertag.core/tag` & `lasertag.core/tag-map` in cljs needs to be pre-generated.
+
+For both of these:
+
+1) Toggle `lasertag.cljs.codegen/write-tests?` and 
+`lasertag.jsi.codegen/write-classes?` to `true`.
+
+2) In one terminal: `npm run codegen`
+
+3) In another terminal: `npm run codegen-watch`
+
+4) The test and classes should immediately get generated and written to disc.
+Kill the `npm run codegen-watch` process.
+
+5) Toggle the defs from step 1 back to `false`
+
 
 <br>
 

@@ -2,6 +2,130 @@
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
 
+## 0.13.0
+2026-06-29
+
+Significant progress in performance. Results for common value types should now return in nanoseconds.
+
+Primary and secondary tag categorization is now much closer to its final form.
+
+
+### Potentially breaking changes
+Refer to the new masterlists in "Added" section below. There may be some additional
+results in `:all-tags` entry (from `tag-map`) or some primary tags or secondary 
+might be called something different now e.g. `:inst` -> `:datetime`. This lib is
+still alpha, so there could be some additional refinements going forward, but it
+is less likely and these tags are becoming more hardened.
+
+- For performance, simplicity, and separation of concerns, the map returned
+by `tag-map` is now limited to the following entries:
+`[:tag :all-tags :classname :type]`
+If you want/need coll-size or fn-info, there a couple new experimental public apis (see below).
+
+
+### Added/Changed
+- This is the new masterlist of primary tags: <br>
+
+```clojure
+[:agent
+ :array
+ :atom
+ :boolean
+ :char
+ :datetime
+ :delay
+ :function
+ :keyword
+ :list
+ :map
+ :nil
+ :number
+ :queue
+ :reader-conditional
+ :ref
+ :regex
+ :seq
+ :set
+ :string
+ :symbol
+ :throwable
+ :uuid
+ :var
+ :vector
+ :volatile]
+```
+
+- This is the new masterlist of secondary tags:<br>
+```clojure
+[:array-like
+ :associative
+ :big-decimal
+ :big-int
+ :byte
+ :callable
+ :carries-meta
+ :char-sequence
+ :coll
+ :coll-like
+ :cons
+ :def
+ :deferred
+ :double
+ :editable
+ :error
+ :exception
+ :float
+ :fractional
+ :generator
+ :global-this
+ :hash-map
+ :infinite
+ :infinity
+ :-infinity
+ :inst
+ :int
+ :iterable
+ :js
+ :lazy
+ :list-like
+ :long
+ :map-entry
+ :map-like
+ :multi-function
+ :named
+ :nan
+ :nat-int
+ :neg
+ :neg-int
+ :object
+ :pos
+ :pos-int
+ :promise
+ :range
+ :ratio
+ :real
+ :record
+ :reference
+ :scalar
+ :seqable
+ :sequential
+ :set-like
+ :short
+ :sorted
+ :stack
+ :subvec
+ :transient
+ :typed-array
+ :whole
+ :zero]
+```
+
+- `lasertag.core.coll-size*` - Experimental utility for getting coll-size across platforms.
+
+- `lasertag.fns.fn-info` - Experimental utility for getting function info.
+
+- Enhanced tests across clj / cljs / bb.
+
 <br>
 
 ## 0.12.0

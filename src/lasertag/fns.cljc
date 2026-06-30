@@ -1,20 +1,12 @@
 (ns lasertag.fns
   (:require 
+   [lasertag.core :refer [tag tag-map]]
    [clojure.string :as string]
-   #?(:cljs [lasertag.cljs-interop :as jsi])))
-
-(defn ? 
-  "Debugging macro internal to lib"
-  ([x]
-   (? nil x))
-  ([l x]
-   (try (if l
-          (println (str " " l "\n") x)
-          (println x))
-        (catch #?(:cljs js/Object :clj Throwable)
-               e
-          (println "WARNING [lasertag.core/?] Unable to print value")))
-   x))
+   #?(:cljs [lasertag.jsi.native-plus :refer [objects-by-unique-method-name
+                                              objects-by-method-name
+                                              js-built-in-objects
+                                              js-built-in-functions]])
+   #?(:cljs [lasertag.jsi.native :as jsi.native])))
 
 (def char-map
   [["_PERCENT_"     "%"]
@@ -32,6 +24,10 @@
 
 (defn- pwos [x] (with-out-str (print x)))
 
+(defn- partition-drop-last [coll]
+  [(drop-last coll)
+   (last coll)])
+
 (defn- demunge-fn-name [s]
   (reduce
    (fn [acc [k v]]
@@ -39,6 +35,7 @@
    s 
    char-map))
 
+;; TODO - find simpler way to resolve classname such as .getName
 #?(:clj
    (do
      (defn- find-classname [x]
@@ -68,7 +65,6 @@
                     {:fn-ns   fn-ns
                      :fn-args :lasertag/unknown-function-signature-on-clj-function})))))))
 
-
 #?(:cljs 
    (do 
      (def cljs-serialized-fn-info   #"^\s*function\s*([^\(]+)\s*\(([^\)]*)\)\s*\{")
@@ -83,7 +79,7 @@
 
      (defn- cljs-fn-args [x fn-args fn-info]
        (when-not fn-args 
-         (let [{:keys [_ args]} (get jsi/js-built-ins-by-built-in x)]
+         (let [{:keys [_ args]} (get jsi.native/js-built-ins-by-built-in x)]
            (merge 
             (if args 
               {:js-built-in-function? true
@@ -92,7 +88,7 @@
                 {:fn-args :lasertag/unknown-function-signature-on-js-built-in-method}))))))
      
      (defn- js-built-in-map [o]
-       (let [{:keys [sym]} (get jsi/js-built-ins-by-built-in o)]
+       (let [{:keys [sym]} (get jsi.native/js-built-ins-by-built-in o)]
          {:js-built-in-method-of      o
           :js-built-in-method-of-name (some-> sym name)
           :js-built-in-function?      true}))
@@ -102,11 +98,11 @@
         (and (string? name-prop)
              (re-find #"[^\$\.-]" name-prop))
          (if-let [built-in-candidates
-                  (get jsi/objects-by-method-name fn-nm)]
+                  (get objects-by-method-name fn-nm)]
            (let [o (first (filter #(= x (aget (.-prototype %) fn-nm)) 
                                   built-in-candidates))]
              (js-built-in-map o))
-           (when-let [built-in (get jsi/objects-by-unique-method-name
+           (when-let [built-in (get objects-by-unique-method-name
                                     fn-nm)]
              (js-built-in-map built-in)))))
 
@@ -121,8 +117,8 @@
        (let [bits          (string/split s #"\$")
              [fn-ns fn-nm] (partition-drop-last bits)
              fn-nm         (demunge-fn-name fn-nm)
-             built-in?     (or (contains? jsi/js-built-in-objects x)
-                               (contains? jsi/js-built-in-functions x))]
+             built-in?     (or (contains? js-built-in-objects x)
+                               (contains? js-built-in-functions x))]
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)
@@ -137,16 +133,6 @@
             :cljs-datatype-fn? true}
            {:lambda? true})))
      
-    (defn- cljs-fn-args [x fn-args fn-info]
-     (when-not fn-args 
-       (let [{:keys [_ args]} (get jsi/js-built-ins-by-built-in x)]
-         (merge 
-          (if args 
-            {:js-built-in-function? true
-             :fn-args               args}
-            (when (:js-built-in-method-of fn-info)
-              {:fn-args
-               :lasertag/unknown-function-signature-on-js-built-in-method}))))))
      
     (defn- fn-args* [x]
       (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
@@ -192,16 +178,19 @@
          (resolve-fn-name x)))))
 
 
-(defn fn-info [x k include-fn-info?]
-  (when include-fn-info?
-    (let [fn-info              (fn-info* x k)
-          [fn-args defrecord?] 
-          #?(:cljs
-             (fn-args x fn-info)
-             :clj
-             nil)]
-      (merge fn-info
-             (when defrecord?
-               {:defrecord? true})
-             #?(:cljs 
-                (cljs-fn-args x fn-args fn-info))))))
+(defn fn-info
+  ([x]
+   (fn-info x nil))
+  ([x k]
+   (let [k                    (or k (tag x))
+         fn-info              (fn-info* x k)
+         [fn-args defrecord?] 
+         #?(:cljs
+            (fn-args x fn-info)
+            :clj
+            nil)]
+     (merge fn-info
+            (when defrecord?
+              {:defrecord? true})
+            #?(:cljs 
+               (cljs-fn-args x fn-args fn-info))))))
