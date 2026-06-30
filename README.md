@@ -339,6 +339,11 @@ If you need enhanced reflection in situations like this, the result of `lasertag
  :tag                        :function}
 ``` -->
 
+<br>
+
+## Performance
+Based on criterium quick-bench testing, most values will return in 15 ~ 50 nanoseconds, depending on hardware. More exotic values whose types are not present in Lasertag's pre-generated result-by-class map will return in 10µs ~ 50µs, depending on hardware.  
+
 
 <br>
 
