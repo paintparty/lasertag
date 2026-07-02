@@ -379,7 +379,7 @@ The cljs tests can also be regenerated.
 Additionally, the data structure that serves most of the results for
 `lasertag.core/tag` & `lasertag.core/tag-map` in cljs needs to be pre-generated.
 
-For both of these:
+For both of these (slightly clunky, this will be cleaned up in future):
 
 1) Toggle `lasertag.cljs.codegen/write-tests?` and 
 `lasertag.jsi.codegen/write-classes?` to `true`.
