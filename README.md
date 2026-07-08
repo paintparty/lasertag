@@ -1,12 +1,24 @@
-<div>
-  <a href="https://clojars.org/io.github.paintparty/lasertag">
-    <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?color=0969da&style=flat-square&cacheSeconds=3" alt="Lasertag Clojars badge"></img>
-  </a>
+<div align="center"><img src="./resources/logo2.png" width="108"></img></div> 
+<br>
+<br>
+
+<div align="center">
+
+**[Examples]**  &nbsp;•&nbsp; **[Setup]**  &nbsp;•&nbsp;  **[Usage]**  &nbsp;•&nbsp; **[Performance]**  &nbsp;•&nbsp; **[Testing]** &nbsp;•&nbsp; **[Development]**
 </div>
 
+[Examples]:     ##examples
+[Setup]:        #setup
+[Usage]:        #usage
+[Performance]:  #performance
+[Testing]:      #testing
+[Development]:  #development
+
 <br>
- 
+
 # Lasertag
+
+<img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?labelColor=000&color=0969da&style=flat&cacheSeconds=3" alt="Lasertag on Clojars"></img>
 
 A library for categorizing values in Clojure, ClojureScript, and Babashka.
 
@@ -347,7 +359,7 @@ Based on criterium quick-bench testing, most values will return in 15 ~ 50 nanos
 
 <br>
 
-## Test
+## Testing
 The JVM tests require [leiningen](https://leiningen.org/) to be installed.
 
 
