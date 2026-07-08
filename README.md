@@ -1,3 +1,5 @@
+<br>
+<br>
 <div align="center"><img src="./resources/logo2.png" width="108"></img></div> 
 <br>
 <br>
