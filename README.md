@@ -1,4 +1,5 @@
-<img src="./resources/logo2.png" width="108"></img>
+<img  src="./resources/logo3.png" width="59"></img>
+
 
 # Lasertag
 
@@ -296,7 +297,6 @@ Or import into your namespace:
 ```
 
 <br>
-<br>
 
 <!-- ### Instance methods on JavaScript built-ins
 
@@ -354,8 +354,6 @@ If you need enhanced reflection in situations like this, the result of `lasertag
  :fn-args                    []
  :tag                        :function}
 ``` -->
-
-<br>
 
 ### Primary Tags
 List of all primary tags:<br>
