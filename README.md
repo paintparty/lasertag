@@ -354,6 +354,102 @@ If you need enhanced reflection in situations like this, the result of `lasertag
 
 <br>
 
+### Primary Tags
+List of all primary tags:<br>
+```clojure
+[:agent
+ :array
+ :atom
+ :boolean
+ :char
+ :datetime
+ :delay
+ :function
+ :keyword
+ :list
+ :map
+ :nil
+ :number
+ :queue
+ :reader-conditional
+ :ref
+ :regex
+ :seq
+ :set
+ :string
+ :symbol
+ :throwable
+ :uuid
+ :var
+ :vector
+ :volatile]
+```
+
+List of all secondary tags (these show up in the `:all-tags` entry):<br>
+```clojure
+[:array-like
+ :associative
+ :big-decimal
+ :big-int
+ :byte
+ :callable
+ :carries-meta
+ :char-sequence
+ :coll
+ :coll-like
+ :cons
+ :def
+ :deferred
+ :double
+ :editable
+ :error
+ :exception
+ :float
+ :fractional
+ :generator
+ :global-this
+ :hash-map
+ :infinite
+ :infinity
+ :-infinity
+ :inst
+ :int
+ :iterable
+ :js
+ :lazy
+ :list-like
+ :long
+ :map-entry
+ :map-like
+ :multi-function
+ :named
+ :nan
+ :nat-int
+ :neg
+ :neg-int
+ :object
+ :pos
+ :pos-int
+ :promise
+ :range
+ :ratio
+ :real
+ :record
+ :reference
+ :scalar
+ :seqable
+ :sequential
+ :set-like
+ :short
+ :sorted
+ :stack
+ :subvec
+ :transient
+ :typed-array
+ :whole
+ :zero]
+```
+
 ## Performance
 Based on criterium quick-bench testing, most values will return in 15 ~ 50 nanoseconds, depending on hardware. More exotic values whose types are not present in Lasertag's pre-generated result-by-class map will return in 10µs ~ 50µs, depending on hardware.  
 
