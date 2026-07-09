@@ -6,8 +6,6 @@
 <sub>\*Works with Clojure, ClojureScript, and Babashka</sub>
 
 
-Lasertag took shape while developing of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
-
 <br>
 <br>
 
