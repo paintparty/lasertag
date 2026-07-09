@@ -1,13 +1,18 @@
-<br>
-<br>
-<div align="center"><img src="./resources/logo2.png" width="108"></img></div> 
+<img src="./resources/logo2.png" width="108"></img>
+
+# Lasertag
+
+**A library for categorizing values in Clojure dialects\***  
+<sub>\*Works with Clojure, ClojureScript, and Babashka</sub>
+
+
+Lasertag took shape while developing of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
+
 <br>
 <br>
 
-<div align="center">
 
 **[Examples]**  &nbsp;•&nbsp; **[Setup]**  &nbsp;•&nbsp;  **[Usage]**  &nbsp;•&nbsp; **[Performance]**  &nbsp;•&nbsp; **[Testing]** &nbsp;•&nbsp; **[Development]**
-</div>
 
 [Examples]:     ##examples
 [Setup]:        #setup
@@ -18,13 +23,9 @@
 
 <br>
 
-# Lasertag
-
 <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?labelColor=000&color=0969da&style=flat&cacheSeconds=3" alt="Lasertag on Clojars"></img>
 
-A library for categorizing values in Clojure, ClojureScript, and Babashka.
 
-Lasertag took shape while developing of the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks).
 
 <br>
 
