@@ -23,8 +23,10 @@
 
 <img src="https://img.shields.io/clojars/v/io.github.paintparty/lasertag.svg?labelColor=000&color=0969da&style=flat&cacheSeconds=3" alt="Lasertag on Clojars"></img>
 
+<br>
+
 ## Why 
-Lasertag took shape while developing the colorizing pretty-printing engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks). This kind of "loose type system" is essential for any library or subsystem that does linting, syntax coloring, or similar.
+Lasertag took shape while developing the syntax-colorizing hifi print engine used by [Bling](https://github.com/paintparty/bling) and [Fireworks](https://github.com/paintparty/fireworks). This kind of "loose type system" is essential for any library or subsystem that does linting, syntax coloring, or similar.
 
 <br>
 
