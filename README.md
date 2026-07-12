@@ -177,6 +177,13 @@ Or import into your namespace:
     [lasertag.core :refer [tag tag-map]]))
 ```
 <br>
+
+### Consuming via git
+
+Using a tool without Maven support? See
+[Consuming Lasertag as a git dependency](docs/git-deps.md).
+
+<br>
 <br>
 
 ## Usage 
