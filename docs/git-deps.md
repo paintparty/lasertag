@@ -25,7 +25,7 @@ The coordinate map in the example above can take several forms, outlined in the 
 
 ## Tag + SHA (URL inferred, recommended)
 
-The tag documents which release the SHA corresponds to.
+The `:git/tag` entry documents which release the SHA corresponds to.
 
 ```clojure
 io.github.paintparty/lasertag 
@@ -69,7 +69,7 @@ io.github.paintparty/lasertag
 ## Resolving the SHA from a tag
 
 If you'd rather not copy the SHA by hand, write the dependency with just
-the tag:
+the `:git/tag` entry :
 
 ```clojure
 io.github.paintparty/lasertag {:git/tag "v0.13.2"}
