@@ -1,13 +1,25 @@
 # Consuming Lasertag as a git dependency
 
-This doc explains, by example, all the possible variations of the map you would
-use to specify Lasertag as a git dependency.
-
-Because the library is named `io.github.paintparty/lasertag`, the git URL is inferred and `:git/url` can be omitted.
+This doc explains, by example, all the possible variations of the coordinate map
+you would use to specify Lasertag as a git dependency.
 
 `:git/sha` is always required. 
 
 `:git/tag` is an optional readable label.
+
+`:git/url` is optional. It can be omitted in this case, because the library is named `io.github.paintparty/lasertag`, and the git URL is inferred.
+
+<br>
+
+```clojure
+;; deps.edn
+
+{:deps {io.github.paintparty/lasertag {:git/tag "v0.13.2"
+                                       :git/sha "aa898c1967d10fc198385f1914893b9c75410d16"}}}
+```
+<br>
+
+The coordinate map in the example above can take several forms, outlined in the sections below.
 
 <br>
 
