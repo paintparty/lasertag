@@ -1,6 +1,12 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
+## 0.13.2
+2026-07-11
+
+### Added
+`deps.edn` and instructions for consuming Lasertag as git dependency.
+
 
 ## 0.13.0
 2026-06-29
