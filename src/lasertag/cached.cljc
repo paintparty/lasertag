@@ -181,10 +181,6 @@
 (defn queue? [v]
   #?(:cljs
      (instance? cljs.core/PersistentQueue v)
-     :bb
-     ;; Remove in bb 0.21.x when java.util.Queue goes in
-     (or (instance? clojure.lang.PersistentQueue v)
-         (instance? java.util.ArrayDeque v))
      :clj
      (or
       (instance? java.util.Queue v)
@@ -313,8 +309,6 @@
      :bb   "Returns false; ChunkedCons is not implemented natively in Babashka.")
   [x]
   #?(:cljs (instance? cljs.core/ChunkedCons x)
-     ;; bb 0.21.x fix 
-     :bb   nil
      :clj  (instance? clojure.lang.ChunkedCons x)))
 
 (defn lazyish-seq? [x]
@@ -325,7 +319,6 @@
    (repeat? x)
    (iterate? x)
    (cons? x)
-   ;; bb 0.21.x secondary tags will be missing
    (chunked-cons? x)))
 
 (defn deferred? [x]
@@ -334,7 +327,7 @@
          :cljs (js-promise? x))))
 
 (defn java-util-class? [s]
-  (boolean (some-> s (string/starts-with? "java.util"))))
+  (boolean (some-> s (str/starts-with? "java.util"))))
 
 (defn java-lang-class? [s]
   (boolean (some->> s (re-find #"java\.lang"))))
@@ -764,7 +757,7 @@
 ;; TODO - describe what this is and how it works
 (def by-class
   #?(:cljs
-      lasertag.jsi.classes/by-class
+     lasertag.jsi.classes/by-class
      :clj
      (by-class*
       {;; numbers
@@ -796,14 +789,11 @@
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
 
-      ;; bb 0.21.x
-      ;;  [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
-      ;; bb 0.21.x
-      ;;  [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
+       [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
+       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
        [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
-      ;; bb 0.21.x
-      ;;  [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
+       [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
        [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
@@ -817,41 +807,22 @@
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-      ;; bb 0.21.x
-      ;;  [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
+       [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
        [java.util.HashSet :set]                                 (java.util.HashSet. #{"a" 1 "b" 2})
        [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
 
-;; (= (tag-map (java.util.ArrayDeque. [1 2 3]))
-;;    {:tag :array, 
-;;     :type java.util.ArrayDeque, 
-;;     :all-tags #{:seqable :array :coll-like :list-like}, 
-;;     :classname "java.util.ArrayDeque"})
-
-;; (not (= {:tag :array,
-;;          :type java.util.ArrayDeque, 
-;;          :all-tags #{:seqable :array :coll-like}, 
-;;          :classname "java.util.ArrayDeque"}
-;;         {:tag :array,
-;;          :type java.util.ArrayDeque, 
-;;          :all-tags #{:seqable :array :coll-like :list-like}, 
-;;          :classname "java.util.ArrayDeque"}))
-
        ;; Constructors
        [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
                                                                     different-behavior)
        ;; temporal
        [java.util.Date :datetime]                               (java.util.Date.)
-       [java.time.Instant :datetime]                            (java.time.Instant/now)
-       [java.time.LocalDate :datetime]                          (java.time.LocalDate/now)
-       [java.time.ZonedDateTime :datetime]                      (java.time.ZonedDateTime/now)
-      
-      ;; leave out for bb for now 
-      ;;  [java.sql.Timestamp :datetime]                           (java.sql.Timestamp. (System/currentTimeMillis))
-
+       
+       ;; leave out for bb for now 
+       ;;  [java.sql.Timestamp :datetime]                           (java.sql.Timestamp. (System/currentTimeMillis))
+       
        ;; reference types
        [clojure.lang.Volatile :volatile]                        (volatile! 1)
        [clojure.lang.Atom :atom]                                (atom :foo)

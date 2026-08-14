@@ -2,11 +2,12 @@
   (:require
    [lasertag.messaging :as messaging]
    [lasertag.cached :as cached]
-   #?@(:clj  [[clojure.string :as str]]
+   #?@(:clj  [[clojure.string :as str]
+              #_[lasertag.macros :refer [?]]]
        :cljs [[lasertag.jsi.native-plus :as jsi]
               [lasertag.jsi.tag]
               [lasertag.jsi.native :as jsi.native]])
-   [clojure.set :as set] ))
+   [clojure.set :as set]))
 
 #?(:clj
    (do
