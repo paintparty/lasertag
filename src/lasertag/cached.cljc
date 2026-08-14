@@ -688,8 +688,11 @@
 
 
      (defmacro by-class* 
-       "Supplied with a map of example values, generates a map of cached results
-        for calls to lasertag.core/tag-map.
+       "Supplied with any number of maps of example values, merges them and
+        generates a map of cached results for calls to lasertag.core/tag-map.
+
+        Args are variadic incase some classes need to be elided for a certain
+        dialect, such as the time lib in Jolt.
 
         Example entry input:
           [[clojure.lang.PersistentHashMap :map] (hash-map :a 1)]
@@ -712,7 +715,7 @@
                :carries-meta},
              :classname \"clojure.lang.PersistentHashMap\"}]
         "
-       [m]
+       [& maps]
        (when write-tests? (spit-test-header))
        (reduce-kv (fn [m [cls tag] x*]
                     (let [x         (eval x*)
@@ -747,7 +750,7 @@
                                                        ; if we need to get more tags at runtime. If it 
                                                        ; matches, we will skip adding the secondary tags
                                                        ; (like would happen at runtime), in order to match
-                                                       ; the result of lookup by classe from the map of 
+                                                       ; the result of lookup by class from the map of 
                                                        ; cached tag-maps. 
                                                        (when (number? x)
                                                          {:skip-dynamic-secondary-tags? true})))))))))
@@ -755,7 +758,7 @@
 
                       (assoc m cls result)))
                   {}
-                  m))))
+                  (apply merge maps)))))
 
 
 ;; TODO - describe what this is and how it works
