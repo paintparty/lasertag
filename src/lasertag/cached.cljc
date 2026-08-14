@@ -1,6 +1,6 @@
 (ns lasertag.cached
   (:require [clojure.set :as set]
-            [clojure.string :as string]
+            [clojure.string :as str]
             [lasertag.macros :refer [?]]
             #?(:cljs [lasertag.jsi.native :as jsi.native])
             #?(:cljs [lasertag.jsi.classes])))
@@ -17,7 +17,7 @@
   #_#{"java.util.HashSet"})
 (def gen-test-ns-name "core-test")
 (def gen-test-path (str "./test/lasertag/" 
-                        (string/replace gen-test-ns-name #"-" "_")
+                        (str/replace gen-test-ns-name #"-" "_")
                         ".clj"))
 
 ;; -----------------------------------------------------------------------------
