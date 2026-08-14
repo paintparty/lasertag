@@ -428,7 +428,11 @@
 
 (defn temporal? [x]
   (or (inst? x)
-      #?(:clj (instance? java.time.temporal.TemporalAccessor x)
+      #?(:jolt (-> x
+                   type 
+                   pr-str 
+                   (str/starts-with? "java.time."))
+         :clj (instance? java.time.temporal.TemporalAccessor x)
          :cljs false))) ;; catch-all for clarity if it isn't an inst
 
 (defn transient? [v]
@@ -892,7 +896,17 @@
        [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
                                                                  '(:clj  (System/getProperty "os.name")
                                                                          :cljs "JS")
-                                                                 false)})))
+                                                                 false)}
+
+      ;; second arg to by-class*
+      ;; temporal constructs not supported by jolt core.
+      ;; they are only in jolt.time lib
+      ;; so we will elide them explicitly for jolt
+      ;; for jolt runtime, these values will be resolved by cached/temporal? and tagged :datetime
+      #?(:jolt nil
+         :clj {[java.time.Instant :datetime]       (java.time.Instant/now)
+               [java.time.LocalDate :datetime]     (java.time.LocalDate/now)
+               [java.time.ZonedDateTime :datetime] (java.time.ZonedDateTime/now)}))))
 
 (def by-number-class
   (select-keys 
