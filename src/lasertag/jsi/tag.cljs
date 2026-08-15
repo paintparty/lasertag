@@ -85,6 +85,8 @@
        (= (str x) "[object Generator]")))
 
 
+;; TODO - maybe eliminate this? could we do it with js-object? check
+;; identify example values and test
 (defn- js-object-instance-map-like
   [x types]
   (when-not (or (-> types :coll)
@@ -105,8 +107,6 @@
                      (select-keys types)
                      vals
                      (some #(when (keyword? %) %))))
-    ;; TODO is having :js-map-like-object and :js-object redundant?
-    ;; maybe we don't need either of those, just :map-like and :js are fine
     (when (cached/js-object-instance? x)
       :js-map-like-object)))
 
@@ -130,6 +130,7 @@
          :typed-array    (when (cached/js-typed-array? x) :js-typed-array)}
 
         js-object-instance-map-like
+        ;; TODO - maybe eliminate this? See js-object-instance-map-like
         (js-object-instance-map-like x types)]
 
     (->> (vals types)

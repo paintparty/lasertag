@@ -61,7 +61,7 @@
        :cljs (alength (object-fields obj)))))
 
 (defn- map-like?* [x k all-tags]
-  (or (contains? #{:map :js-object :js-map :js-data-view} k)
+  (or (contains? #{:map :js-map :js-data-view} k)
       (contains? all-tags :record)
       (contains? all-tags :datatype)
       (contains? all-tags :js-map-like-object)
@@ -91,7 +91,8 @@
                        #?(:cljs (lasertag.jsi.tag/cljs-coll-like? x)))
         all-tags   (cond-> all-tags
                      map-like?
-                     (conj :map-like)
+                     (-> (disj :js-map-like-object) ;; remove intermediary :js-map-like-object tag
+                         (conj :map-like))
                      set-like?
                      (conj :set-like)
                      coll-like?
@@ -359,8 +360,8 @@
    (defn- cljs-coll-size-try
      [{:keys [x tag all-tags]}]
      (cond
-       (or (= :js-object tag)
-           (contains? all-tags :js-map-like-object))
+       (or (contains? all-tags :js-map-like-object)
+           (every? all-tags [:object :js :map-like]))
        (.-length (js/Object.keys x))
 
        (or (contains? all-tags :js-set)
@@ -390,8 +391,7 @@
        (alength x)
 
        (and (not record?)
-            (contains? all-tags :datatype)
-            (contains? all-tags :map-like))
+            (every? all-tags [:datatype :map-like]))
        (object-field-count x)
 
        :else
