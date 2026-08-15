@@ -342,26 +342,23 @@
 ;; S:::::::::::::::SS I::::::::IZ:::::::::::::::::ZE::::::::::::::::::::E
 ;;  SSSSSSSSSSSSSSS   IIIIIIIIIIZZZZZZZZZZZZZZZZZZZEEEEEEEEEEEEEEEEEEEEEE
 ;;
-;;
-;;
-;; TODO open PR to add java.util.AbstractCollection to bb,
-;; then eliminate this branch
+
 
 (defn- abstract-instance?* [x]
-  #?(:bb
-     (instance? java.util.AbstractMap x)
-     :clj
+  #?(:clj
      (or (instance? java.util.AbstractCollection x)
          (instance? java.util.AbstractMap x))
      :cljs
      nil))
 
 #?(:cljs
+   ;; TODO - consider multi-arity approach
+   ;; single arity is x, and then tag-map is called internally on x
+   ;; 2-arity is x and (tag-map x), in case tag-map was already called on value and is available
    (defn- cljs-coll-size-try
      [{:keys [x tag all-tags]}]
      (cond
-       (or (contains? all-tags :js-map-like-object)
-           (every? all-tags [:object :js :map-like]))
+       (every? all-tags [:object :js :map-like])
        (.-length (js/Object.keys x))
 
        (or (contains? all-tags :js-set)
