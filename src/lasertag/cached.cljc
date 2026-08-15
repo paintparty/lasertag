@@ -822,7 +822,6 @@
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-       [clojure.lang.PersistentStructMap :map]                  (do (defstruct foo :name :color) (struct foo "strawberry" "red"))
        [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
