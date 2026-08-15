@@ -154,13 +154,13 @@ Add as a dependency to your project:
 
 Deps:
 ```clojure
-io.github.paintparty/lasertag {:mvn/version "0.13.3"}
+io.github.paintparty/lasertag {:mvn/version "0.14.0"}
 ```
 <br>
 
 Leiningen:
 ```clojure
-[io.github.paintparty/lasertag "0.13.3"]
+[io.github.paintparty/lasertag "0.14.0"]
 ```
 <br>
 
