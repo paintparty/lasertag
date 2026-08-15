@@ -3,7 +3,7 @@
    [lasertag.messaging :as messaging]
    [lasertag.cached :as cached]
    #?@(:clj  [[clojure.string :as str]
-              #_[lasertag.macros :refer [?]]]
+              [lasertag.macros :refer [?]]]
        :cljs [[lasertag.jsi.native-plus :as jsi]
               [lasertag.jsi.tag]
               [lasertag.jsi.native :as jsi.native]])
@@ -226,6 +226,7 @@
      :clj
      (or
       (cached/cljc-coll-type x)
+      (cached/cljc-scalar-type x)
       (when (fn? x) :function)
       (when (cached/throwable? x) :throwable)
       (when (cached/temporal? x) :datetime)
@@ -239,7 +240,9 @@
       (when (instance? java.util.AbstractList x) :list)
       (when (vanilla-class? x) :class))))
 
-(defn merged-with-runtime-tags [x m]
+(defn merged-with-runtime-tags 
+  "If x is number, we need to add more tags such as :whole, :neg, etc"
+  [x m]
   (let [number-tags  (when (cached/real-number? x) (cached/number-tags x))
         all-tags2    (cached/all-tags* x)
         all-tags-new (set/union (:all-tags m) number-tags all-tags2)]
@@ -297,10 +300,11 @@
   ([x]
    (tag-map x nil))
   ([x opts]
-   (try (or (cond->> (cached-tag-map x)
-              (and (number? x) ;<- check if we need to get more tags at runtime 
-                   (not (:skip-dynamic-secondary-tags? opts)))
-              (merged-with-runtime-tags x))
+   (try (or (when-let [m (cached-tag-map x)]
+              (if (and (number? x) ;<- check if we need to get more tags at runtime 
+                       (not (:skip-dynamic-secondary-tags? opts)))
+                (merged-with-runtime-tags x m)
+                m))
             (tag* {:x       x
                    :extras? true
                    :opts    opts}))

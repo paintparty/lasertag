@@ -144,7 +144,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
 ## Setup
 Requires Clojure `1.11.1` or higher
 
-If using with Babashka, requires Babashka `v1.12.210` or higher
+If using with Babashka, requires Babashka `v1.13.219` or higher
 
 <br>
 
@@ -154,13 +154,13 @@ Add as a dependency to your project:
 
 Deps:
 ```clojure
-io.github.paintparty/lasertag {:mvn/version "0.13.2"}
+io.github.paintparty/lasertag {:mvn/version "0.13.3"}
 ```
 <br>
 
 Leiningen:
 ```clojure
-[io.github.paintparty/lasertag "0.13.2"]
+[io.github.paintparty/lasertag "0.13.3"]
 ```
 <br>
 

@@ -51,6 +51,21 @@
 
 (def subvec-class (cljc-type (subvec [1 2 3 4 5] 1 3)))
 
+(defn cljc-scalar-type
+  "Provides a primary tag for data structures whose class constructor may not be
+   present in cached map, such as "
+  [x]
+  (when-not (coll? x)
+    (cond (number? x) :number
+          (string? x) :string
+          (boolean? x) :boolean
+          (keyword? x) :keyword
+          (symbol? x) :symbol                          
+          (boolean? x) :boolean
+          (nil? x) :nil                     
+          (char? x) :char
+          (uuid? x) :uuid)))
+
 (defn cljc-coll-type
   "Provides a primary tag for:
    - Data structures whose class constructor may not be present in cached map,
