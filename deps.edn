@@ -1,2 +1,11 @@
 {:paths ["src"]
- :deps  {}}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps  {io.github.cognitect-labs/test-runner
+                       {:git/tag "v0.5.1" 
+                        :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner"]}}}
+
+ (not (= {:tag :seq, :type clojure.lang.Repeat, :all-tags #{:seqable :sequential :coll :deferred :coll-like :lazy :seq :list-like :carries-meta}, :classname "clojure.lang.Repeat"}
+         {:tag :seq, :type clojure.lang.LazySeq, :all-tags #{:seqable :sequential :coll :deferred :coll-like :lazy :seq :list-like :carries-meta}, :classname "clojure.lang.LazySeq"}))
+

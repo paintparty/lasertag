@@ -2,7 +2,7 @@
  {test:bb
   {:extra-paths      ["test"]
    :extra-deps       {io.github.paintparty/lasertag
-                      {:local/root "."}             #_{:mvn/version "0.11.1"}
+                      {:local/root "."}             
 
                       io.github.cognitect-labs/test-runner
                       {:git/tag "v0.5.1"
@@ -11,6 +11,10 @@
    :exec-args        {:dirs ["test"]}
    :org.babashka/cli {:coerce {:nses [:symbol]
                                :vars [:symbol]}}}
+  test:jolt
+  {:doc  "Run tests in jolt"
+   :task (shell "../../community/jolt/jolt/bin/jolt" "-M:test")} 
+
   git-deps-docs
   {:doc      "Regenerate docs/git-deps.md from the latest tag"
    :requires ([babashka.process :as p]

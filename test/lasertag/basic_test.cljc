@@ -6,11 +6,9 @@
             #?(:clj  [lasertag.macros :refer [?]])
             [lasertag.cached :as cached])
 
-  (:import [java.util.concurrent.atomic AtomicInteger AtomicLong
-            DoubleAccumulator DoubleAdder LongAccumulator LongAdder])
   ;; This require breaks testing in clj and bb (cognitect.test-runner)
   ;; leave it comment out unless debugging
-  #_(:require-macros [lasertag.macros :refer [?]]))
+  (:require-macros [lasertag.macros :refer [?]]))
 
 
 ;; Basic experimentation
@@ -18,9 +16,6 @@
    nil
    :clj
    (do
-     (? (tag (DoubleAdder.)))
-     #_(? (lasertag.core/tag-map (seq [1 2 3])))
-     #_(? (lasertag.core/tag-map (hash-map :a 1)))
      ;;  (deftype CustomMap [m]
      ;;    clojure.lang.IPersistentMap
      ;;    ;;  (count [_] (count m))
@@ -193,6 +188,8 @@
 
 #?(:cljs
    (do
+    (? (tag-map (js-obj "a" 1) ))
+    (? (tag-map {:a "1"}))
     ;;  (def sgm (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))
 
      ;; (def m (tag-map sgm))
