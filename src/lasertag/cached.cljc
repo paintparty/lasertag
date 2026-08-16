@@ -2,8 +2,10 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [lasertag.macros :refer [?]]
+            #?(:clj [clojure.pprint])
             #?(:cljs [lasertag.jsi.native :as jsi.native])
-            #?(:cljs [lasertag.jsi.classes])))
+            #?(:cljs [lasertag.jsi.classes])
+            [lasertag.messaging :as messaging]))
 
 
 ;; -----------------------------------------------------------------------------
@@ -13,19 +15,19 @@
 ;; (def ^:private write-tests? true)
 (def ^:private write-tests? false)
 (def ^:private greenlit-tests
+  "For only writing specific tests during dev."
   #{}
   #_#{"java.util.HashSet"})
 (def gen-test-ns-name "core-test")
 (def gen-test-path (str "./test/lasertag/" 
                         (str/replace gen-test-ns-name #"-" "_")
-                        ".clj"))
+                        ".cljc"))
 
 ;; -----------------------------------------------------------------------------
 
 
 
 ;; Predefining classes so we don't need to import them -------------------------
-
 (defn cljc-type 
   "Cljc-friendly and safe alternative to `clojure.core/type`.
 
@@ -656,10 +658,8 @@
       :classname classname
       :all-tags (set/union all-tags #{:nan})}}))
 
-
 #?(:clj
    (do 
-
      (def comment-box-text
        "This is used to generate the header of a test file saved in `gen-test-path`"
        (str 
@@ -694,6 +694,69 @@
               "\n")
              :append false))
 
+     (defn- indented-string [indent-str s]
+       (some-> s
+               str
+               (str/split #"\n")
+               (->> (mapv #(str indent-str  %))
+                    (str/join "\n"))))
+
+     (defn- deftest-str* [deftest-name result form evaled-form]
+       (str/replace 
+        (with-out-str
+          (clojure.pprint/pprint
+           (list 
+            'deftest deftest-name
+            (list 'is
+                  (list '=
+                        result
+                        (list 'tag-map
+                              form
+                         ; This check needs to match check in lasertag.core/tag-map
+                         ; if we need to get more tags at runtime. If it 
+                         ; matches, we will skip adding the secondary tags
+                         ; (like would happen at runtime), in order to match
+                         ; the result of lookup by class from the map of 
+                         ; cached tag-maps. 
+                              (when (number? evaled-form)
+                                {:skip-dynamic-secondary-tags? true})))))))
+        #"\n$"
+        ""))
+
+
+
+
+     (defn- cljc-form-with-elided-branches-str
+       [s elided-branches]
+       (str
+        "\n\n"
+        (when elided-branches "#?(")
+        (str/join "\n   "
+                  (mapv #(str %  " " "nil") 
+                        elided-branches))
+        (when elided-branches "\n   :clj\n")
+        (if elided-branches
+          (indented-string "   " s)
+          s)
+        (when elided-branches ")")))
+
+     (def elided-branches-for-clj-tests
+       {"java.time.ZonedDateTime"                  [:jolt]
+        "clojure.lang.Repeat"                      [:jolt]
+        "clojure.lang.BigInt"                      [:jolt]
+        "clojure.lang.Cons"                        [:jolt]
+        "clojure.lang.LongRange"                   [:jolt]
+        "java.lang.Long"                           [:jolt]
+        "java.lang.Float"                          [:jolt]
+        "java.lang.Short"                          [:jolt]
+        "java.lang.Byte"                           [:jolt]
+        "java.lang.Integer"                        [:jolt]
+        "clojure.lang.Range"                       [:jolt]
+        "java.math.BigInteger"                     [:jolt]
+        "clojure.lang.PersistentVector"            [:jolt]
+        "clojure.lang.PersistentVector$ChunkedSeq" [:jolt]
+        "clojure.lang.APersistentVector$SubVector" [:jolt]
+        "clojure.lang.ArraySeq"                    [:jolt]})
 
      (defmacro by-class* 
        "Supplied with any number of maps of example values, merges them and
@@ -724,44 +787,45 @@
              :classname \"clojure.lang.PersistentHashMap\"}]
         "
        [& maps]
-       (when write-tests? (spit-test-header))
-       (reduce-kv (fn [m [cls tag] x*]
-                    (let [x         (eval x*)
-                          all-tags  (conj (all-tags* x) tag)
-                          classname (if (nil? cls) "nil" (str cls))
-                          result    {:tag       tag
-                                     :type      cls
-                                     :all-tags  all-tags
-                                     :classname classname}]
-
-                      (when (= type java.util.HashSet)
-                        (println type))
+       (when write-tests?
+         (println "\nlasertag.cached/write-tests? is `true`, writing tests...")
+         (when elided-branches-for-clj-tests
+           (println 
+            (str "\nGenerated deftests for some classes will have elided branches:\n"
+                 (with-out-str
+                   (clojure.pprint/pprint elided-branches-for-clj-tests)))))
+         (spit-test-header))
+       (reduce-kv (fn [m [cls tag] form]
+                    (let [evaled-form (eval form)
+                          all-tags    (conj (all-tags* evaled-form) tag)
+                          classname   (if (nil? cls) "nil" (str cls))
+                          result      {:tag       tag
+                                       :type      cls
+                                       :all-tags  all-tags
+                                       :classname classname}]
 
                       (when write-tests?
                         (require '[clojure.pprint :refer [pprint]])
-                        (spit (str "./test/lasertag/core_test" ".clj") 
+                        (spit (str "./test/lasertag/core_test" ".cljc") 
                               (when (or (empty? greenlit-tests)
                                         (and (not (empty? greenlit-tests))
                                              (contains? greenlit-tests classname)))
-                                (str
-                                 "\n\n"
-                                 (with-out-str
-                                   (clojure.pprint/pprint
-                                    (list 
-                                     'deftest (symbol (str classname "-test"))
-                                     (list 'is
-                                           (list '=
-                                                 result
-                                                 (list 'tag-map
-                                                       x*
-                                                       ; This check needs to match check in lasertag.core/tag-map
-                                                       ; if we need to get more tags at runtime. If it 
-                                                       ; matches, we will skip adding the secondary tags
-                                                       ; (like would happen at runtime), in order to match
-                                                       ; the result of lookup by class from the map of 
-                                                       ; cached tag-maps. 
-                                                       (when (number? x)
-                                                         {:skip-dynamic-secondary-tags? true})))))))))
+                                (let [elided-branches 
+                                      (some->> classname
+                                               (get elided-branches-for-clj-tests)
+                                               seq)
+                                      deftest-name
+                                      (symbol (str classname "-test"))
+
+                                      deftest-str
+                                      (deftest-str* deftest-name
+                                        result 
+                                        form
+                                        evaled-form)] 
+                                  
+                                  (cljc-form-with-elided-branches-str
+                                   deftest-str
+                                   elided-branches)))
                               :append true))
 
                       (assoc m cls result)))

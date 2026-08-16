@@ -343,7 +343,6 @@
 ;;  SSSSSSSSSSSSSSS   IIIIIIIIIIZZZZZZZZZZZZZZZZZZZEEEEEEEEEEEEEEEEEEEEEE
 ;;
 
-
 (defn- abstract-instance?* [x]
   #?(:clj
      (or (instance? java.util.AbstractCollection x)
@@ -442,6 +441,3 @@
 ;; Update readme
 
 ;; docstring / quickdoc
-
-;; pred lib predspread
-;; medley, tupelo, valip, clj-commons, useful, one from metosin, one from clj guy
