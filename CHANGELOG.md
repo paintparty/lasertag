@@ -1,6 +1,23 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
+## 0.14.0
+2026-08-15
+
+### Added
+- Support for Jolt
+- Added variadic macro arg for constructing the by-class map of pre-gen results from n number of maps, which allows classes to be elided from result map, based on dialect. On the occasion of support for Jolt.
+
+
+### Changed
+- Remove redundant :js-map-like-object. Fixes [#27](https://github.com/paintparty/lasertag/issues/27)
+- Convert project from lein to deps.edn [#45](https://github.com/paintparty/lasertag/issues/45)
+
+
+### Fixed
+- Tagging for all subclasses of `Number` in Clojure [#15](https://github.com/paintparty/lasertag/issues/16)
+
+
 ## 0.13.2
 2026-07-11
 

@@ -15,14 +15,12 @@
 ;; Toggle this to regenerate the data structure that serves most of the results
 ;; for `lasertag.core/tag` & `lasertag.core/tag-map` in cljs.
 ;; Generated ns is `lasertag.jsi.classes`
-
-(def ^:private write-classes? true)
+(def ^:private write-classes? false)
 
 
 ;; Toggle this to regenerate the cljs tests
 ;; Generated ns is `lasertag.generated`
-
-(def ^:private write-tests? true)
+(def ^:private write-tests? false)
 ;; -----------------------------------------------------------------------------
 
 

@@ -1,14 +1,14 @@
 (ns lasertag.basic-test
   (:require [lasertag.core :refer [tag tag-map]]
             [clojure.pprint :refer [pprint]]
+            [lasertag.macros :refer [?]]
             #?(:cljs [cljs.test :refer [deftest is testing]]
                :clj  [clojure.test :refer [deftest is testing]])
-            #?(:clj  [lasertag.macros :refer [?]])
             [lasertag.cached :as cached])
 
   ;; This require breaks testing in clj and bb (cognitect.test-runner)
   ;; leave it comment out unless debugging
-  (:require-macros [lasertag.macros :refer [?]]))
+  #_(:require-macros [lasertag.macros :refer [?]]))
 
 
 ;; Basic experimentation
@@ -188,8 +188,8 @@
 
 #?(:cljs
    (do
-    (? (tag-map (js-obj "a" 1) ))
-    (? (tag-map {:a "1"}))
+    ;; (? (tag-map (js-obj "a" 1) ))
+    ;; (? (tag-map {:a "1"}))
     ;;  (def sgm (new js/Intl.Segmenter "fr" #js{:granularity "word"} "fr"))
 
      ;; (def m (tag-map sgm))

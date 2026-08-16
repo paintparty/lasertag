@@ -10,8 +10,11 @@
 (defn- italic [s]
   (str #?(:cljs nil :clj "\033[3m") s #?(:cljs nil :clj "\033[0;m")))
 
-(defn- bold [s]
+(defn ^:no-doc bold [s]
   (str #?(:cljs nil :clj "\033[1m") s #?(:cljs nil :clj "\033[0;m")))
+
+(defn ^:no-doc dim [s]
+  (str #?(:cljs nil :clj "\033[2m") s #?(:cljs nil :clj "\033[0;m")))
 
 
 (defn as-str [x]

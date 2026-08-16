@@ -4,7 +4,7 @@
 # Lasertag
 
 **A library for categorizing values in Clojure dialects\***  
-<sub>\*Works with Clojure, ClojureScript, and Babashka</sub>
+<sub>Works with Clojure, ClojureScript, and Babashka, and Jolt</sub>
 
 
 <br>
@@ -498,8 +498,7 @@ Additionally, the data structure that serves most of the results for
 
 For both of these (slightly clunky, this will be cleaned up in future):
 
-1) Toggle `lasertag.cljs.codegen/write-tests?` and 
-`lasertag.jsi.codegen/write-classes?` to `true`.
+1) Toggle `lasertag.jsi.codegen/write-tests?` and `lasertag.jsi.codegen/write-classes?` to `true`.
 
 2) In one terminal: `npm run codegen`
 
