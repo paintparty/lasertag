@@ -4,6 +4,8 @@
 ;;
 ;;   Do not manually add anything to this namespace.
 ;;
+;;   It can be regenerated with the bb task `test:snapshot`.
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (ns
@@ -610,24 +612,6 @@
        :all-tags #{:seqable :array :coll-like :list-like},
        :classname "java.util.ArrayDeque"}
       (tag-map (java.util.ArrayDeque. [1 2 3]) nil)))))
-
-#?(:clj
-   (deftest
-    clojure.lang.StringSeq-test
-    (is
-     (=
-      {:tag :seq,
-       :type clojure.lang.StringSeq,
-       :all-tags
-       #{:seqable
-         :sequential
-         :coll
-         :coll-like
-         :seq
-         :list-like
-         :carries-meta},
-       :classname "clojure.lang.StringSeq"}
-      (tag-map (seq "ab") nil)))))
 
 #?(:clj
    (deftest

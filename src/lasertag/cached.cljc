@@ -862,7 +862,10 @@
        [clojure.lang.PersistentArrayMap :map]                   {:a 1}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
-       [clojure.lang.StringSeq :seq]                            (seq "ab")
+
+      ;;  TODO - Add to bb
+      ;;  [clojure.lang.StringSeq :seq]                            (seq "ab")
+
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
        [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
