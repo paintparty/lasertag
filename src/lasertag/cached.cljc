@@ -9,16 +9,19 @@
 
 
 ;; -----------------------------------------------------------------------------
-;; Should always be set to false, unless writing tests during dev of lasertag
-;; Run lein-test to regenerate tests.
+(def ^:private write-tests? 
+  #?(:cljs
+     false
+     :clj
+     (= "true" (System/getenv "LASERTAG_WRITE_TESTS"))))
 
-;; (def ^:private write-tests? true)
-(def ^:private write-tests? false)
 (def ^:private greenlit-tests
   "For only writing specific tests during dev."
   #{}
   #_#{"java.util.HashSet"})
+
 (def gen-test-ns-name "core-test")
+
 (def gen-test-path (str "./test/lasertag/" 
                         (str/replace gen-test-ns-name #"-" "_")
                         ".cljc"))
@@ -670,10 +673,7 @@
         ";;\n"
         ";;   Do not manually add anything to this namespace.\n"
         ";;\n"
-        ";;   To regenerate, set `lasertag.cached/write-tests?` to `true`,"
-        "\n"
-        ";;   then run `lein test`."
-        "\n"
+        ";;   It can be regenerated with the bb task `test:snapshot`.\n"
         ";;\n"
         ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" ))
 
@@ -730,33 +730,25 @@
        [s elided-branches]
        (str
         "\n\n"
-        (when elided-branches "#?(")
+        "#?("
         (str/join "\n   "
                   (mapv #(str %  " " "nil") 
                         elided-branches))
-        (when elided-branches "\n   :clj\n")
-        (if elided-branches
-          (indented-string "   " s)
-          s)
-        (when elided-branches ")")))
+        (when elided-branches "\n   ")
+        ":clj\n"
+        (indented-string "   " s)
+        ")"))
 
      (def elided-branches-for-clj-tests
        {"java.time.ZonedDateTime"                  [:jolt]
         "clojure.lang.Repeat"                      [:jolt]
         "clojure.lang.BigInt"                      [:jolt]
-        "clojure.lang.Cons"                        [:jolt]
-        "clojure.lang.LongRange"                   [:jolt]
-        "java.lang.Long"                           [:jolt]
         "java.lang.Float"                          [:jolt]
         "java.lang.Short"                          [:jolt]
         "java.lang.Byte"                           [:jolt]
         "java.lang.Integer"                        [:jolt]
-        "clojure.lang.Range"                       [:jolt]
         "java.math.BigInteger"                     [:jolt]
-        "clojure.lang.PersistentVector"            [:jolt]
-        "clojure.lang.PersistentVector$ChunkedSeq" [:jolt]
-        "clojure.lang.APersistentVector$SubVector" [:jolt]
-        "clojure.lang.ArraySeq"                    [:jolt]})
+        "clojure.lang.APersistentVector$SubVector" [:jolt]})
 
      (defmacro by-class* 
        "Supplied with any number of maps of example values, merges them and
@@ -792,8 +784,11 @@
          (when elided-branches-for-clj-tests
            (println 
             (str "\nGenerated deftests for some classes will have elided branches:\n"
-                 (with-out-str
-                   (clojure.pprint/pprint elided-branches-for-clj-tests)))))
+                 (str/replace
+                  (with-out-str
+                    (clojure.pprint/pprint elided-branches-for-clj-tests))
+                  #"\n$"
+                  ""))))
          (spit-test-header))
        (reduce-kv (fn [m [cls tag] form]
                     (let [evaled-form (eval form)
@@ -867,7 +862,7 @@
        [clojure.lang.PersistentArrayMap :map]                   {:a 1}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
-
+       [clojure.lang.StringSeq :seq]                            (seq "ab")
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
        [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]

@@ -1,3 +1,5 @@
+;; TODO - should we move the cljc tests out of here and incorporate into the test gen?
+
 (ns lasertag.basic-test
   (:require [lasertag.core :refer [tag tag-map]]
             [clojure.pprint :refer [pprint]]
@@ -97,6 +99,14 @@
             {:tag       :function,
              :all-tags  #{:callable :lambda :function}
              :classname "Function"}))))
+   :jolt
+   (deftest clj-function-types-map
+     ;; TODO - Address :classname dissoc
+     (is (=
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                  :classname)
+          {:tag      :function,
+           :all-tags #{:callable :lambda :function :carries-meta}})))
    :bb
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
@@ -110,7 +120,7 @@
      ;; TODO - Address :classname dissoc
      (is (=
           (dissoc (dissoc (tag-map #(inc %)) :type)
-                     :classname)
+                  :classname)
           {:tag      :function,
            :all-tags #{:callable :lambda :function :carries-meta}}))))
 
@@ -121,6 +131,14 @@
           {:tag       :function
            :all-tags  #{:callable :function}
            :classname "Function"})))
+
+   :jolt
+   (deftest clj-elide-function-info
+     (is (=
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          {:tag       :function,
+           :all-tags  #{:callable :function :carries-meta},
+           :classname "lasertag.basic_test$xy"})))
    :bb
    (deftest clj-elide-function-info
      (testing "custom xy fn, in bb"
