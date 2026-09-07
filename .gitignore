@@ -19,3 +19,8 @@ node_modules/*
 .lsp/*
 .clj-kondo/*
 .DS_Store
+.jolt/*
+.rebel_readline_history
+
+# Fireworks inline-result cache
+.fireworks/results/
