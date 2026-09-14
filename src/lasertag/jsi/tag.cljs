@@ -101,7 +101,7 @@
                       :fn
                       :inst
                       :js-date
-                      :defmulti
+                      :multi-function
                       :js-global-this
                       :typed-array]
                      (select-keys types)

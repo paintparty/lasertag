@@ -1,7 +1,7 @@
 (ns lasertag.fns
   (:require 
    [lasertag.core :refer [tag tag-map]]
-   [clojure.string :as string]
+   [clojure.string :as str]
    #?(:cljs [lasertag.jsi.native-plus :refer [objects-by-unique-method-name
                                               objects-by-method-name
                                               js-built-in-objects
@@ -31,7 +31,7 @@
 (defn- demunge-fn-name [s]
   (reduce
    (fn [acc [k v]]
-     (string/replace acc (re-pattern k) v))
+     (str/replace acc (re-pattern k) v))
    s 
    char-map))
 
@@ -44,20 +44,20 @@
 
      (defn- resolve-classname [x]
        (let [[_ nm] (find-classname x)
-             bits   (some-> nm (string/split #"\."))]
+             bits   (some-> nm (str/split #"\."))]
          {:fn-ns   (-> bits
                        drop-last
-                       (->> (string/join "."))
-                       (string/replace #"_" "-")) 
+                       (->> (str/join "."))
+                       (str/replace #"_" "-")) 
           :fn-name (last bits)
           :fn-args :lasertag/unknown-function-signature-on-java-class}))
 
      (defn- resolve-fn-name [x]
        (let [pwo-stringified (pwos x)
              [_ nm*]         (re-find #"^#object\[([^\s]*)\s" pwo-stringified)]
-         (when (and nm* (not (string/blank? nm*)))
-           (let [[fn-ns fn-nm _anon] (string/split nm* #"\$")
-                 fn-ns               (string/replace fn-ns #"_" "-")
+         (when (and nm* (not (str/blank? nm*)))
+           (let [[fn-ns fn-nm _anon] (str/split nm* #"\$")
+                 fn-ns               (str/replace fn-ns #"_" "-")
                  fn-nm               (when-not _anon (demunge-fn-name fn-nm))]
              (merge (when fn-nm 
                       (when-not (re-find #"^fn--\d+$" fn-nm)
@@ -108,13 +108,13 @@
 
      (defn- cljs-defmulti [sym]
        (when (symbol? sym)
-         (let [[fn-ns fn-nm] (-> sym str (string/split #"/"))]
+         (let [[fn-ns fn-nm] (-> sym str (str/split #"/"))]
            {:fn-ns   fn-ns
             :fn-name fn-nm
             :fn-args :lasertag/multimethod})) )
 
      (defn- cljs-fn [x s]
-       (let [bits          (string/split s #"\$")
+       (let [bits          (str/split s #"\$")
              [fn-ns fn-nm] (partition-drop-last bits)
              fn-nm         (demunge-fn-name fn-nm)
              built-in?     (or (contains? js-built-in-objects x)
@@ -122,7 +122,7 @@
          (merge {:fn-name fn-nm}
                 (when built-in? {:js-built-in-function? true})
                 (when (seq fn-ns)
-                  {:fn-ns (string/replace (string/join "." fn-ns) #"_" "-")}) 
+                  {:fn-ns (str/replace (str/join "." fn-ns) #"_" "-")}) 
                 (when-not built-in? (js-built-in-method-of x s fn-nm)))))
 
      (defn- cljs-fn-alt [o]
@@ -137,11 +137,11 @@
     (defn- fn-args* [x]
       (let [[_ _ s] (re-find cljs-serialized-fn-info (str x))
             strings (some-> s
-                            (string/split #","))
+                            (str/split #","))
             syms    (some->> strings
                             ;; change to mapv?
                             (map (comp symbol
-                                        string/trim)))]
+                                        str/trim)))]
         syms))
 
     (defn- fn-args-defrecord [coll fn-info]
@@ -162,33 +162,48 @@
             fn-args              (fn-args-lambda fn-args fn-info)]
         [fn-args defrecord?]))))
 
-
-(defn- fn-info* [x k]
-  #?(:cljs 
-     (let [name-prop (.-name x)]
-       (cond
-         (= k :defmulti)                 (cljs-defmulti name-prop)
-         (not (string/blank? name-prop)) (cljs-fn x name-prop)
-         :else                           (cljs-fn-alt x)))
+(defn multi-function-sym [mf]
+  #?(:cljs
+     (.-name mf)
      :clj
-     (if (= k :defmulti)
-       {:fn-args :lasertag/multimethod}
-       (if (= k :class)
-         (resolve-classname x)
-         (resolve-fn-name x)))))
+     (some (fn [[_ ^clojure.lang.Var v]]
+             (when (and (.hasRoot v) (identical? mf (.getRawRoot v)))
+               (symbol v)))                     ; 1.10+
+           (mapcat ns-interns (all-ns)))))
 
+(defn- fn-info*
+  ([x k]
+   (fn-info* x k nil))
+  ([x k all-tags]
+   (let [multi-function? (contains? all-tags :multi-function)]
+    #?(:cljs 
+       (let [name-prop (.-name x)]
+         (cond
+           multi-function?           (cljs-defmulti name-prop)
+           (not (str/blank? name-prop)) (cljs-fn x name-prop)
+           :else                           (cljs-fn-alt x)))
+       :clj
+       (if multi-function?
+         (let [[fn-ns fn-name] 
+               (-> x
+                   multi-function-sym
+                   str
+                   (str/split #"/"))] 
+           {:fn-args :lasertag/multimethod
+            :fn-name fn-name
+            :fn-ns   fn-ns})
+         (if (= k :class)
+           (resolve-classname x)
+           (resolve-fn-name x)))))))
 
 (defn fn-info
   ([x]
    (fn-info x nil))
   ([x k]
-   (let [k                    (or k (tag x))
-         fn-info              (fn-info* x k)
-         [fn-args defrecord?] 
-         #?(:cljs
-            (fn-args x fn-info)
-            :clj
-            nil)]
+   (let [[k all-tags]         (let [{:keys [tag all-tags]} (tag-map x)]
+                                [tag all-tags])
+         fn-info              (fn-info* x k all-tags)
+         [fn-args defrecord?] #?(:cljs (fn-args x fn-info) :clj nil)]
      (merge fn-info
             (when defrecord?
               {:defrecord? true})
