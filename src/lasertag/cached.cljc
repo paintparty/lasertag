@@ -940,45 +940,7 @@
        [clojure.lang.Var :var]                                  (do (def my-var 42) #'my-var)
        [clojure.lang.Delay :delay]                              (delay 42)
 
-       ;; Throwables (maybe remove these?)
-       
-       ;; Java Errors
-       ;;  [java.lang.AssertionError :throwable]                    (java.lang.AssertionError. "foo")
-       ;;  [java.lang.NoClassDefFoundError :throwable]              (java.lang.NoClassDefFoundError. "foo")
-       ;;  [java.lang.UnsatisfiedLinkError :throwable]              (java.lang.UnsatisfiedLinkError. "foo")
-       ;;  [java.lang.ClassCircularityError :throwable]             (java.lang.ClassCircularityError. "foo")
-       ;;  [java.lang.OutOfMemoryError :throwable]                  (java.lang.OutOfMemoryError. "foo")
-       ;;  [java.lang.StackOverflowError :throwable]                (java.lang.StackOverflowError. "foo")
-       ;;  [java.lang.InternalError :throwable]                     (java.lang.InternalError. "foo")
-       ;;  ;; [java.lang.ThreadDeath :throwable]                    (java.lang.ThreadDeath. "foo")           ;;<- class not found
-       ;;  ;; [java.lang.IOError :throwable]                        (java.lang.IOError. "foo")               ;;<- class not found
-       
-       ;; Java Exceptions
-       ;;  [java.lang.CloneNotSupportedException :throwable]        (java.lang.CloneNotSupportedException. "foo")
-       ;;  [java.lang.InterruptedException :throwable]              (java.lang.InterruptedException. "foo")
-       ;;  [java.io.FileNotFoundException :throwable]               (java.io.FileNotFoundException. "foo")
-       ;;  [java.net.SocketException :throwable]                    (java.net.SocketException. "foo")
-       ;;  [java.sql.SQLException :throwable]                       (java.sql.SQLException. "foo")
-       ;;  [java.lang.ClassNotFoundException :throwable]            (java.lang.ClassNotFoundException. "foo")
-       ;;  [java.lang.NoSuchMethodException :throwable]             (java.lang.NoSuchMethodException. "foo")
-       ;;  [java.lang.IllegalAccessException :throwable]            (java.lang.IllegalAccessException. "foo")
-       ;;  [java.lang.NullPointerException :throwable]              (java.lang.NullPointerException. "foo")
-       ;;  [java.lang.IllegalArgumentException :throwable]          (java.lang.IllegalArgumentException. "foo")
-       ;;  [java.lang.IllegalStateException :throwable]             (java.lang.IllegalStateException. "foo")
-       ;;  [java.lang.ArithmeticException :throwable]               (java.lang.ArithmeticException. "foo")
-       ;;  [java.lang.ArrayIndexOutOfBoundsException :throwable]    (java.lang.ArrayIndexOutOfBoundsException. "foo")
-       ;;  [java.lang.StringIndexOutOfBoundsException :throwable]   (java.lang.StringIndexOutOfBoundsException. "foo")
-       ;;  [java.lang.UnsupportedOperationException :throwable]     (java.lang.UnsupportedOperationException. "foo")
-       ;;  [java.util.concurrent.CancellationException :throwable]  (java.util.concurrent.CancellationException. "foo")
-       ;;  [java.util.NoSuchElementException :throwable]            (java.util.NoSuchElementException. "foo")
-       
-
-       ;;  [java.lang.ClassCastException :throwable]                (java.lang.ClassCastException. "foo")
-       
-       ;;  ;; Clojure Exceptions
-       ;;  [clojure.lang.ExceptionInfo :throwable]                  (ex-info "foo" {})
-       ;;  [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 42 "foo")
-       
+  
        ;; Reflection
        [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
                                                                  '(:clj  (System/getProperty "os.name")
