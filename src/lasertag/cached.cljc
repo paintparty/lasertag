@@ -687,6 +687,9 @@
      (def examples-by-classname
        (atom {}))
 
+     (def examples-ordered
+       (atom []))
+
      (def comment-box-text
        "This is used to generate the header of a test file saved in `gen-test-path`"
        (str 
@@ -829,10 +832,11 @@
                    (swap! examples-by-classname
                           assoc
                           classname 
-                          {:source    
+                          {:code    
                            (pr-str form)
                            :value     
                            form})
+                   (swap! examples-ordered conj classname)
 
                    (when write-tests?
                      (require '[clojure.pprint :refer [pprint]])
@@ -871,24 +875,24 @@
      (by-class*
       [
        ;; Scalars
+       [java.lang.Boolean :boolean]                             true
+       [nil :nil]                                               nil
        [java.lang.Long :number]                                 42
+       [java.lang.Integer :number]                              (int 42)
+       [java.lang.Float :number]                                (float 3.14)
        [java.lang.Byte :number]                                 (byte 1)
        [java.lang.Double :number]                               3.14
        [java.lang.Short :number]                                (short 42)
        [clojure.lang.Ratio :number]                             1/3
-       [java.lang.Float :number]                                (float 3.14)
-       [java.lang.Integer :number]                              (int 42)
        [clojure.lang.BigInt :number]                            42N
        [java.math.BigInteger :number]                           (java.math.BigInteger. "42")
        [java.math.BigDecimal :number]                           42M
-       [clojure.lang.Keyword :keyword]                          :foo
        [java.lang.String :string]                               "foo"
-       [clojure.lang.Symbol :symbol]                            (symbol "foo")
-       [java.lang.Boolean :boolean]                             true
-       [nil :nil]                                               nil
        [java.lang.Character :char]                              \c
-       [java.util.UUID :uuid]                                   #uuid "4fe5d828-6444-11e8-8222-720007e40350"
        [java.util.regex.Pattern :regex]                         #"^[a-z]+$"
+       [clojure.lang.Keyword :keyword]                          :foo
+       [clojure.lang.Symbol :symbol]                            (symbol "foo")
+       [java.util.UUID :uuid]                                   #uuid "4fe5d828-6444-11e8-8222-720007e40350"
 
        ;; Collections
        ;; TODO - Add to bb
@@ -897,13 +901,13 @@
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1 :b 2)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
-       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
+       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq [1 2 3])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
        [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
        [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
-       [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
+       [clojure.lang.Range :seq]                                (range 0 1 1/5)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
        [clojure.lang.PersistentList$EmptyList :list]            (list)
@@ -914,13 +918,13 @@
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-       [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
+       [clojure.lang.MapEntry :vector]                          (first {:a 1})
        [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map  :a 1 :b 2))
        [java.util.ArrayList :array]                             (java.util.ArrayList. (range 3))
        [java.util.HashSet :set]                                 (java.util.HashSet. #{1 2 3})
        [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
 
-       ;; Constructors
+       ;; Functions 
        [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
                                                                     different-behavior)
        ;; Temporal Values
@@ -929,15 +933,15 @@
        ;; [java.sql.Timestamp :datetime]                        (java.sql.Timestamp. (System/currentTimeMillis))
        
        ;; Identities
-       [clojure.lang.Volatile :volatile]                        (volatile! 1)
        [clojure.lang.Atom :atom]                                (atom 1)
        [clojure.lang.Agent :agent]                              (agent 1)
+       [clojure.lang.Volatile :volatile]                        (volatile! 1)
        [clojure.lang.Ref :ref]                                  (ref 0)
        [clojure.lang.Var :var]                                  (do (def my-var 42) #'my-var)
        [clojure.lang.Delay :delay]                              (delay 42)
 
        ;; Throwables (maybe remove these?)
-
+       
        ;; Java Errors
        ;;  [java.lang.AssertionError :throwable]                    (java.lang.AssertionError. "foo")
        ;;  [java.lang.NoClassDefFoundError :throwable]              (java.lang.NoClassDefFoundError. "foo")
@@ -967,14 +971,14 @@
        ;;  [java.lang.UnsupportedOperationException :throwable]     (java.lang.UnsupportedOperationException. "foo")
        ;;  [java.util.concurrent.CancellationException :throwable]  (java.util.concurrent.CancellationException. "foo")
        ;;  [java.util.NoSuchElementException :throwable]            (java.util.NoSuchElementException. "foo")
-      
+       
 
-      ;;  [java.lang.ClassCastException :throwable]                (java.lang.ClassCastException. "foo")
-
-      ;;  ;; Clojure Exceptions
-      ;;  [clojure.lang.ExceptionInfo :throwable]                  (ex-info "foo" {})
-      ;;  [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 42 "foo")
-
+       ;;  [java.lang.ClassCastException :throwable]                (java.lang.ClassCastException. "foo")
+       
+       ;;  ;; Clojure Exceptions
+       ;;  [clojure.lang.ExceptionInfo :throwable]                  (ex-info "foo" {})
+       ;;  [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 42 "foo")
+       
        ;; Reflection
        [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
                                                                  '(:clj  (System/getProperty "os.name")
