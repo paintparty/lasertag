@@ -3,7 +3,7 @@
 
 # Lasertag
 
-**A library for categorizing values in Clojure dialects\***  
+**A library for categorizing values in Clojure dialects**  
 <sub>Works with Clojure, ClojureScript, and Babashka, and Jolt</sub>
 
 
@@ -144,7 +144,9 @@ The function `lasertag.core/tag` will return a descriptive tag:
 ## Setup
 Requires Clojure `1.11.1` or higher
 
-If using with Babashka, requires Babashka `v1.13.219` or higher
+If using with Babashka, requires `v1.13.219` or higher
+
+If using with Jolt, requires `v0.8.5` or higher
 
 <br>
 
@@ -465,30 +467,21 @@ Based on criterium quick-bench testing, most values will return in 15 ~ 50 nanos
 <br>
 
 ## Testing
-The JVM tests require [leiningen](https://leiningen.org/) to be installed.
 
+### Clojure, bb, and Jolt tests:
+Run tests via `bb tasks` (requires Babashka)
 
-```Clojure
-lein test
-```
-
-ClojureScript tests:
+### ClojureScript tests:
 
 ```Clojure
 npm run test
-```
-
-Babashka tests:
-
-```Clojure
-bb test:bb
 ```
 
 ## Developing
 Most of the tests are auto-generated.
 
 ### CLJ, bb testing
-To regenerate tests for JVM Clojure, look at source of `lasertag.cached`.
+To regenerate tests for JVM Clojure, bb, and Jolt, use the `test:snapshot` bb task.
 
 ### CLJS testing
 The cljs tests can also be regenerated.
@@ -496,7 +489,7 @@ The cljs tests can also be regenerated.
 Additionally, the data structure that serves most of the results for
 `lasertag.core/tag` & `lasertag.core/tag-map` in cljs needs to be pre-generated.
 
-For both of these (slightly clunky, this will be cleaned up in future):
+For both of these (slightly clunky, this will be streamlined in future):
 
 1) Toggle `lasertag.jsi.codegen/write-tests?` and `lasertag.jsi.codegen/write-classes?` to `true`.
 
@@ -509,6 +502,8 @@ Kill the `npm run codegen-watch` process.
 
 5) Toggle the defs from step 1 back to `false`
 
+### Regenerating git-deps.md
+This doc needs to be regenerated after a new release is tagged. Run `bb git-deps-docs`, commit regenerate `git-deps.md` and push to `main`. [TODO - automate this].
 
 <br>
 

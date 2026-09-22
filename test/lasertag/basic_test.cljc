@@ -1,5 +1,8 @@
+;; TODO - should we move the cljc tests out of here and incorporate into the test gen?
+
 (ns lasertag.basic-test
   (:require [lasertag.core :refer [tag tag-map]]
+            [clojure.string :as str]
             [clojure.pprint :refer [pprint]]
             [lasertag.macros :refer [?]]
             #?(:cljs [cljs.test :refer [deftest is testing]]
@@ -10,7 +13,7 @@
   ;; leave it comment out unless debugging
   #_(:require-macros [lasertag.macros :refer [?]]))
 
-
+(defn foo [] nil)
 ;; Basic experimentation
 #?(:bb
    nil
@@ -56,11 +59,26 @@
 (def my-data-type (->MyType 2 3))
 (defrecord MyRecordType [a b c d])
 (def my-record-type (->MyRecordType 4 8 4 5))
-(defmulti different-behavior (fn [x] (:x-type x)))
+(defmulti different-behavior ^{:foo :bar}(fn [x] (:x-type x)))
 (defmethod different-behavior :foo
   [x]
   (str (:name x) " will have a specific behavior"))
 (defn xy [x y] (+ x y))
+
+
+;; -----------------------------------------------------------------------------
+
+
+
+
+#_(? lasertag.cached/by-class)
+
+#_(? (-> (transient (hash-set :a :b))
+         tag-map
+         :classname
+         lasertag.core/classname->tokens
+         (->> (str/join " "))))
+
 
 ;; #?(:cljs
 ;;    (deftest cljs-function-types
@@ -69,7 +87,7 @@
 ;;      (is (= :function (tag MyRecordType)))
 ;;      (is (= :lasertag.core-test/MyType (tag my-data-type)))
 ;;      (is (= :record (tag my-record-type)))
-;;      (is (= :defmulti (tag different-behavior))))
+;;      (is (= :multi-function (tag different-behavior))))
 ;;    :clj
 ;;    (do
 ;;      (deftest clj-function-types
@@ -78,7 +96,7 @@
 ;;        (is (= :class (tag MyRecordType)))
 ;;        (is (= :lasertag.core_test.MyType (tag my-data-type)))
 ;;        (is (= :record (tag my-record-type)))
-;;        (is (= :defmulti (tag different-behavior))))))
+;;        (is (= :multi-function (tag different-behavior))))))
 
 
 ;; (deftest cljc-scalar-types
@@ -96,7 +114,17 @@
             (dissoc (tag-map #(inc %)) :type)
             {:tag       :function,
              :all-tags  #{:callable :lambda :function}
+             :category  "functions"
              :classname "Function"}))))
+   :jolt
+   (deftest clj-function-types-map
+     ;; TODO - Address :classname dissoc
+     (is (=
+          (dissoc (dissoc (tag-map #(inc %)) :type)
+                  :classname)
+          {:tag      :function,
+           :category "functions"
+           :all-tags #{:callable :lambda :function :carries-meta}})))
    :bb
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
@@ -104,14 +132,16 @@
           (dissoc (dissoc (tag-map #(inc %)) :type)
                   :classname)
           {:tag      :function,
+           :category "functions"
            :all-tags #{:function :carries-meta :callable}})))
    :clj
    (deftest clj-function-types-map
      ;; TODO - Address :classname dissoc
      (is (=
           (dissoc (dissoc (tag-map #(inc %)) :type)
-                     :classname)
+                  :classname)
           {:tag      :function,
+           :category "functions"
            :all-tags #{:callable :lambda :function :carries-meta}}))))
 
 #?(:cljs
@@ -119,14 +149,25 @@
      (is (=
           (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function
+           :category "functions"
            :all-tags  #{:callable :function}
            :classname "Function"})))
+
+   :jolt
+   (deftest clj-elide-function-info
+     (is (=
+          (dissoc (tag-map xy {:include-function-info? false}) :type)
+          {:tag       :function,
+           :category "functions"
+           :all-tags  #{:callable :function :carries-meta},
+           :classname "lasertag.basic_test$xy"})))
    :bb
    (deftest clj-elide-function-info
      (testing "custom xy fn, in bb"
        (is (=
             (dissoc (tag-map xy {:include-function-info? false}) :type)
             {:tag       :function,
+             :category  "functions"
              :all-tags  #{:function :carries-meta :callable},
              :classname "sci.impl.fns"}))))
    :clj
@@ -134,6 +175,7 @@
      (is (=
           (dissoc (tag-map xy {:include-function-info? false}) :type)
           {:tag       :function,
+           :category  "functions"
            :all-tags  #{:callable :function :carries-meta},
            :classname "lasertag.basic_test$xy"}))))
 

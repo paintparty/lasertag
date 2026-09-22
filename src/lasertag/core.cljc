@@ -2,8 +2,8 @@
   (:require
    [lasertag.messaging :as messaging]
    [lasertag.cached :as cached]
-   #?@(:clj  [[clojure.string :as str]
-              [lasertag.macros :refer [?]]]
+   [clojure.string :as str]
+   #?@(:clj  [[lasertag.macros :refer [?]]]
        :cljs [[lasertag.jsi.native-plus :as jsi]
               [lasertag.jsi.tag]
               [lasertag.jsi.native :as jsi.native]])
@@ -183,11 +183,18 @@
    {:tag k}
 
    ;; The `type` (calling clojure.core.type, or cljs.core.type) on the value 
-   {:type #?(:cljs (if (= k :js-generator)
-                     (symbol "#object[Generator]")
-                     (cached/cljc-type x))
-             :clj (cached/cljc-type x))}
+   {:type     #?(:cljs (if (= k :js-generator)
+                         (symbol "#object[Generator]")
+                         (cached/cljc-type x))
+                 :clj (cached/cljc-type x))}
 
+   ;; The canonical category of the value, based on primary tag
+   ;; :atom   -> "identities"
+   ;; :seq    -> "collections"
+   ;; :regex  -> "scalar"
+   ;; :string -> "scalar"
+   {:category (get cached/canonical-category-by-primary-tag k)}
+   
    #?(:cljs (cljs-tag-map* x k opts)
       :clj  (all-tags {:x    x
                        :k    k

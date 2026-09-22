@@ -9,22 +9,45 @@
 
 
 ;; -----------------------------------------------------------------------------
-;; Should always be set to false, unless writing tests during dev of lasertag
-;; Run lein-test to regenerate tests.
+(def ^:private write-tests? 
+  #?(:cljs
+     false
+     :clj
+     (= "true" (System/getenv "LASERTAG_WRITE_TESTS"))))
 
-;; (def ^:private write-tests? true)
-(def ^:private write-tests? false)
 (def ^:private greenlit-tests
   "For only writing specific tests during dev."
   #{}
   #_#{"java.util.HashSet"})
+
 (def gen-test-ns-name "core-test")
+
 (def gen-test-path (str "./test/lasertag/" 
                         (str/replace gen-test-ns-name #"-" "_")
                         ".cljc"))
 
-;; -----------------------------------------------------------------------------
+;; Canonical categorization ----------------------------------------------------
 
+(def canonical-categories 
+  {"scalars"         #{:keyword :number :string :symbol :boolean :nil :char :uuid :regex}
+   "collections"     #{:seq :map :vector :set :list :array :queue}
+   "functions"       #{:function}
+   "temporal values" #{:datetime}
+   "identities"      #{:volatile :atom :agent :ref :var :delay}
+   "pending values"  #{:promise :future}
+   "throwables"      #{:throwable}
+   "reflection"      #{:reader-conditional}})
+
+(def canonical-category-by-primary-tag
+  (reduce-kv
+   (fn [m category-name primary-tags]
+     (reduce
+      (fn [m primary-tag]
+        (assoc m primary-tag category-name))
+      m
+      primary-tags))
+   {}
+   canonical-categories))
 
 
 ;; Predefining classes so we don't need to import them -------------------------
@@ -658,8 +681,15 @@
       :classname classname
       :all-tags (set/union all-tags #{:nan})}}))
 
+
 #?(:clj
    (do 
+     (def examples-by-classname
+       (atom {}))
+
+     (def examples-ordered
+       (atom []))
+
      (def comment-box-text
        "This is used to generate the header of a test file saved in `gen-test-path`"
        (str 
@@ -670,10 +700,7 @@
         ";;\n"
         ";;   Do not manually add anything to this namespace.\n"
         ";;\n"
-        ";;   To regenerate, set `lasertag.cached/write-tests?` to `true`,"
-        "\n"
-        ";;   then run `lein test`."
-        "\n"
+        ";;   It can be regenerated with the bb task `test:snapshot`.\n"
         ";;\n"
         ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" ))
 
@@ -730,33 +757,25 @@
        [s elided-branches]
        (str
         "\n\n"
-        (when elided-branches "#?(")
+        "#?("
         (str/join "\n   "
                   (mapv #(str %  " " "nil") 
                         elided-branches))
-        (when elided-branches "\n   :clj\n")
-        (if elided-branches
-          (indented-string "   " s)
-          s)
-        (when elided-branches ")")))
+        (when elided-branches "\n   ")
+        ":clj\n"
+        (indented-string "   " s)
+        ")"))
 
      (def elided-branches-for-clj-tests
        {"java.time.ZonedDateTime"                  [:jolt]
         "clojure.lang.Repeat"                      [:jolt]
         "clojure.lang.BigInt"                      [:jolt]
-        "clojure.lang.Cons"                        [:jolt]
-        "clojure.lang.LongRange"                   [:jolt]
-        "java.lang.Long"                           [:jolt]
         "java.lang.Float"                          [:jolt]
         "java.lang.Short"                          [:jolt]
         "java.lang.Byte"                           [:jolt]
         "java.lang.Integer"                        [:jolt]
-        "clojure.lang.Range"                       [:jolt]
         "java.math.BigInteger"                     [:jolt]
-        "clojure.lang.PersistentVector"            [:jolt]
-        "clojure.lang.PersistentVector$ChunkedSeq" [:jolt]
-        "clojure.lang.APersistentVector$SubVector" [:jolt]
-        "clojure.lang.ArraySeq"                    [:jolt]})
+        "clojure.lang.APersistentVector$SubVector" [:jolt]})
 
      (defmacro by-class* 
        "Supplied with any number of maps of example values, merges them and
@@ -788,49 +807,64 @@
         "
        [& maps]
        (when write-tests?
-         (println "\nlasertag.cached/write-tests? is `true`, writing tests...")
+         (println "\nLASERTAG_WRITE_TESTS is true, writing tests...")
          (when elided-branches-for-clj-tests
            (println 
             (str "\nGenerated deftests for some classes will have elided branches:\n"
-                 (with-out-str
-                   (clojure.pprint/pprint elided-branches-for-clj-tests)))))
+                 (str/replace
+                  (with-out-str
+                    (clojure.pprint/pprint elided-branches-for-clj-tests))
+                  #"\n$"
+                  ""))))
          (spit-test-header))
-       (reduce-kv (fn [m [cls tag] form]
-                    (let [evaled-form (eval form)
-                          all-tags    (conj (all-tags* evaled-form) tag)
-                          classname   (if (nil? cls) "nil" (str cls))
-                          result      {:tag       tag
-                                       :type      cls
-                                       :all-tags  all-tags
-                                       :classname classname}]
+       (reduce (fn [m [[cls tag] form]]
+                 (let [evaled-form (eval form)
+                       all-tags    (conj (all-tags* evaled-form) tag)
+                       classname   (if (nil? cls) "nil" (str cls))
+                       result      {:tag       tag
+                                    :all-tags  all-tags
+                                    :category  (get canonical-category-by-primary-tag tag)
+                                    :type      cls
+                                    :classname classname}]
 
-                      (when write-tests?
-                        (require '[clojure.pprint :refer [pprint]])
-                        (spit (str "./test/lasertag/core_test" ".cljc") 
-                              (when (or (empty? greenlit-tests)
-                                        (and (not (empty? greenlit-tests))
-                                             (contains? greenlit-tests classname)))
-                                (let [elided-branches 
-                                      (some->> classname
-                                               (get elided-branches-for-clj-tests)
-                                               seq)
-                                      deftest-name
-                                      (symbol (str classname "-test"))
+                   ;; add entry to the examples-by-class-atom
+                   ;; used for reference by other tools such as atlas-spec
+                   (swap! examples-by-classname
+                          assoc
+                          classname 
+                          {:code    
+                           (pr-str form)
+                           :value     
+                           form})
+                   (swap! examples-ordered conj classname)
 
-                                      deftest-str
-                                      (deftest-str* deftest-name
-                                        result 
-                                        form
-                                        evaled-form)] 
-                                  
-                                  (cljc-form-with-elided-branches-str
+                   (when write-tests?
+                     (require '[clojure.pprint :refer [pprint]])
+                     (spit (str "./test/lasertag/core_test" ".cljc") 
+                           (when (or (empty? greenlit-tests)
+                                     (and (not (empty? greenlit-tests))
+                                          (contains? greenlit-tests classname)))
+                             (let [elided-branches 
+                                   (some->> classname
+                                            (get elided-branches-for-clj-tests)
+                                            seq)
+                                   deftest-name
+                                   (symbol (str classname "-test"))
+
                                    deftest-str
-                                   elided-branches)))
-                              :append true))
+                                   (deftest-str* deftest-name
+                                     result 
+                                     form
+                                     evaled-form)] 
+                               
+                               (cljc-form-with-elided-branches-str
+                                deftest-str
+                                elided-branches)))
+                           :append true))
 
-                      (assoc m cls result)))
-                  {}
-                  (apply merge maps)))))
+                   (assoc m cls result)))
+               {}
+               (partition 2 (apply concat maps))))))
 
 
 ;; TODO - describe what this is and how it works
@@ -839,116 +873,85 @@
      lasertag.jsi.classes/by-class
      :clj
      (by-class*
-      {;; numbers
-       [java.lang.Long :number]                                 21
-       [java.lang.Byte :number]                                 (byte 1)
-       [java.lang.Double :number]                               21.42
-       [java.lang.Short :number]                                (short 21)
-       [clojure.lang.Ratio :number]                             2/3
-       [java.lang.Float :number]                                (float 21.42)
-       [java.lang.Integer :number]                              (int 21)
-       [clojure.lang.BigInt :number]                            21N
-       [java.math.BigInteger :number]                           (java.math.BigInteger. "21")
-       [java.math.BigDecimal :number]                           21M
-
-       ;; scalars
-       [clojure.lang.Keyword :keyword]                          :foo
-       [java.lang.String :string]                               "foo"
-       [clojure.lang.Symbol :symbol]                            (symbol "foo")
+      [
+       ;; Scalars
        [java.lang.Boolean :boolean]                             true
        [nil :nil]                                               nil
-       [java.lang.Character :char]                              \a
-
-       ;; literal types
+       [java.lang.Long :number]                                 42
+       [java.lang.Integer :number]                              (int 42)
+       [java.lang.Float :number]                                (float 3.14)
+       [java.lang.Byte :number]                                 (byte 1)
+       [java.lang.Double :number]                               3.14
+       [java.lang.Short :number]                                (short 42)
+       [clojure.lang.Ratio :number]                             1/3
+       [clojure.lang.BigInt :number]                            42N
+       [java.math.BigInteger :number]                           (java.math.BigInteger. "42")
+       [java.math.BigDecimal :number]                           42M
+       [java.lang.String :string]                               "bar"
+       [java.lang.Character :char]                              \c
+       [java.util.regex.Pattern :regex]                         #"^[a-z]+$"
+       [clojure.lang.Keyword :keyword]                          :foo
+       [clojure.lang.Symbol :symbol]                            (symbol "foo")
        [java.util.UUID :uuid]                                   #uuid "4fe5d828-6444-11e8-8222-720007e40350"
-       [java.util.regex.Pattern :regex]                         #"^abc$"
 
-       ;; data-structures
-       [clojure.lang.PersistentArrayMap :map]                   {:a 1}
-       [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1)
+       ;; Collections
+       ;; TODO - Add to bb
+       ;; [clojure.lang.StringSeq :seq]                         (seq "ab")
+       [clojure.lang.PersistentArrayMap :map]                   {:a 1 
+                                                                 :b 2}
+       [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1 :b 2)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
-
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
-       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq ['a 'b])
+       [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq [1 2 3])
        [clojure.lang.PersistentVector :vector]                  [1 2 3]
        [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
        [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
-       [clojure.lang.Range :seq]                                (range 0 1.0 0.1)
+       [clojure.lang.Range :seq]                                (range 0 1 1/5)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
        [clojure.lang.PersistentList$EmptyList :list]            (list)
        [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
        [clojure.lang.PersistentTreeSet :set]                    (sorted-set 3 1 2)
-       [clojure.lang.PersistentArrayMap$TransientArrayMap :map] (transient (array-map 1 2 3 4))
-       [clojure.lang.PersistentHashMap$TransientHashMap :map]   (transient (hash-map 1 2 3 4))
+       [clojure.lang.PersistentArrayMap$TransientArrayMap :map] (transient (array-map :a 1 :b 2))
+       [clojure.lang.PersistentHashMap$TransientHashMap :map]   (transient (hash-map  :a 1 :b 2))
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
        [clojure.lang.PersistentHashSet$TransientHashSet :set]   (transient #{1 2 3})
        [clojure.lang.PersistentQueue :queue]                    clojure.lang.PersistentQueue/EMPTY
-       [clojure.lang.MapEntry :vector]                          (-> {:a 1} first)
-       [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map "a" 1 "b" 2))
-       [java.util.ArrayList :array]                             (java.util.ArrayList. (range 6))
-       [java.util.HashSet :set]                                 (java.util.HashSet. #{"a" 1 "b" 2})
+       [clojure.lang.MapEntry :vector]                          (first {:a 1})
+       [java.util.HashMap :map]                                 (java.util.HashMap. (hash-map  :a 1 :b 2))
+       [java.util.ArrayList :array]                             (java.util.ArrayList. (range 3))
+       [java.util.HashSet :set]                                 (java.util.HashSet. #{1 2 3})
        [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
 
-       ;; Constructors
-       [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
-                                                                    different-behavior)
-       ;; temporal
+       ;; Functions 
+       [clojure.lang.MultiFn :function]                         (do (defmulti area :shape)
+                                                                    (defmethod area :square [m]
+                                                                      [m]
+                                                                      (* (:side m) (:side m)))
+                                                                    (defmethod area :circle [m]
+                                                                      (* Math/PI (:radius m) (:radius m))))
+       ;; Temporal Values
        [java.util.Date :datetime]                               (java.util.Date.)
-       
        ;; leave out for bb for now 
-       ;;  [java.sql.Timestamp :datetime]                           (java.sql.Timestamp. (System/currentTimeMillis))
+       ;; [java.sql.Timestamp :datetime]                        (java.sql.Timestamp. (System/currentTimeMillis))
        
-       ;; reference types
+       ;; Identities
+       [clojure.lang.Atom :atom]                                (atom 1)
+       [clojure.lang.Agent :agent]                              (agent 1)
        [clojure.lang.Volatile :volatile]                        (volatile! 1)
-       [clojure.lang.Atom :atom]                                (atom :foo)
-       [clojure.lang.Agent :agent]                              (agent :foo)
        [clojure.lang.Ref :ref]                                  (ref 0)
        [clojure.lang.Var :var]                                  (do (def my-var 42) #'my-var)
-       [clojure.lang.Delay :delay]                              (delay 21)
+       [clojure.lang.Delay :delay]                              (delay 42)
 
-       ;; Java Errors
-       ;;  [java.lang.AssertionError :throwable]                    (java.lang.AssertionError. "foo")
-       ;;  [java.lang.NoClassDefFoundError :throwable]              (java.lang.NoClassDefFoundError. "foo")
-       ;;  [java.lang.UnsatisfiedLinkError :throwable]              (java.lang.UnsatisfiedLinkError. "foo")
-       ;;  [java.lang.ClassCircularityError :throwable]             (java.lang.ClassCircularityError. "foo")
-       ;;  [java.lang.OutOfMemoryError :throwable]                  (java.lang.OutOfMemoryError. "foo")
-       ;;  [java.lang.StackOverflowError :throwable]                (java.lang.StackOverflowError. "foo")
-       ;;  [java.lang.InternalError :throwable]                     (java.lang.InternalError. "foo")
-       ;;  ;; [java.lang.ThreadDeath :throwable]                    (java.lang.ThreadDeath. "foo")           ;;<- class not found
-       ;;  ;; [java.lang.IOError :throwable]                        (java.lang.IOError. "foo")               ;;<- class not found
        
-       ;; Java Exceptions
-       ;;  [java.lang.CloneNotSupportedException :throwable]        (java.lang.CloneNotSupportedException. "foo")
-       ;;  [java.lang.InterruptedException :throwable]              (java.lang.InterruptedException. "foo")
-       ;;  [java.io.FileNotFoundException :throwable]               (java.io.FileNotFoundException. "foo")
-       ;;  [java.net.SocketException :throwable]                    (java.net.SocketException. "foo")
-       ;;  [java.sql.SQLException :throwable]                       (java.sql.SQLException. "foo")
-       ;;  [java.lang.ClassNotFoundException :throwable]            (java.lang.ClassNotFoundException. "foo")
-       ;;  [java.lang.NoSuchMethodException :throwable]             (java.lang.NoSuchMethodException. "foo")
-       ;;  [java.lang.IllegalAccessException :throwable]            (java.lang.IllegalAccessException. "foo")
-       ;;  [java.lang.NullPointerException :throwable]              (java.lang.NullPointerException. "foo")
-       ;;  [java.lang.IllegalArgumentException :throwable]          (java.lang.IllegalArgumentException. "foo")
-       ;;  [java.lang.IllegalStateException :throwable]             (java.lang.IllegalStateException. "foo")
-       ;;  [java.lang.ArithmeticException :throwable]               (java.lang.ArithmeticException. "foo")
-       ;;  [java.lang.ArrayIndexOutOfBoundsException :throwable]    (java.lang.ArrayIndexOutOfBoundsException. "foo")
-       ;;  [java.lang.StringIndexOutOfBoundsException :throwable]   (java.lang.StringIndexOutOfBoundsException. "foo")
-       ;;  [java.lang.UnsupportedOperationException :throwable]     (java.lang.UnsupportedOperationException. "foo")
-       ;;  [java.util.concurrent.CancellationException :throwable]  (java.util.concurrent.CancellationException. "foo")
-       ;;  [java.util.NoSuchElementException :throwable]            (java.util.NoSuchElementException. "foo")
-       [java.lang.ClassCastException :throwable]                (java.lang.ClassCastException. "foo")
-
-       ;; Clojure Exceptions
-       [clojure.lang.ExceptionInfo :throwable]                  (ex-info "foo" {})
-       [clojure.lang.ArityException :throwable]                 (clojure.lang.ArityException. 3 "foo")
-
-       ;; reflection
+       ;; Reflection
        [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
                                                                  '(:clj  (System/getProperty "os.name")
                                                                          :cljs "JS")
-                                                                 false)}
+                                                                 false)
+       ]
 
       ;; second arg to by-class*
       ;; temporal constructs not supported by jolt core.
@@ -956,9 +959,12 @@
       ;; so we will elide them explicitly for jolt
       ;; for jolt runtime, these values will be resolved by cached/temporal? and tagged :datetime
       #?(:jolt nil
-         :clj {[java.time.Instant :datetime]       (java.time.Instant/now)
+         :clj [
+               ;; Datetime
+               [java.time.Instant :datetime]       (java.time.Instant/now)
                [java.time.LocalDate :datetime]     (java.time.LocalDate/now)
-               [java.time.ZonedDateTime :datetime] (java.time.ZonedDateTime/now)}))))
+               [java.time.ZonedDateTime :datetime] (java.time.ZonedDateTime/now) ]))))
+
 
 (def by-number-class
   (select-keys 

@@ -1,13 +1,26 @@
 # Changelog
 [Lasertag](https://github.com/paintparty/lasertag): A library for categorizing types of values in Clojure, ClojureScript, and Babashka.
 
+
+## 0.15.0
+2026-09-15
+
+### Added
+- :category entry (canonical category of value type) in result of `tag-map` [#49](https://github.com/paintparty/lasertag/issues/49)
+
+- `test:cljs` task to `bb.edn`
+
+### Fixed
+- :multi-function bug in lasertag.fns/fn-info [#50](https://github.com/paintparty/lasertag/issues/50)
+
 ## 0.14.0
 2026-08-15
 
 ### Added
-- Support for Jolt
-- Added variadic macro arg for constructing the by-class map of pre-gen results from n number of maps, which allows classes to be elided from result map, based on dialect. On the occasion of support for Jolt.
-
+- Support for Jolt. [#47](https://github.com/paintparty/lasertag/issues/47)
+- Add variadic macro arg for constructing the by-class map of pre-gen results from n number of maps, which allows classes to be elided from result map, based on dialect. On the occasion of support for Jolt.
+- Add `test:snapshot` bb task for regenerating JVM, bb, and Jolt tests. Closes  [#46](https://github.com/paintparty/lasertag/issues/46)
+- Support for `StringSeq`
 
 ### Changed
 - Remove redundant :js-map-like-object. Fixes [#27](https://github.com/paintparty/lasertag/issues/27)
