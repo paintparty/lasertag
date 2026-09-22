@@ -18,8 +18,11 @@
   test:jolt     {:doc  "Run tests in jolt"
                  :task (shell "jolt" "-M:jolt-test")} 
 
+  test:cljs     {:doc  "Run tests in cljs, with shadow-cljs and karma"
+                 :task (shell "npm" "test")} 
+
   test:all      {:doc     "Run the test suite for all target platforms."
-                 :depends [test test:bb test:jolt]}
+                 :depends [test test:bb test:jolt test:cljs]}
 
   ci            {:doc     "Run the CI pipeline of tests and build the JAR."
                  :depends [test:all] ; or just test

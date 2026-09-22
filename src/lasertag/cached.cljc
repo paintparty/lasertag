@@ -807,7 +807,7 @@
         "
        [& maps]
        (when write-tests?
-         (println "\nlasertag.cached/write-tests? is `true`, writing tests...")
+         (println "\nLASERTAG_WRITE_TESTS is true, writing tests...")
          (when elided-branches-for-clj-tests
            (println 
             (str "\nGenerated deftests for some classes will have elided branches:\n"
