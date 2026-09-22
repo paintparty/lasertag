@@ -887,7 +887,7 @@
        [clojure.lang.BigInt :number]                            42N
        [java.math.BigInteger :number]                           (java.math.BigInteger. "42")
        [java.math.BigDecimal :number]                           42M
-       [java.lang.String :string]                               "foo"
+       [java.lang.String :string]                               "bar"
        [java.lang.Character :char]                              \c
        [java.util.regex.Pattern :regex]                         #"^[a-z]+$"
        [clojure.lang.Keyword :keyword]                          :foo
@@ -897,7 +897,8 @@
        ;; Collections
        ;; TODO - Add to bb
        ;; [clojure.lang.StringSeq :seq]                         (seq "ab")
-       [clojure.lang.PersistentArrayMap :map]                   {:a 1 :b 2}
+       [clojure.lang.PersistentArrayMap :map]                   {:a 1 
+                                                                 :b 2}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1 :b 2)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
@@ -925,8 +926,12 @@
        [java.util.ArrayDeque :array]                            (java.util.ArrayDeque. [1 2 3])                            
 
        ;; Functions 
-       [clojure.lang.MultiFn :function]                         (do (defmulti different-behavior (fn [x] (:x-type x)))
-                                                                    different-behavior)
+       [clojure.lang.MultiFn :function]                         (do (defmulti area :shape)
+                                                                    (defmethod area :square [m]
+                                                                      [m]
+                                                                      (* (:side m) (:side m)))
+                                                                    (defmethod area :circle [m]
+                                                                      (* Math/PI (:radius m) (:radius m))))
        ;; Temporal Values
        [java.util.Date :datetime]                               (java.util.Date.)
        ;; leave out for bb for now 
@@ -940,7 +945,7 @@
        [clojure.lang.Var :var]                                  (do (def my-var 42) #'my-var)
        [clojure.lang.Delay :delay]                              (delay 42)
 
-  
+       
        ;; Reflection
        [clojure.lang.ReaderConditional :reader-conditional]     (reader-conditional
                                                                  '(:clj  (System/getProperty "os.name")
