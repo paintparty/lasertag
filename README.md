@@ -59,6 +59,8 @@ The function `lasertag.core/tag` will return a descriptive tag:
 =>
 {:tag       :seq
  :type      clojure.lang.LongRange
+ :classname "clojure.lang.LongRange"
+ :category  "collections"
  :all-tags  #{:seqable
               :sequential
               :coll
@@ -68,8 +70,7 @@ The function `lasertag.core/tag` will return a descriptive tag:
               :seq
               :list-like
               :carries-meta
-              :range}
- :classname "clojure.lang.LongRange"}
+              :range}}
 ```
 
 <br>
@@ -205,8 +206,9 @@ Using a tool without Maven support? See
 =>
 {:tag       :string
  :type      java.lang.String
- :all-tags  #{:string :scalar}
- :classname "java.lang.String"}
+ :classname "java.lang.String"
+ :category  "scalars"
+ :all-tags  #{:string :scalar}}
 
 
 
@@ -216,6 +218,8 @@ Using a tool without Maven support? See
 =>
 {:tag       :map
  :type      clojure.lang.PersistentArrayMap
+ :classname "clojure.lang.PersistentArrayMap"
+ :category  "collections"
  :all-tags  #{:callable
               :seqable
               :editable
@@ -225,8 +229,7 @@ Using a tool without Maven support? See
               :coll-like
               :map-like
               :map
-              :carries-meta}
- :classname "clojure.lang.PersistentArrayMap"}
+              :carries-meta}}
 
 
 
@@ -236,6 +239,8 @@ Using a tool without Maven support? See
 =>
 {:tag       :seq
  :type      clojure.lang.LongRange
+ :classname "clojure.lang.LongRange"
+ :category  "collections"
  :all-tags  #{:seqable
               :sequential
               :coll
@@ -245,8 +250,7 @@ Using a tool without Maven support? See
               :seq
               :list-like
               :carries-meta
-              :range}
- :classname "clojure.lang.LongRange"}
+              :range}}
 
 
 
@@ -257,13 +261,14 @@ Using a tool without Maven support? See
 =>
 {:tag       :record
  :type      my.ns.MyRecordType
+ :classname "my.ns.MyRecordType"
+ :category  "collections"
  :all-tags  #{:datatype
               :coll
               :coll-like
               :record
               :map-like
-              :carries-meta}
- :classname "my.ns.MyRecordType"}
+              :carries-meta}}
 
 
 
@@ -275,6 +280,7 @@ Using a tool without Maven support? See
 {:tag       :delay
  :type      clojure.lang.Delay
  :all-tags  #{:deferred :delay :derefable}
+ :category  "identities"
  :classname "clojure.lang.Delay"}
 
 
@@ -286,8 +292,9 @@ Using a tool without Maven support? See
 =>
 {:tag       :function
  :type      clojure.lang.MultiFn
- :all-tags  #{:multi-function :function :callable}
- :classname "clojure.lang.MultiFn"}
+ :classname "clojure.lang.MultiFn"
+ :category  "functions"
+ :all-tags  #{:multi-function :function :callable}}
 
 
 
@@ -298,8 +305,9 @@ Using a tool without Maven support? See
 =>
 {:tag       :var
  :type      clojure.lang.Var
- :all-tags  #{:reference :var :callable :derefable}
- :classname "clojure.lang.Var"}
+ :classname "clojure.lang.Var"
+ :category  "identities"
+ :all-tags  #{:reference :var :callable :derefable}}
 
 
 
@@ -460,6 +468,21 @@ List of all secondary tags (these show up in the `:all-tags` entry):<br>
  :zero]
 ```
 
+A value’s `:category` is based on its primary tag:
+```clojure
+(def canonical-categories
+  {"scalars"         #{:keyword :number :string :symbol :boolean :nil :char :uuid :regex}
+   "collections"     #{:seq :map :vector :set :list :array :queue}
+   "functions"       #{:function}
+   "temporal values" #{:datetime}
+   "identities"      #{:volatile :atom :agent :ref :var :delay}
+   "pending values"  #{:promise :future}
+   "throwables"      #{:throwable}
+   "reflection"      #{:reader-conditional}})
+```
+
+<br>
+
 ## Performance
 Based on criterium quick-bench testing, most values will return in 15 ~ 50 nanoseconds, depending on hardware. More exotic values whose types are not present in Lasertag's pre-generated result-by-class map will return in 10µs ~ 50µs, depending on hardware.  
 
@@ -476,6 +499,8 @@ Run tests via `bb tasks` (requires Babashka)
 ```Clojure
 npm run test
 ```
+
+<br>
 
 ## Developing
 Most of the tests are auto-generated.
