@@ -6,12 +6,12 @@
 2026-09-15
 
 ### Added
-- :category entry (canonical category of value type) in result of `tag-map` [#49](https://github.com/paintparty/lasertag/issues/49)
+- `:category` entry (canonical category of value type) in result of `tag-map` [#49](https://github.com/paintparty/lasertag/issues/49)
 
 - `test:cljs` task to `bb.edn`
 
 ### Fixed
-- :multi-function bug in lasertag.fns/fn-info [#50](https://github.com/paintparty/lasertag/issues/50)
+- `:multi-function` bug in lasertag.fns/fn-info [#50](https://github.com/paintparty/lasertag/issues/50)
 
 ## 0.14.0
 2026-08-15
