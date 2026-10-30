@@ -900,20 +900,20 @@
        [clojure.lang.PersistentArrayMap :map]                   {:a 1 
                                                                  :b 2}
        [clojure.lang.PersistentHashMap :map]                    (hash-map :a 1 :b 2)
+       [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
+       [clojure.lang.PersistentVector :vector]                  [1 2 3]
+       [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
+       [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
+       [clojure.lang.PersistentTreeSet :set]                    (sorted-set 3 1 2)
        [clojure.lang.LazySeq :seq]                              (map inc [1 2 3])
        [clojure.lang.ArraySeq :seq]                             (seq (into-array [1 2 3]))
        [clojure.lang.PersistentVector$ChunkedSeq :seq]          (seq [1 2 3])
-       [clojure.lang.PersistentVector :vector]                  [1 2 3]
-       [clojure.lang.PersistentHashSet :set]                    #{1 2 3}
-       [clojure.lang.APersistentVector$SubVector :vector]       (subvec [1 2 3 4 5] 1 3)
        [clojure.lang.Cons :seq]                                 (cons 1 '(2 3))
        [clojure.lang.LongRange :seq]                            (range 3)
        [clojure.lang.Range :seq]                                (range 0 1 1/5)
        [clojure.lang.Repeat :seq]                               (repeat 2 "a")
        [clojure.lang.PersistentList :list]                      (list 1 2 3)
        [clojure.lang.PersistentList$EmptyList :list]            (list)
-       [clojure.lang.PersistentTreeMap :map]                    (sorted-map :a 1 :b 2)
-       [clojure.lang.PersistentTreeSet :set]                    (sorted-set 3 1 2)
        [clojure.lang.PersistentArrayMap$TransientArrayMap :map] (transient (array-map :a 1 :b 2))
        [clojure.lang.PersistentHashMap$TransientHashMap :map]   (transient (hash-map  :a 1 :b 2))
        [clojure.lang.PersistentVector$TransientVector :map]     (transient [1 2 3])
