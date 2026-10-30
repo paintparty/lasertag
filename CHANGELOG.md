@@ -11,7 +11,10 @@
 - `test:cljs` task to `bb.edn`
 
 ### Fixed
-- `:multi-function` bug in lasertag.fns/fn-info [#50](https://github.com/paintparty/lasertag/issues/50)
+- `:multi-function` bug in `lasertag.fns/fn-info` [#50](https://github.com/paintparty/lasertag/issues/50)
+
+### Removed
+- Support for `StringSeq`. Will be added back when supported in bb.
 
 ## 0.14.0
 2026-08-15
